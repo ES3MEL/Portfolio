@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Allyssa Geanne Quinit — Product, UX &amp; QA</title>
+<meta name="description" content="Allyssa Geanne P. Quinit — UI/UX Designer, QA Engineer &amp; Business Analyst. Portfolio and resume.">
+<meta name="theme-color" content="#05060c">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%237C5CFC'/%3E%3Cstop offset='0.5' stop-color='%234FA0FF'/%3E%3Cstop offset='1' stop-color='%2333E5C4'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='22' fill='%2305060c'/%3E%3Ctext x='50' y='64' font-family='monospace' font-size='32' font-weight='700' fill='url(%23g)' text-anchor='middle'%3EAQ%3C/text%3E%3C/svg%3E">
+
+<script>
+/* Apply saved/system theme + accent before paint to avoid flash */
+(function(){
+  var root = document.documentElement;
+  try{
+    var saved = localStorage.getItem('agq-theme');
+    var theme = saved || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+    root.setAttribute('data-theme', theme);
+  }catch(e){ root.setAttribute('data-theme','dark'); }
+  try{
+    var accent = localStorage.getItem('agq-accent') || 'aurora';
+    root.setAttribute('data-accent', accent);
+  }catch(e){ root.setAttribute('data-accent','aurora'); }
+})();
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<!-- Loading animation -->
+<div class="preloader" id="preloader" aria-hidden="true">
+  <canvas class="preloader-canvas" id="preloaderCanvas"></canvas>
+  <div class="preloader-inner">
+    <div class="preloader-stage">
+      <svg class="preloader-progress" viewBox="0 0 120 120" aria-hidden="true">
+        <circle class="pp-track" cx="60" cy="60" r="52"></circle>
+        <circle class="pp-fill" id="ppFill" cx="60" cy="60" r="52"></circle>
+      </svg>
+      <svg class="preloader-logo" viewBox="0 0 100 100" aria-hidden="true">
+        <path class="pl-stroke" d="M50 18 L78 82 L62 82 L50 52 L38 82 L22 82 Z"></path>
+      </svg>
+      <div class="preloader-orbit" aria-hidden="true"><span></span><span></span><span></span></div>
+    </div>
+    <div class="preloader-word mono" id="preloaderWord">
+      <span>A</span><span>L</span><span>L</span><span>Y</span><span>S</span><span>S</span><span>A</span>
+    </div>
+    <div class="preloader-pct mono" id="preloaderPct">0<i>%</i></div>
+    <div class="preloader-tagline" id="preloaderTag">Crafting the experience…</div>
+  </div>
+</div>
+
+<!-- global gradient wash that drifts with scroll -->
+<div class="bg-aurora" aria-hidden="true">
+  <span class="aurora aurora--a"></span>
+  <span class="aurora aurora--b"></span>
+  <span class="aurora aurora--c"></span>
+</div>
+<div class="bg-grain" aria-hidden="true"></div>
+<div class="bg-code" id="bgCode" aria-hidden="true"></div>
+
+<div class="progress-rail" aria-hidden="true"><div class="progress-fill" id="progressFill"></div></div>
+<div class="cursor-ring" id="cursorRing" aria-hidden="true"></div>
+
+<!-- ===== NAV ===== -->
+<header class="site-header" id="siteHeader">
+  <div class="nav">
+    <a href="#top" class="brand">
+      <span class="brand-mark">AGQ</span>
+    </a>
+
+    <button class="cmdk-trigger" id="cmdkTrigger" aria-haspopup="dialog" aria-controls="cmdkOverlay">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.6"/><path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <span class="mono">Quick nav</span>
+      <span class="cmdk-kbd mono">/</span>
+    </button>
+
+    <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation menu">
+      <span></span><span></span>
+    </button>
+
+    <nav class="nav-menu" id="navMenu" aria-label="Primary">
+      <span class="nav-pill" id="navPill" aria-hidden="true"></span>
+      <a href="#about" class="nav-link" data-section="about"><span>About</span></a>
+      <a href="#experience" class="nav-link" data-section="experience"><span>Experience</span></a>
+      <a href="#projects" class="nav-link" data-section="projects"><span>Projects</span></a>
+      <a href="#skills" class="nav-link" data-section="skills"><span>Skills</span></a>
+      <a href="#tools" class="nav-link" data-section="tools"><span>Tools</span></a>
+      <a href="#highlights" class="nav-link" data-section="highlights"><span>Highlights</span></a>
+      <a href="#honors" class="nav-link" data-section="honors"><span>Honors</span></a>
+      <a href="#contact" class="nav-cta"><span>Contact</span></a>
+
+      <div class="nav-tools">
+        <button class="theme-toggle" id="themeToggle" aria-label="Toggle light and dark mode" title="Toggle theme (T)">
+          <svg class="theme-icon-sun" viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.8"/><path d="M12 2v2.5M12 19.5V22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M2 12h2.5M19.5 12H22M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <svg class="theme-icon-moon" viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true"><path d="M20 14.5A8 8 0 019.5 4a7 7 0 108.5 10.5c.7-.1 1.4-.3 2-.5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+        </button>
+
+        <div class="theme-panel-wrap">
+          <button class="theme-toggle accent-trigger" id="themePanelToggle" aria-label="Customize accent colors" aria-expanded="false" aria-controls="themePanel" title="Accent colors">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/><path d="M12 3a9 9 0 000 18c1.4 0 2-1 2-2 0-1.3-1-1.5-1-2.5 0-.8.7-1.5 1.5-1.5H17a4 4 0 004-4c0-4.4-4-8-9-8z" fill="currentColor" opacity=".18"/><circle cx="8.5" cy="10" r="1.1" fill="currentColor"/><circle cx="12" cy="8" r="1.1" fill="currentColor"/><circle cx="15.5" cy="10" r="1.1" fill="currentColor"/></svg>
+          </button>
+
+          <div class="theme-panel" id="themePanel" role="dialog" aria-label="Theme customization" hidden>
+            <button class="theme-default-btn" id="themeDefaultBtn" title="Reset to a clean, minimal, professional look">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true"><path d="M4 12a8 8 0 108-8M4 12V7m0 5h5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span>Default · clean &amp; minimal</span>
+            </button>
+            <p class="theme-panel-title mono">Theme</p>
+            <button class="theme-panel-mode" id="panelThemeToggle">
+              <span class="mono">Light / Dark</span>
+              <span class="theme-panel-mode-hint mono">press T</span>
+            </button>
+            <p class="theme-panel-title mono">Accent gradient</p>
+            <input type="search" class="accent-search" id="accentSearch" placeholder="Search themes…" aria-label="Search accent themes" autocomplete="off">
+            <div class="accent-cats" id="accentCats" role="tablist" aria-label="Theme categories">
+              <button class="accent-cat is-active" data-cat="all" role="tab" aria-selected="true">All</button>
+              <button class="accent-cat" data-cat="fav" role="tab" aria-selected="false">★ Favorites</button>
+              <button class="accent-cat" data-cat="recent" role="tab" aria-selected="false">Recent</button>
+              <button class="accent-cat" data-cat="cool" role="tab" aria-selected="false">Cool</button>
+              <button class="accent-cat" data-cat="warm" role="tab" aria-selected="false">Warm</button>
+              <button class="accent-cat" data-cat="vibrant" role="tab" aria-selected="false">Vibrant</button>
+              <button class="accent-cat" data-cat="nature" role="tab" aria-selected="false">Nature</button>
+              <button class="accent-cat" data-cat="neutral" role="tab" aria-selected="false">Neutral</button>
+            </div>
+            <p class="accent-empty" id="accentEmpty" hidden>No themes match.</p>
+            <div class="accent-grid">
+              <button class="accent-swatch" data-accent="aurora" aria-pressed="false" title="Aurora"><span style="background:linear-gradient(135deg,#7C5CFC,#4FA0FF,#33E5C4)"></span><em>Aurora</em></button>
+              <button class="accent-swatch" data-accent="sunset" aria-pressed="false" title="Sunset"><span style="background:linear-gradient(135deg,#FF6FB5,#FF9E6D,#FFD16B)"></span><em>Sunset</em></button>
+              <button class="accent-swatch" data-accent="ocean" aria-pressed="false" title="Ocean"><span style="background:linear-gradient(135deg,#2E7BE6,#22B7D6,#33E5C4)"></span><em>Ocean</em></button>
+              <button class="accent-swatch" data-accent="grape" aria-pressed="false" title="Grape"><span style="background:linear-gradient(135deg,#8B5CF6,#C084FC,#F0ABFC)"></span><em>Grape</em></button>
+              <button class="accent-swatch" data-accent="forest" aria-pressed="false" title="Forest"><span style="background:linear-gradient(135deg,#0EA57B,#4ADE80,#A3E635)"></span><em>Forest</em></button>
+              <button class="accent-swatch" data-accent="ember" aria-pressed="false" title="Ember"><span style="background:linear-gradient(135deg,#F43F5E,#FB7185,#FDBA74)"></span><em>Ember</em></button>
+              <button class="accent-swatch" data-accent="rose" aria-pressed="false" title="Rose"><span style="background:linear-gradient(135deg,#EC4899,#F472B6,#FDA4AF)"></span><em>Rose</em></button>
+              <button class="accent-swatch" data-accent="neon" aria-pressed="false" title="Neon"><span style="background:linear-gradient(135deg,#22D3EE,#3B82F6,#E879F9)"></span><em>Neon</em></button>
+              <button class="accent-swatch" data-accent="gold" aria-pressed="false" title="Gold"><span style="background:linear-gradient(135deg,#B45309,#F59E0B,#FDE047)"></span><em>Gold</em></button>
+              <button class="accent-swatch" data-accent="mint" aria-pressed="false" title="Mint"><span style="background:linear-gradient(135deg,#10B981,#2DD4BF,#67E8F9)"></span><em>Mint</em></button>
+              <button class="accent-swatch" data-accent="crimson" aria-pressed="false" title="Crimson"><span style="background:linear-gradient(135deg,#7F1D1D,#DC2626,#FB923C)"></span><em>Crimson</em></button>
+              <button class="accent-swatch" data-accent="lagoon" aria-pressed="false" title="Lagoon"><span style="background:linear-gradient(135deg,#0EA5E9,#14B8A6,#84CC16)"></span><em>Lagoon</em></button>
+              <button class="accent-swatch" data-accent="candy" aria-pressed="false" title="Candy"><span style="background:linear-gradient(135deg,#F472B6,#A78BFA,#38BDF8)"></span><em>Candy</em></button>
+              <button class="accent-swatch" data-accent="cocoa" aria-pressed="false" title="Cocoa"><span style="background:linear-gradient(135deg,#B45309,#D97706,#FBBF24)"></span><em>Cocoa</em></button>
+              <button class="accent-swatch" data-accent="violet" aria-pressed="false" title="Violet"><span style="background:linear-gradient(135deg,#8B5CF6,#A78BFA,#C4B5FD)"></span><em>Violet</em></button>
+              <button class="accent-swatch" data-accent="lavender" aria-pressed="false" title="Lavender"><span style="background:linear-gradient(135deg,#A78BFA,#C4B5FD,#DDD6FE)"></span><em>Lavender</em></button>
+              <button class="accent-swatch" data-accent="sky" aria-pressed="false" title="Sky"><span style="background:linear-gradient(135deg,#0EA5E9,#38BDF8,#7DD3FC)"></span><em>Sky</em></button>
+              <button class="accent-swatch" data-accent="aqua" aria-pressed="false" title="Aqua"><span style="background:linear-gradient(135deg,#22D3EE,#2DD4BF,#67E8F9)"></span><em>Aqua</em></button>
+              <button class="accent-swatch" data-accent="lime" aria-pressed="false" title="Lime"><span style="background:linear-gradient(135deg,#65A30D,#A3E635,#D9F99D)"></span><em>Lime</em></button>
+              <button class="accent-swatch" data-accent="amber" aria-pressed="false" title="Amber"><span style="background:linear-gradient(135deg,#F59E0B,#FBBF24,#FDE68A)"></span><em>Amber</em></button>
+              <button class="accent-swatch" data-accent="coral" aria-pressed="false" title="Coral"><span style="background:linear-gradient(135deg,#FB7185,#FB923C,#FDBA74)"></span><em>Coral</em></button>
+              <button class="accent-swatch" data-accent="peach" aria-pressed="false" title="Peach"><span style="background:linear-gradient(135deg,#FDBA74,#FCA5A5,#FBCFE8)"></span><em>Peach</em></button>
+              <button class="accent-swatch" data-accent="fuchsia" aria-pressed="false" title="Fuchsia"><span style="background:linear-gradient(135deg,#D946EF,#E879F9,#F0ABFC)"></span><em>Fuchsia</em></button>
+              <button class="accent-swatch" data-accent="sakura" aria-pressed="false" title="Sakura"><span style="background:linear-gradient(135deg,#F472B6,#F9A8D4,#FBCFE8)"></span><em>Sakura</em></button>
+              <button class="accent-swatch" data-accent="galaxy" aria-pressed="false" title="Galaxy"><span style="background:linear-gradient(135deg,#6D28D9,#4338CA,#0EA5E9)"></span><em>Galaxy</em></button>
+              <button class="accent-swatch" data-accent="midnight" aria-pressed="false" title="Midnight"><span style="background:linear-gradient(135deg,#334155,#3B82F6,#6366F1)"></span><em>Midnight</em></button>
+              <button class="accent-swatch" data-accent="coffee" aria-pressed="false" title="Coffee"><span style="background:linear-gradient(135deg,#78350F,#B45309,#D6B98C)"></span><em>Coffee</em></button>
+              <button class="accent-swatch" data-accent="cyberpunk" aria-pressed="false" title="Cyberpunk"><span style="background:linear-gradient(135deg,#FF00E5,#7C3AED,#00E5FF)"></span><em>Cyberpunk</em></button>
+              <button class="accent-swatch" data-accent="futuretech" aria-pressed="false" title="Future Tech"><span style="background:linear-gradient(135deg,#2563EB,#06B6D4,#22D3EE)"></span><em>Future</em></button>
+              <button class="accent-swatch" data-accent="royal" aria-pressed="false" title="Royal Blue"><span style="background:linear-gradient(135deg,#1E3A8A,#4338CA,#6D28D9)"></span><em>Royal</em></button>
+              <button class="accent-swatch" data-accent="emerald" aria-pressed="false" title="Emerald"><span style="background:linear-gradient(135deg,#047857,#10B981,#6EE7B7)"></span><em>Emerald</em></button>
+              <button class="accent-swatch" data-accent="arctic" aria-pressed="false" title="Arctic"><span style="background:linear-gradient(135deg,#7DD3FC,#A5F3FC,#E0F2FE)"></span><em>Arctic</em></button>
+              <button class="accent-swatch" data-accent="goldenhour" aria-pressed="false" title="Golden Hour"><span style="background:linear-gradient(135deg,#F97316,#FBBF24,#FCD34D)"></span><em>Golden</em></button>
+              <button class="accent-swatch" data-accent="tropical" aria-pressed="false" title="Tropical"><span style="background:linear-gradient(135deg,#F59E0B,#22C55E,#06B6D4)"></span><em>Tropical</em></button>
+              <button class="accent-swatch" data-accent="fireice" aria-pressed="false" title="Fire & Ice"><span style="background:linear-gradient(135deg,#F43F5E,#A855F7,#38BDF8)"></span><em>Fire&amp;Ice</em></button>
+              <button class="accent-swatch" data-accent="vaporwave" aria-pressed="false" title="Vaporwave"><span style="background:linear-gradient(135deg,#FF6AD5,#C774E8,#8795E8)"></span><em>Vapor</em></button>
+              <button class="accent-swatch" data-accent="nebula" aria-pressed="false" title="Nebula"><span style="background:linear-gradient(135deg,#7C3AED,#DB2777,#F59E0B)"></span><em>Nebula</em></button>
+              <button class="accent-swatch" data-accent="sage" aria-pressed="false" title="Sage"><span style="background:linear-gradient(135deg,#4D7C0F,#84CC16,#BEF264)"></span><em>Sage</em></button>
+              <button class="accent-swatch" data-accent="ruby" aria-pressed="false" title="Ruby"><span style="background:linear-gradient(135deg,#9F1239,#E11D48,#FB7185)"></span><em>Ruby</em></button>
+              <button class="accent-swatch" data-accent="mango" aria-pressed="false" title="Mango"><span style="background:linear-gradient(135deg,#EA580C,#F59E0B,#FDE047)"></span><em>Mango</em></button>
+              <button class="accent-swatch" data-accent="flamingo" aria-pressed="false" title="Flamingo"><span style="background:linear-gradient(135deg,#EC4899,#FB7185,#FDA4AF)"></span><em>Flamingo</em></button>
+              <button class="accent-swatch" data-accent="jade" aria-pressed="false" title="Jade"><span style="background:linear-gradient(135deg,#059669,#14B8A6,#5EEAD4)"></span><em>Jade</em></button>
+              <button class="accent-swatch" data-accent="cobalt" aria-pressed="false" title="Cobalt"><span style="background:linear-gradient(135deg,#1E40AF,#3B82F6,#60A5FA)"></span><em>Cobalt</em></button>
+              <button class="accent-swatch" data-accent="orchid" aria-pressed="false" title="Orchid"><span style="background:linear-gradient(135deg,#9333EA,#C026D3,#E879F9)"></span><em>Orchid</em></button>
+              <button class="accent-swatch" data-accent="ember2" aria-pressed="false" title="Ember"><span style="background:linear-gradient(135deg,#B91C1C,#EA580C,#FB923C)"></span><em>Ember</em></button>
+              <button class="accent-swatch" data-accent="aurora2" aria-pressed="false" title="Aurora Glow"><span style="background:linear-gradient(135deg,#22D3EE,#818CF8,#F472B6)"></span><em>Aurora Glow</em></button>
+              <button class="accent-swatch" data-accent="matrix" aria-pressed="false" title="Matrix"><span style="background:linear-gradient(135deg,#166534,#22C55E,#86EFAC)"></span><em>Matrix</em></button>
+              <button class="accent-swatch" data-accent="dusk" aria-pressed="false" title="Dusk"><span style="background:linear-gradient(135deg,#4338CA,#7C3AED,#EC4899)"></span><em>Dusk</em></button>
+              <button class="accent-swatch" data-accent="steel" aria-pressed="false" title="Steel"><span style="background:linear-gradient(135deg,#475569,#0EA5E9,#94A3B8)"></span><em>Steel</em></button>
+              <button class="accent-swatch" data-accent="mono" aria-pressed="false" title="Slate"><span style="background:linear-gradient(135deg,#64748B,#94A3B8,#CBD5E1)"></span><em>Slate</em></button>
+            </div>
+            <p class="theme-panel-title mono">Gradient motion</p>
+            <div class="anim-options" id="animOptions" role="group" aria-label="Gradient animation style">
+              <button class="anim-opt is-active" data-anim="off" aria-pressed="true">Default</button>
+              <button class="anim-opt" data-anim="drift" aria-pressed="false">Drift</button>
+              <button class="anim-opt" data-anim="shimmer" aria-pressed="false">Shimmer</button>
+              <button class="anim-opt" data-anim="hue" aria-pressed="false">Hue Shift</button>
+              <button class="anim-opt" data-anim="pulse" aria-pressed="false">Pulse</button>
+              <button class="anim-opt" data-anim="circular" aria-pressed="false">Circular</button>
+            </div>
+            <div class="anim-options anim-options--speed" id="speedOptions" role="group" aria-label="Animation speed">
+              <button class="anim-opt" data-speed="slow" aria-pressed="false">Slow</button>
+              <button class="anim-opt is-active" data-speed="medium" aria-pressed="true">Medium</button>
+              <button class="anim-opt" data-speed="fast" aria-pressed="false">Fast</button>
+            </div>
+            <p class="theme-panel-title mono">Corners</p>
+            <div class="anim-options" id="radiusOptions" role="group" aria-label="Corner radius style">
+              <button class="anim-opt" data-radius="sharp" aria-pressed="false">Sharp</button>
+              <button class="anim-opt is-active" data-radius="default" aria-pressed="true">Default</button>
+              <button class="anim-opt" data-radius="round" aria-pressed="false">Rounded</button>
+              <button class="anim-opt" data-radius="pill" aria-pressed="false">Pill</button>
+              <button class="anim-opt" data-radius="squircle" aria-pressed="false">Squircle</button>
+            </div>
+            <p class="theme-panel-title mono">Background</p>
+            <div class="anim-options anim-options--bg" id="bgOptions" role="group" aria-label="Background animation style">
+              <button class="anim-opt" data-bg="code" aria-pressed="false">Code</button>
+              <button class="anim-opt" data-bg="dots" aria-pressed="false">Particles</button>
+              <button class="anim-opt" data-bg="stars" aria-pressed="false">Stars</button>
+              <button class="anim-opt" data-bg="constellation" aria-pressed="false">Network</button>
+              <button class="anim-opt" data-bg="matrix" aria-pressed="false">Matrix</button>
+              <button class="anim-opt" data-bg="grid" aria-pressed="false">Grid</button>
+              <button class="anim-opt" data-bg="mesh" aria-pressed="false">Mesh</button>
+            </div>
+            <p class="theme-panel-title mono">Background themes</p>
+            <div class="anim-options anim-options--bg" id="bgThemeOptions" role="group" aria-label="Themed animated backgrounds">
+              <button class="anim-opt is-active" data-bg="none" aria-pressed="true">Default</button>
+              <button class="anim-opt" data-bg="ninja" aria-pressed="false">Ninja</button>
+              <button class="anim-opt" data-bg="pirate" aria-pressed="false">Pirate</button>
+              <button class="anim-opt" data-bg="energy" aria-pressed="false">Energy</button>
+              <button class="anim-opt" data-bg="sakura" aria-pressed="false">Petals</button>
+              <button class="anim-opt" data-bg="hero" aria-pressed="false">Hero</button>
+              <button class="anim-opt" data-bg="comic" aria-pressed="false">Comic</button>
+              <button class="anim-opt" data-bg="pixelfx" aria-pressed="false">Pixel</button>
+              <button class="anim-opt" data-bg="fantasy" aria-pressed="false">Fantasy</button>
+              <button class="anim-opt" data-bg="bubbles" aria-pressed="false">Bubbles</button>
+              <button class="anim-opt" data-bg="doodle" aria-pressed="false">Doodle</button>
+            </div>
+            <p class="theme-panel-title mono">Sound</p>
+            <button class="theme-panel-mode" id="soundToggle" role="switch" aria-checked="false">
+              <span class="mono">Sound effects</span>
+              <span class="sound-switch" aria-hidden="true"><span class="sound-switch-knob"></span></span>
+            </button>
+            <div class="sound-volume" id="soundVolumeWrap" hidden>
+              <span class="mono sound-vol-label">Volume</span>
+              <input type="range" id="soundVolume" min="0" max="100" value="50" aria-label="Sound volume">
+            </div>
+            <p class="theme-panel-title mono">Accessibility</p>
+            <button class="theme-panel-mode" id="contrastToggle" role="switch" aria-checked="false">
+              <span class="mono">High contrast</span>
+              <span class="sound-switch" aria-hidden="true"><span class="sound-switch-knob"></span></span>
+            </button>
+            <button class="theme-panel-mode" id="bigTextToggle" role="switch" aria-checked="false" style="margin-top:8px">
+              <span class="mono">Larger text</span>
+              <span class="sound-switch" aria-hidden="true"><span class="sound-switch-knob"></span></span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<!-- ===== COMMAND PALETTE ===== -->
+<div class="cmdk-overlay" id="cmdkOverlay" hidden>
+  <div class="cmdk-panel" role="dialog" aria-modal="true" aria-label="Quick navigation">
+    <div class="cmdk-input-row">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.6"/><path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <input type="text" id="cmdkInput" class="cmdk-input" placeholder="Jump to a section or run a quick action…" autocomplete="off" aria-label="Search sections and actions">
+      <span class="cmdk-kbd mono">esc</span>
+    </div>
+    <ul class="cmdk-list" id="cmdkList" role="listbox"></ul>
+    <div class="cmdk-foot">
+      <span><kbd class="mono">↑</kbd><kbd class="mono">↓</kbd> navigate</span>
+      <span><kbd class="mono">↵</kbd> select</span>
+      <span><kbd class="mono">esc</kbd> close</span>
+      <span class="cmdk-foot-tip"><kbd class="mono">?</kbd> all shortcuts</span>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SIDE DOT NAV (desktop) ===== -->
+<nav class="dot-nav" aria-label="Section progress">
+  <a href="#top" class="dot-nav__item" data-section="top"><span class="dot-nav__dot"></span><span class="dot-nav__label">Intro</span></a>
+  <a href="#about" class="dot-nav__item" data-section="about"><span class="dot-nav__dot"></span><span class="dot-nav__label">About</span></a>
+  <a href="#experience" class="dot-nav__item" data-section="experience"><span class="dot-nav__dot"></span><span class="dot-nav__label">Experience</span></a>
+  <a href="#projects" class="dot-nav__item" data-section="projects"><span class="dot-nav__dot"></span><span class="dot-nav__label">Projects</span></a>
+  <a href="#skills" class="dot-nav__item" data-section="skills"><span class="dot-nav__dot"></span><span class="dot-nav__label">Skills</span></a>
+  <a href="#tools" class="dot-nav__item" data-section="tools"><span class="dot-nav__dot"></span><span class="dot-nav__label">Tools</span></a>
+  <a href="#highlights" class="dot-nav__item" data-section="highlights"><span class="dot-nav__dot"></span><span class="dot-nav__label">Highlights</span></a>
+  <a href="#honors" class="dot-nav__item" data-section="honors"><span class="dot-nav__dot"></span><span class="dot-nav__label">Honors</span></a>
+  <a href="#contact" class="dot-nav__item" data-section="contact"><span class="dot-nav__dot"></span><span class="dot-nav__label">Contact</span></a>
+</nav>
+
+<main id="main">
+
+  <!-- ===== HERO ===== -->
+  <section id="top" class="hero" aria-label="Introduction">
+    <div class="hero-grid-layout">
+
+      <div class="hero-inner">
+        <p class="eyebrow" data-reveal>
+          <span class="eyebrow-dot"></span>
+          Available for junior roles
+        </p>
+
+        <h1 class="hero-title">
+          <span class="hero-title-line">Designing, testing,</span>
+          <span class="hero-title-line hero-title-line--grad">and documenting</span>
+          <span class="hero-title-line">digital products.</span>
+        </h1>
+
+        <p class="hero-role mono" data-reveal>
+          <span id="typedRole"></span><span class="type-cursor" aria-hidden="true"></span>
+        </p>
+
+        <p class="hero-desc" data-reveal>
+          I'm <strong>Allyssa Geanne Quinit</strong>, an Information Technology student who has spent
+          the past year moving between interface design, manual QA, and product documentation at
+          <strong>Twala (Ohelio, Inc.)</strong>. I'm now looking for a junior role where I can bring
+          all three together.
+        </p>
+
+        <div class="hero-actions" data-reveal>
+          <a href="#projects" class="btn btn-primary magnetic">
+            <span>See my work</span>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+          <a href="#contact" class="btn btn-ghost magnetic"><span>Contact me</span></a>
+          <button type="button" class="btn btn-ghost magnetic" id="tourBtn">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true"><path d="M5 3l14 9-14 9V3z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+            <span>Take a tour</span>
+          </button>
+        </div>
+
+        <div class="hero-stats" data-reveal>
+          <div class="hero-stat">
+            <b class="count-up" data-target="4">0</b>
+            <span>Concurrent roles at Twala</span>
+          </div>
+          <div class="hero-stat">
+            <b class="count-up" data-target="5">0</b>
+            <span>Design &amp; web projects</span>
+          </div>
+          <div class="hero-stat">
+            <b class="count-up" data-target="13">0</b>
+            <span>Certifications &amp; honors</span>
+          </div>
+        </div>
+
+        <div class="status-ticker mono" data-reveal>
+          <span class="status-dot" aria-hidden="true"></span>
+          <span>Open to:</span>
+          <span class="status-ticker-text" id="statusTicker"></span>
+        </div>
+
+        <button class="pitch-btn" id="pitchBtn" data-reveal>
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true"><path d="M12 3v3m0 12v3M5.6 5.6l2.1 2.1m8.6 8.6l2.1 2.1M3 12h3m12 0h3M5.6 18.4l2.1-2.1m8.6-8.6l2.1-2.1" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+          <span>▶ 30-second pitch</span>
+        </button>
+        <p class="pitch-line" id="pitchLine" aria-live="polite" hidden></p>
+
+        <div class="role-match" data-reveal>
+          <span class="role-match-label mono">Hiring for a specific role? Highlight what matters:</span>
+          <div class="role-match-btns" id="roleMatch">
+            <button class="role-chip" data-role="uxui">UI/UX</button>
+            <button class="role-chip" data-role="qa">QA</button>
+            <button class="role-chip" data-role="ba">Business Analyst</button>
+            <button class="role-chip" data-role="fe">Frontend</button>
+            <button class="role-chip role-chip--clear" data-role="clear">Reset</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-photo-col" data-reveal>
+        <div class="photo-frame" id="photoFrame">
+          <span class="frame-ring" aria-hidden="true"></span>
+          <span class="frame-corner fc-tl" aria-hidden="true"></span>
+          <span class="frame-corner fc-tr" aria-hidden="true"></span>
+          <span class="frame-corner fc-bl" aria-hidden="true"></span>
+          <span class="frame-corner fc-br" aria-hidden="true"></span>
+
+          <img src="assets/profile.jpg" alt="Portrait of Allyssa Geanne Quinit" id="profileImg" class="avatar-img avatar-day">
+          <img src="assets/profile-sleeping.png" alt="Allyssa Geanne Quinit, sleeping" id="profileImgSleep" class="avatar-img avatar-sleep" aria-hidden="true">
+          <img src="assets/profile-sleepy.png" alt="Allyssa Geanne Quinit, sleepy" id="profileImgSleepy" class="avatar-img avatar-sleepy" aria-hidden="true">
+          <div class="photo-fallback" id="photoFallback" aria-hidden="true">AGQ</div>
+
+          <span class="avatar-night" aria-hidden="true">
+            <span class="avatar-moon"></span>
+            <span class="avatar-zzz"><i>Z</i><i>z</i><i>z</i></span>
+          </span>
+          <span class="avatar-sparkles" id="avatarSparkles" aria-hidden="true"></span>
+
+          <span class="frame-tag">
+            <span class="frame-dot" aria-hidden="true"></span>
+            id: agq_01 · verified
+          </span>
+        </div>
+
+        <span class="avatar-bubble" id="avatarBubble" role="status" aria-live="polite"></span>
+
+        <p class="avatar-sleep-note" id="avatarSleepNote" aria-hidden="true">
+          <span class="asn-emoji">😴</span> Shhh… I'm asleep. <b>Hover to wake me up!</b>
+        </p>
+
+        <div class="orbit-chip chip-a" aria-hidden="true">UI/UX</div>
+        <div class="orbit-chip chip-b" aria-hidden="true">QA</div>
+        <div class="orbit-chip chip-c" aria-hidden="true">Business Analysis</div>
+      </div>
+
+    </div>
+
+    <button class="scroll-cue" id="scrollCue" aria-label="Scroll to about section">
+      <span>scroll</span>
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" aria-hidden="true"><path d="M12 4v16m0 0l-6-6m6 6l6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </section>
+
+  <!-- marquee strip -->
+  <div class="marquee" aria-hidden="true">
+    <div class="marquee-track">
+      <span>UI/UX Design</span><span class="dot">•</span>
+      <span>Quality Assurance</span><span class="dot">•</span>
+      <span>Business Analysis</span><span class="dot">•</span>
+      <span>Product Documentation</span><span class="dot">•</span>
+      <span>Figma</span><span class="dot">•</span>
+      <span>Webflow</span><span class="dot">•</span>
+      <span>Manual Testing</span><span class="dot">•</span>
+      <span>UI/UX Design</span><span class="dot">•</span>
+      <span>Quality Assurance</span><span class="dot">•</span>
+      <span>Business Analysis</span><span class="dot">•</span>
+      <span>Product Documentation</span><span class="dot">•</span>
+      <span>Figma</span><span class="dot">•</span>
+      <span>Webflow</span><span class="dot">•</span>
+      <span>Manual Testing</span><span class="dot">•</span>
+    </div>
+  </div>
+
+  <!-- ===== ABOUT ===== -->
+  <section id="about" class="section" aria-label="About">
+    <div class="container">
+      <div class="section-head" data-reveal>
+        <span class="tag-label">01 — About</span>
+        <h2>Profile</h2>
+      </div>
+
+      <div class="about-grid">
+        <div class="about-text">
+          <p class="about-lead" data-reveal="left">
+            Information Technology student with hands-on experience across UI/UX design,
+            quality assurance, business analysis, and project management — built through
+            academic capstones and a running internship.
+          </p>
+          <p class="about-sub" data-reveal>
+            Comfortable designing a user-centered interface, tracing a bug back to its root cause,
+            and writing the documentation that keeps a team aligned — often in the same afternoon.
+            Adaptable, detail-oriented, and quick to act on feedback, with a genuine interest in the
+            full product lifecycle, from planning through delivery.
+          </p>
+
+          <div class="meta-row" data-reveal>
+            <div class="meta-chip spot">
+              <span class="mono">Location</span>
+              <b>Pampanga, Philippines</b>
+            </div>
+            <div class="meta-chip spot">
+              <span class="mono">Education</span>
+              <b>BS Information Technology · PSU</b>
+            </div>
+            <div class="meta-chip spot">
+              <span class="mono">Languages</span>
+              <b>English · Filipino</b>
+            </div>
+          </div>
+        </div>
+
+        <div class="about-visual" data-reveal aria-hidden="true">
+          <svg viewBox="0 0 380 340" class="venn-svg">
+            <defs>
+              <linearGradient id="vennMonogram" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:var(--grad-1)"></stop>
+                <stop offset="55%" style="stop-color:var(--grad-2)"></stop>
+                <stop offset="100%" style="stop-color:var(--grad-3)"></stop>
+              </linearGradient>
+            </defs>
+            <g class="venn-circle venn-circle--a"><circle cx="140" cy="115" r="100"></circle></g>
+            <g class="venn-circle venn-circle--b"><circle cx="240" cy="115" r="100"></circle></g>
+            <g class="venn-circle venn-circle--c"><circle cx="190" cy="195" r="100"></circle></g>
+            <text x="88" y="45" class="venn-label">Design</text>
+            <text x="292" y="45" class="venn-label">QA</text>
+            <text x="190" y="322" class="venn-label">Business Analysis</text>
+            <text x="190" y="163" class="venn-center">AGQ</text>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Live workspace dashboard -->
+      <div class="dash" data-reveal="zoom" aria-label="Live workspace dashboard">
+        <article class="dash-card dash-card--clock tilt spot">
+          <span class="dash-greeting" id="dashGreeting">Hello</span>
+          <span class="dash-clock mono" id="dashClock">--:--:--</span>
+          <div class="dash-clock-meta">
+            <span id="dashDate">—</span>
+            <span class="dash-dot" aria-hidden="true">·</span>
+            <span id="dashDay">—</span>
+            <span class="dash-dot" aria-hidden="true">·</span>
+            <span class="mono" id="dashTz">—</span>
+          </div>
+        </article>
+
+        <article class="dash-card dash-card--status tilt spot">
+          <span class="dash-label mono">Current status</span>
+          <span class="dash-status"><span class="dash-status-dot" aria-hidden="true"></span>Open to opportunities</span>
+          <span class="dash-sub">Junior UX · QA · Business Analysis</span>
+        </article>
+
+        <article class="dash-card dash-metric tilt spot">
+          <span class="dash-metric-num"><b class="count-up" data-target="4">0</b></span>
+          <span class="dash-label mono">Years learning design &amp; dev</span>
+        </article>
+
+        <article class="dash-card dash-metric tilt spot">
+          <span class="dash-metric-num"><b class="count-up" data-target="5">0</b><i>+</i></span>
+          <span class="dash-label mono">Projects shipped</span>
+        </article>
+
+        <article class="dash-card dash-card--stack tilt spot">
+          <span class="dash-label mono">Favorite stack</span>
+          <div class="dash-stack">
+            <span class="chip">Figma</span><span class="chip">Webflow</span><span class="chip">HTML / CSS</span>
+            <span class="chip">ClickUp</span><span class="chip">Manual QA</span>
+          </div>
+        </article>
+
+        <article class="dash-card dash-card--focus tilt spot">
+          <span class="dash-label mono">Current focus</span>
+          <span class="dash-focus">Bridging design, QA &amp; documentation on real products at Twala.</span>
+        </article>
+
+        <article class="dash-card dash-card--fact tilt spot">
+          <span class="dash-label mono">☕ Fun fact</span>
+          <span class="dash-fact" id="dashFact">I test my own designs — designer by day, bug-hunter by afternoon.</span>
+        </article>
+
+        <article class="dash-card dash-card--session tilt spot">
+          <span class="dash-label mono">Session</span>
+          <span class="dash-session" id="dashSession">Just arrived — welcome.</span>
+        </article>
+
+        <article class="dash-card dash-card--visits tilt spot">
+          <span class="dash-label mono">👋 Visitor</span>
+          <span class="dash-visits" id="dashVisits">Welcome!</span>
+          <span class="dash-visits-sub" id="dashVisitsSub"></span>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== EXPERIENCE ===== -->
+  <section id="experience" class="section section-alt" aria-label="Experience">
+    <div class="container">
+      <div class="section-head" data-reveal>
+        <span class="tag-label">02 — Experience</span>
+        <h2>Where I've worked</h2>
+        <p class="section-sub">All four roles were at the same company, run in parallel rather than in sequence.</p>
+      </div>
+
+      <div class="timeline">
+        <div class="timeline-rail" aria-hidden="true"><div class="timeline-rail-fill" id="timelineFill"></div></div>
+
+        <article class="timeline-item" data-reveal>
+          <span class="timeline-node"></span>
+          <div class="timeline-card spot">
+            <div class="timeline-card-top">
+              <h3>Business Analyst <span class="badge badge-done">Complete</span></h3>
+              <span class="mono timeline-date">Mar 2026 — Jul 2026</span>
+            </div>
+            <p class="timeline-org">Twala (Ohelio, Inc.) · Manila, Philippines</p>
+            <ul>
+              <li>Completed a Udemy Business Analysis course to sharpen core BA concepts and practice.</li>
+              <li>Built competitive comparison matrices for TwalaSign against key market competitors.</li>
+              <li>Developed feature backlogs for TwalaSign and Doxu.AI to guide prioritization and sprint planning.</li>
+              <li>Drafted product documentation for TwalaSign and Doxu.AI.</li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="timeline-item" data-reveal>
+          <span class="timeline-node"></span>
+          <div class="timeline-card spot">
+            <div class="timeline-card-top">
+              <h3>Quality Assurance Engineer <span class="badge badge-done">Complete</span></h3>
+              <span class="mono timeline-date">Mar 2026 — Jul 2026</span>
+            </div>
+            <p class="timeline-org">Twala (Ohelio, Inc.) · Manila, Philippines</p>
+            <ul>
+              <li>Ran manual tests on Doxu.AI's mobile responsiveness and filed detailed bug tickets for every issue found.</li>
+              <li>Tested Doxu.AI landing pages across web and mobile for functionality and layout consistency.</li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="timeline-item" data-reveal>
+          <span class="timeline-node"></span>
+          <div class="timeline-card spot">
+            <div class="timeline-card-top">
+              <h3>Project Management <span class="badge badge-done">Complete</span></h3>
+              <span class="mono timeline-date">Mar 2026 — Jul 2026</span>
+            </div>
+            <p class="timeline-org">Twala (Ohelio, Inc.) · Manila, Philippines</p>
+            <ul>
+              <li>Completed a Udemy Project Management course covering planning, scoping, and delivery.</li>
+              <li>Monitored mobile-responsiveness tasks for Doxu.AI (Twala v2), tracking progress and status.</li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="timeline-item" data-reveal>
+          <span class="timeline-node"></span>
+          <div class="timeline-card spot">
+            <div class="timeline-card-top">
+              <h3>UI/UX Designer <span class="badge badge-done">Complete</span></h3>
+              <span class="mono timeline-date">Feb 2025 — May 2025</span>
+            </div>
+            <p class="timeline-org">Twala (Ohelio, Inc.) · Manila, Philippines</p>
+            <ul>
+              <li>Redesigned selected landing pages for clarity and layout, implementing updates directly in Webflow — including the client and partner carousel.</li>
+              <li>Helped restructure Twala's help center articles in Intercom so users could find what they needed.</li>
+            </ul>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== PROJECTS ===== -->
+  <section id="projects" class="section" aria-label="Projects">
+    <div class="container">
+      <div class="section-head" data-reveal>
+        <span class="tag-label">03 — Projects</span>
+        <h2>Selected design &amp; web work</h2>
+        <p class="section-sub">Click any card for a full breakdown — overview, features, process, and links.</p>
+      </div>
+
+      <!-- Filter + search toolbar -->
+      <div class="projects-toolbar" data-reveal>
+        <div class="filter-row" id="projectFilters" role="tablist" aria-label="Filter projects by category">
+          <button class="filter-btn is-active" data-filter="all" role="tab" aria-selected="true">All</button>
+          <button class="filter-btn" data-filter="UI/UX Design" role="tab" aria-selected="false">UI/UX Design</button>
+          <button class="filter-btn" data-filter="Web App" role="tab" aria-selected="false">Web App</button>
+          <button class="filter-btn" data-filter="Website" role="tab" aria-selected="false">Website</button>
+          <button class="filter-btn" data-filter="Mobile" role="tab" aria-selected="false">Mobile</button>
+        </div>
+        <div class="project-search">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.6"/><path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          <input type="text" id="projectSearch" placeholder="Search projects…" aria-label="Search projects" autocomplete="off">
+        </div>
+      </div>
+
+      <div class="project-grid" id="projectGrid"></div>
+      <p class="project-empty" id="projectEmpty" hidden>No projects match that search — try another term.</p>
+    </div>
+  </section>
+
+  <!-- ===== PROJECT MODAL ===== -->
+  <div class="pmodal-overlay" id="pmodalOverlay" hidden>
+    <div class="pmodal" role="dialog" aria-modal="true" aria-labelledby="pmodalTitle">
+      <button class="pmodal-close" id="pmodalClose" aria-label="Close project details">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+      <div class="pmodal-scroll" id="pmodalScroll"></div>
+    </div>
+  </div>
+
+  <!-- ===== SKILLS ===== -->
+  <section id="skills" class="section section-alt" aria-label="Skills">
+    <div class="container">
+      <div class="section-head" data-reveal>
+        <span class="tag-label">04 — Skills</span>
+        <h2>The toolkit</h2>
+      </div>
+
+      <div class="skill-groups">
+        <div class="skill-group" data-reveal data-rolegroup="uxui">
+          <h3 class="mono">Design &amp; UI/UX</h3>
+          <div class="chip-row">
+            <span class="chip">Figma</span><span class="chip">Adobe Photoshop</span><span class="chip">Adobe Illustrator</span>
+            <span class="chip">Canva</span><span class="chip">Wireframing</span><span class="chip">Prototyping</span>
+            <span class="chip">Layout Design</span><span class="chip">Graphic Design</span><span class="chip">Video Editing</span>
+          </div>
+        </div>
+        <div class="skill-group" data-reveal data-rolegroup="fe">
+          <h3 class="mono">Front-End Development</h3>
+          <div class="chip-row">
+            <span class="chip">HTML <i>basic</i></span><span class="chip">CSS <i>basic</i></span><span class="chip">Webflow <i>basic</i></span>
+          </div>
+        </div>
+        <div class="skill-group" data-reveal data-rolegroup="qa">
+          <h3 class="mono">Quality Assurance</h3>
+          <div class="chip-row">
+            <span class="chip">Manual Testing</span><span class="chip">Bug Reporting</span>
+          </div>
+        </div>
+        <div class="skill-group" data-reveal data-rolegroup="ba">
+          <h3 class="mono">Project Mgmt &amp; Analysis</h3>
+          <div class="chip-row">
+            <span class="chip">Backlog Creation</span><span class="chip">Product Documentation</span><span class="chip">Competitive Analysis</span>
+          </div>
+        </div>
+        <div class="skill-group" data-reveal>
+          <h3 class="mono">Productivity &amp; Tools</h3>
+          <div class="chip-row">
+            <span class="chip">Microsoft Word</span><span class="chip">Excel</span><span class="chip">Google Sheets</span>
+            <span class="chip">PowerPoint</span><span class="chip">ClickUp</span>
+          </div>
+        </div>
+        <div class="skill-group" data-reveal>
+          <h3 class="mono">Languages</h3>
+          <div class="chip-row">
+            <span class="chip">English <i>fluent</i></span><span class="chip">Filipino <i>native</i></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== TOOLS CAROUSEL ===== -->
+  <section id="tools" class="section" aria-label="Software and tools">
+    <div class="container">
+      <div class="section-head" data-reveal>
+        <span class="tag-label">05 — Tools</span>
+        <h2>Software I work with</h2>
+        <p class="section-sub">The day-to-day stack across design, development, testing, and delivery.</p>
+      </div>
+    </div>
+
+    <div class="tools-marquee" data-reveal>
+      <div class="tools-track" id="toolsTrack"></div>
+    </div>
+  </section>
+
+  <!-- ===== HIGHLIGHTS CAROUSEL ===== -->
+  <section id="highlights" class="section section-alt" aria-label="Skills and certifications highlights">
+    <div class="container">
+      <div class="section-head" data-reveal>
+        <span class="tag-label">06 — Highlights</span>
+        <h2>Skills &amp; certifications, in motion</h2>
+        <p class="section-sub">A quick-swipe look at the core toolkit and the credentials behind it.</p>
+      </div>
+
+      <div class="carousel" data-reveal>
+        <div class="carousel-viewport" id="carouselViewport">
+          <div class="carousel-track" id="carouselTrack">
+
+            <article class="slide">
+              <span class="badge badge-skill">Skill</span>
+              <h3>Design &amp; UI/UX</h3>
+              <p>Figma, Adobe Photoshop, Adobe Illustrator, Canva — wireframing and prototyping from blank canvas to polished flow.</p>
+              <div class="slide-tags">
+                <span class="chip">Figma</span><span class="chip">Wireframing</span><span class="chip">Prototyping</span>
+              </div>
+            </article>
+
+            <article class="slide">
+              <span class="badge badge-cert">Certification</span>
+              <h3>Business Analysis Fundamentals</h3>
+              <p>IIBA-endorsed course covering core BA concepts, requirements gathering, and stakeholder analysis.</p>
+              <div class="slide-tags">
+                <span class="chip">Udemy · 2026</span>
+              </div>
+            </article>
+
+            <article class="slide">
+              <span class="badge badge-skill">Skill</span>
+              <h3>Quality Assurance</h3>
+              <p>Manual testing and structured bug reporting — the same process used daily on Doxu.AI's mobile QA.</p>
+              <div class="slide-tags">
+                <span class="chip">Manual Testing</span><span class="chip">Bug Reporting</span>
+              </div>
+            </article>
+
+            <article class="slide">
+              <span class="badge badge-cert">Certification</span>
+              <h3>UI/UX Design Certificate</h3>
+              <p>Foundational and applied UI/UX coursework covering design systems, usability, and interaction design.</p>
+              <div class="slide-tags">
+                <span class="chip">Udemy · 2025</span>
+              </div>
+            </article>
+
+            <article class="slide">
+              <span class="badge badge-skill">Skill</span>
+              <h3>Business Analysis</h3>
+              <p>Backlog creation, competitive analysis, and product documentation for TwalaSign and Doxu.AI.</p>
+              <div class="slide-tags">
+                <span class="chip">Backlog Creation</span><span class="chip">Product Docs</span>
+              </div>
+            </article>
+
+            <article class="slide">
+              <span class="badge badge-cert">Certification</span>
+              <h3>Project Management: Beginner to PM</h3>
+              <p>Planning, scoping, and delivery fundamentals — applied directly to tracking Doxu.AI's mobile-responsiveness work.</p>
+              <div class="slide-tags">
+                <span class="chip">Udemy · 2026</span>
+              </div>
+            </article>
+
+            <article class="slide">
+              <span class="badge badge-skill">Skill</span>
+              <h3>Front-End Development</h3>
+              <p>Working knowledge of HTML, CSS, and Webflow — enough to implement designs directly, not just hand them off.</p>
+              <div class="slide-tags">
+                <span class="chip">HTML</span><span class="chip">CSS</span><span class="chip">Webflow</span>
+              </div>
+            </article>
+
+            <article class="slide">
+              <span class="badge badge-cert">Certification</span>
+              <h3>Cloud Computing Fundamentals</h3>
+              <p>IBM SkillsBuild coursework covering core cloud concepts and infrastructure basics.</p>
+              <div class="slide-tags">
+                <span class="chip">IBM SkillsBuild · 2025</span>
+              </div>
+            </article>
+
+          </div>
+        </div>
+
+        <div class="carousel-controls">
+          <button class="carousel-btn" id="carouselPrev" aria-label="Previous slide">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="carousel-dots" id="carouselDots" role="tablist" aria-label="Slide navigation"></div>
+          <button class="carousel-btn" id="carouselNext" aria-label="Next slide">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== EDUCATION + HONORS ===== -->
+  <section id="honors" class="section section-alt" aria-label="Education, honors and certifications">
+    <div class="container">
+      <div class="section-head" data-reveal>
+        <span class="tag-label">07 — Education &amp; Honors</span>
+        <h2>Background &amp; recognition</h2>
+      </div>
+
+      <div class="honors-grid">
+        <div class="edu-list" data-reveal>
+          <span class="mono block-label">Education</span>
+          <article class="edu-item">
+            <span class="mono edu-year">2022—2026</span>
+            <div>
+              <h4>BS Information Technology</h4>
+              <p>Pampanga State University</p>
+            </div>
+          </article>
+          <article class="edu-item">
+            <span class="mono edu-year">2020—2022</span>
+            <div>
+              <h4>Senior High — ABM</h4>
+              <p>Pampanga State University · High Honors</p>
+            </div>
+          </article>
+          <article class="edu-item">
+            <span class="mono edu-year">2016—2020</span>
+            <div>
+              <h4>Junior High School</h4>
+              <p>Wenceslao Village High School · High Honors</p>
+            </div>
+          </article>
+        </div>
+
+        <div class="cert-list" data-reveal>
+          <span class="mono block-label">Certifications &amp; Awards</span>
+          <div class="cert-scroll">
+            <div class="cert-row"><span class="mono">2026</span><span>Project Management Course: Beginner to Project Manager — Udemy</span></div>
+            <div class="cert-row"><span class="mono">2026</span><span>Business Analysis Fundamentals (IIBA Endorsed) — Udemy</span></div>
+            <div class="cert-row"><span class="mono">2026</span><span>AI Learning Modules Certificate — AIClassASEAN.org</span></div>
+            <div class="cert-row"><span class="mono">2026</span><span>Project Management Certificate — SimpliLearn</span></div>
+            <div class="cert-row"><span class="mono">2026</span><span>Business Analysis Basics Certificate — SimpliLearn</span></div>
+            <div class="cert-row"><span class="mono">2025</span><span>UI/UX Design Certificate — Udemy</span></div>
+            <div class="cert-row"><span class="mono">2025</span><span>Cloud Computing Fundamentals — IBM SkillsBuild</span></div>
+            <div class="cert-row"><span class="mono">2025</span><span>Top 19 Awardee — CCS, 3rd Year (2nd Sem)</span></div>
+            <div class="cert-row"><span class="mono">2025</span><span>President's Lister — CCS, 3rd Year (1st Sem)</span></div>
+            <div class="cert-row"><span class="mono">2024</span><span>President's Lister — CCS, 2nd Year</span></div>
+            <div class="cert-row"><span class="mono">2023</span><span>Dean's Lister — CCS, 1st Year</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== LET'S WORK TOGETHER CTA ===== -->
+  <section id="cta" class="section section-cta" aria-label="Let's work together">
+    <div class="container">
+      <div class="cta-card" data-reveal="zoom">
+        <div class="cta-glow" aria-hidden="true"></div>
+        <span class="mono cta-kicker"><span class="status-dot"></span>Available for junior roles</span>
+        <h2>Let's build something<br>worth documenting.</h2>
+        <p>Open to junior UI/UX, QA, or business-analysis roles — and happy to talk through a project, an internship, or just compare notes on good design.</p>
+        <div class="cta-actions">
+          <a href="#contact" class="btn btn-primary magnetic"><span>Start a conversation</span>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+          <a href="assets/Allyssa-Geanne-Quinit-CV.pdf" data-cv-lock target="_blank" rel="noopener noreferrer" class="btn btn-ghost magnetic"><span>Preview CV</span>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/></svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== CONTACT ===== -->
+  <section id="contact" class="section section-contact" aria-label="Contact">
+    <div class="container">
+      <div class="section-head" data-reveal>
+        <span class="tag-label">08 — Contact</span>
+        <h2>Let's build something worth documenting</h2>
+        <p class="section-sub">Open to junior-level roles in UX, QA, or product. Drop a note below or reach me directly.</p>
+      </div>
+
+      <div class="contact-layout">
+        <div class="contact-details" data-reveal>
+          <div class="contact-links">
+            <button class="contact-link" id="copyEmailBtn" data-email="allyssageannequinit@gmail.com">
+              <span class="mono">Email</span>
+              <b>allyssageannequinit@gmail.com</b>
+              <span class="contact-link-action mono" id="copyEmailLabel">Copy</span>
+            </button>
+            <a class="contact-link" href="tel:+639661366539">
+              <span class="mono">Phone</span>
+              <b>+63 966-136-6539</b>
+              <span class="contact-link-action mono">Call</span>
+            </a>
+            <div class="contact-link contact-link-static">
+              <span class="mono">Location</span>
+              <b>San Roque Dau, Lubao, Pampanga, PH</b>
+            </div>
+          </div>
+
+          <div class="social-row">
+            <a class="social-btn" href="https://www.linkedin.com/in/allyssa-geanne-quinit-a01793378" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn profile">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M4.98 3.5a2.5 2.5 0 11-.02 5.01A2.5 2.5 0 014.98 3.5zM3 9h4v12H3zM9 9h3.8v1.7h.05c.53-1 1.83-2.05 3.77-2.05C20.4 8.65 21 11 21 14.1V21h-4v-6.1c0-1.45-.03-3.3-2-3.3s-2.32 1.57-2.32 3.2V21H9z"/></svg>
+              <span>LinkedIn</span>
+            </a>
+            <a class="social-btn" href="https://www.facebook.com/people/Allyssa-Geanne-Quinit/" target="_blank" rel="noopener noreferrer" aria-label="Facebook profile">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M22 12a10 10 0 10-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.5 1.49-3.89 3.77-3.89 1.09 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.78l-.44 2.89h-2.34v6.99A10 10 0 0022 12z"/></svg>
+              <span>Facebook</span>
+            </a>
+            <a class="social-btn social-btn--cv" href="assets/Allyssa-Geanne-Quinit-CV.pdf" data-cv-lock target="_blank" rel="noopener noreferrer" aria-label="Preview CV as PDF">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/></svg>
+              <span>Preview CV</span>
+            </a>
+          </div>
+        </div>
+
+        <form class="contact-form spot" id="contactForm" novalidate data-reveal>
+          <p class="contact-form-title">Send a message</p>
+          <div class="field">
+            <label for="cfName">Name</label>
+            <input type="text" id="cfName" name="name" autocomplete="name" required aria-required="true">
+            <span class="field-error" aria-live="polite"></span>
+          </div>
+          <div class="field">
+            <label for="cfEmail">Email</label>
+            <input type="email" id="cfEmail" name="email" autocomplete="email" required aria-required="true">
+            <span class="field-error" aria-live="polite"></span>
+          </div>
+          <div class="field">
+            <label for="cfMessage">Message</label>
+            <textarea id="cfMessage" name="message" rows="4" required aria-required="true"></textarea>
+            <span class="field-error" aria-live="polite"></span>
+          </div>
+          <button type="submit" class="btn btn-primary contact-submit magnetic"><span>Send message</span>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <p class="form-status" id="formStatus" role="status" aria-live="polite"></p>
+        </form>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <p>© <span id="year"></span> Allyssa Geanne Quinit · Designed &amp; built with care.</p>
+    <span class="footer-clock mono" aria-label="Current local time in the Philippines"><span class="footer-clock-dot" aria-hidden="true"></span><span id="localClock">—</span></span>
+    <div class="footer-social">
+      <a href="https://www.linkedin.com/in/allyssa-geanne-quinit-a01793378" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" aria-hidden="true"><path d="M4.98 3.5a2.5 2.5 0 11-.02 5.01A2.5 2.5 0 014.98 3.5zM3 9h4v12H3zM9 9h3.8v1.7h.05c.53-1 1.83-2.05 3.77-2.05C20.4 8.65 21 11 21 14.1V21h-4v-6.1c0-1.45-.03-3.3-2-3.3s-2.32 1.57-2.32 3.2V21H9z"/></svg>
+      </a>
+      <a href="https://www.facebook.com/people/Allyssa-Geanne-Quinit/" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" aria-hidden="true"><path d="M22 12a10 10 0 10-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.5 1.49-3.89 3.77-3.89 1.09 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.78l-.44 2.89h-2.34v6.99A10 10 0 0022 12z"/></svg>
+      </a>
+      <a href="assets/Allyssa-Geanne-Quinit-CV.pdf" data-cv-lock target="_blank" rel="noopener noreferrer" aria-label="Preview CV">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/></svg>
+      </a>
+    </div>
+    <a href="#top" class="back-top">Back to top ↑</a>
+  </div>
+</footer>
+
+<!-- Back to top floating button -->
+<button class="back-to-top" id="backToTop" aria-label="Back to top">
+  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true"><path d="M12 19V5m0 0l-6 6m6-6l6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+</button>
+
+<!-- Easter egg toast -->
+<div class="egg-toast" id="eggToast" aria-hidden="true"></div>
+
+<!-- Visitor achievements -->
+<button class="ach-fab" id="achFab" aria-label="View achievements" aria-expanded="false">
+  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true"><path d="M8 4h8v3a4 4 0 01-8 0V4z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 5H5v1a3 3 0 003 3M16 5h3v1a3 3 0 01-3 3M9 13h6M10 13v3m4-3v3M8 20h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <span class="ach-fab-count mono" id="achCount">0</span>
+</button>
+<div class="ach-panel" id="achPanel" role="dialog" aria-label="Visitor achievements" hidden>
+  <div class="ach-panel-head">
+    <h3>Achievements</h3>
+    <span class="ach-progress mono" id="achProgress">0 / 7</span>
+  </div>
+  <p class="ach-intro">Explore the portfolio to unlock badges. Each row tells you exactly how to earn it — <b>unlock all 7 to reveal a hidden surprise.</b></p>
+  <div class="ach-bar"><span id="achBarFill"></span></div>
+  <ul class="ach-list" id="achList"></ul>
+  <div class="ach-surprise" id="achSurprise" hidden>
+    <div class="ach-surprise-glow" aria-hidden="true"></div>
+    <span class="ach-surprise-badge">🎁 Surprise unlocked</span>
+    <p class="ach-surprise-text" id="achSurpriseText"></p>
+    <button class="btn btn-primary ach-surprise-btn" id="achSurpriseBtn"><span>Reveal it</span></button>
+  </div>
+</div>
+
+<!-- ===== CHAT WIDGET ===== -->
+<button class="chat-toggle" id="chatToggle" aria-haspopup="dialog" aria-controls="chatPanel" aria-expanded="false" aria-label="Open quick chat about Allyssa">
+  <svg class="chat-toggle-icon-open" viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><path d="M4 5h16v11H8l-4 4V5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+  <svg class="chat-toggle-icon-close" viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+</button>
+
+<div class="chat-panel" id="chatPanel" role="dialog" aria-modal="false" aria-label="Quick chat about Allyssa" hidden>
+  <div class="chat-header">
+    <div class="chat-header-info">
+      <span class="chat-avatar mono">AQ</span>
+      <div>
+        <p class="chat-title">Ask about Allyssa</p>
+        <p class="chat-subtitle"><span class="chat-online-dot"></span>Instant answers · not a live chat</p>
+      </div>
+    </div>
+    <button class="chat-voice-toggle" id="chatVoiceToggle" role="switch" aria-checked="false" aria-label="Read answers aloud" title="Read answers aloud">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true"><path d="M11 5L6 9H3v6h3l5 4V5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M15.5 8.5a5 5 0 010 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </button>
+    <button class="chat-close" id="chatClose" aria-label="Close chat">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+
+  <div class="chat-body" id="chatBody"></div>
+
+  <div class="chat-quick-replies" id="chatQuickReplies"></div>
+
+  <form class="chat-input-row" id="chatForm">
+    <button type="button" class="chat-mic" id="chatMic" aria-label="Speak your question" title="Speak your question">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M5 11a7 7 0 0014 0M12 18v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </button>
+    <input type="text" id="chatInput" class="chat-input" placeholder="Ask about her skills, experience…" autocomplete="off" aria-label="Type a question">
+    <button type="submit" class="chat-send" aria-label="Send">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </form>
+</div>
+
+<!-- ===== RECRUITER SNAPSHOT ===== -->
+<button class="snap-fab" id="snapFab" aria-haspopup="dialog" aria-controls="snapCard" title="One-page recruiter snapshot">
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true"><path d="M4 7h3l1.5-2h7L17 7h3v12H4z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.4" stroke="currentColor" stroke-width="1.8"/></svg>
+  <span>Snapshot</span>
+</button>
+<div class="snap-overlay" id="snapOverlay" hidden>
+  <div class="snap-card" id="snapCard" role="dialog" aria-modal="true" aria-label="Recruiter snapshot">
+    <button class="snap-x" id="snapClose" aria-label="Close">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+    <div class="snap-head">
+      <div class="snap-mono mono">AGQ</div>
+      <div>
+        <h3>Allyssa Geanne Quinit</h3>
+        <p class="snap-role">UI/UX Designer · QA Engineer · Business Analyst</p>
+      </div>
+    </div>
+    <div class="snap-grid">
+      <div class="snap-block"><span class="snap-k mono">Focus</span><span class="snap-v">User-centered design, quality assurance, requirements analysis, and clear documentation across the product lifecycle.</span></div>
+      <div class="snap-block"><span class="snap-k mono">Core tools</span><span class="snap-v">Figma · Manual Testing · MySQL · HTML/CSS · Canva · MS Office</span></div>
+      <div class="snap-block"><span class="snap-k mono">Highlights</span><span class="snap-v">Internship at Twala (Ohelio, Inc.) · 5 design & web projects · 13 certifications & honors</span></div>
+      <div class="snap-block"><span class="snap-k mono">Availability</span><span class="snap-v">Open to junior UX / QA / Business Analyst roles.</span></div>
+      <div class="snap-block"><span class="snap-k mono">Contact</span><span class="snap-v">allyssageannequinit@gmail.com · linkedin.com/in/allyssa-geanne-quinit-a01793378</span></div>
+    </div>
+    <div class="snap-phone">
+      <div class="snap-phone-text">
+        <span class="snap-k mono">Share this portfolio</span>
+        <span class="snap-v" id="snapUrl">Copy the link to open on any device.</span>
+        <button class="snap-copy-link" id="snapCopyLink">Copy link</button>
+      </div>
+    </div>
+    <div class="snap-actions">
+      <button class="btn btn-ghost" id="snapVcard"><span>Save contact (.vcf)</span></button>
+      <button class="btn btn-primary" id="snapPrint"><span>Save / Print PDF</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== CV PASSWORD GATE ===== -->
+<div class="cvlock-overlay" id="cvlockOverlay" hidden>
+  <div class="cvlock" role="dialog" aria-modal="true" aria-labelledby="cvlockTitle">
+    <button class="cvlock-x" id="cvlockClose" aria-label="Cancel">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+    <div class="cvlock-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="26" height="26" fill="none"><rect x="4" y="10" width="16" height="10" rx="2.5" stroke="currentColor" stroke-width="1.9"/><path d="M8 10V7a4 4 0 018 0v3" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><circle cx="12" cy="15" r="1.6" fill="currentColor"/></svg>
+    </div>
+    <h3 id="cvlockTitle">Protected résumé</h3>
+    <p class="cvlock-sub">Allyssa shares the access code with recruiters and contacts directly. Enter it below to open the CV.</p>
+    <form id="cvlockForm" class="cvlock-form">
+      <input type="password" id="cvlockInput" class="cvlock-input" placeholder="Access code" autocomplete="off" aria-label="CV access code">
+      <button type="submit" class="btn btn-primary cvlock-submit"><span>Unlock CV</span></button>
+    </form>
+    <p class="cvlock-error" id="cvlockError" hidden>Incorrect code — please check with Allyssa.</p>
+    <p class="cvlock-hint mono">Recruiter? Request the code at allyssageannequinit@gmail.com</p>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
