@@ -634,8 +634,8 @@
         <p class="section-sub">Click any card for a full breakdown — overview, features, process, and links.</p>
       </div>
 
-      <!-- Filter + search toolbar -->
-      <div class="projects-toolbar" data-reveal>
+      <!-- Filter + search toolbar (shown when expanded) -->
+      <div class="projects-toolbar" id="projectsToolbar" data-reveal hidden>
         <div class="filter-row" id="projectFilters" role="tablist" aria-label="Filter projects by category">
           <button class="filter-btn is-active" data-filter="all" role="tab" aria-selected="true">All</button>
           <button class="filter-btn" data-filter="UI/UX Design" role="tab" aria-selected="false">UI/UX Design</button>
@@ -651,6 +651,13 @@
 
       <div class="project-grid" id="projectGrid"></div>
       <p class="project-empty" id="projectEmpty" hidden>No projects match that search — try another term.</p>
+
+      <div class="projects-viewall" data-reveal>
+        <button class="btn btn-ghost magnetic" id="projectsViewAll" aria-expanded="false">
+          <span id="projectsViewAllLabel">View all projects</span>
+          <svg class="viewall-chev" viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
     </div>
   </section>
 

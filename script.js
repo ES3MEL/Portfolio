@@ -1091,6 +1091,12 @@
         </button>`;
     }
 
+    let expanded = false;
+    const COLLAPSED_COUNT = 3;
+    const toolbar = $('#projectsToolbar');
+    const viewAllBtn = $('#projectsViewAll');
+    const viewAllLabel = $('#projectsViewAllLabel');
+
     function render() {
       grid.innerHTML = PROJECTS.map(cardHtml).join('');
       grid.querySelectorAll('.pcard').forEach(card => {
@@ -1106,12 +1112,41 @@
         const matchesFilter = activeFilter === 'all' || p.category === activeFilter;
         const haystack = (p.title + ' ' + p.desc + ' ' + p.tech.join(' ') + ' ' + p.role + ' ' + p.category).toLowerCase();
         const matchesQuery = !query || haystack.includes(query);
-        const show = matchesFilter && matchesQuery;
+        let show = matchesFilter && matchesQuery;
+        // In collapsed view, only show the first few (featured first via PROJECTS order)
+        if (show && !expanded && visible >= COLLAPSED_COUNT) show = false;
         card.classList.toggle('is-hidden', !show);
-        if (show) visible++;
+        if (matchesFilter && matchesQuery) visible++;
       });
-      if (empty) empty.hidden = visible !== 0;
+      // Count how many actually match (for the label), independent of the collapse cap
+      const total = PROJECTS.filter(p => {
+        const matchesFilter = activeFilter === 'all' || p.category === activeFilter;
+        const haystack = (p.title + ' ' + p.desc + ' ' + p.tech.join(' ') + ' ' + p.role + ' ' + p.category).toLowerCase();
+        return matchesFilter && (!query || haystack.includes(query));
+      }).length;
+      if (empty) empty.hidden = total !== 0;
+      if (viewAllBtn) viewAllBtn.hidden = total <= COLLAPSED_COUNT && !expanded;
+      if (viewAllLabel) viewAllLabel.textContent = expanded ? 'Show less' : `View all projects (${PROJECTS.length})`;
     }
+
+    function setExpanded(on) {
+      expanded = on;
+      if (toolbar) toolbar.hidden = !on;
+      if (viewAllBtn) viewAllBtn.setAttribute('aria-expanded', String(on));
+      if (viewAllBtn) viewAllBtn.classList.toggle('is-expanded', on);
+      applyFilters();
+      if (window.__agqSound) window.__agqSound.play('click');
+      if (!on) {
+        // collapsing: reset filters/search and scroll back to the section top
+        activeFilter = 'all'; query = '';
+        const s = $('#projectSearch'); if (s) s.value = '';
+        $$('.filter-btn', filters).forEach(b => { const a = b.dataset.filter === 'all'; b.classList.toggle('is-active', a); b.setAttribute('aria-selected', String(a)); });
+        applyFilters();
+        const sec = document.getElementById('projects');
+        if (sec) sec.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' });
+      }
+    }
+    viewAllBtn?.addEventListener('click', () => setExpanded(!expanded));
 
     filters?.addEventListener('click', (e) => {
       const btn = e.target.closest('.filter-btn');
