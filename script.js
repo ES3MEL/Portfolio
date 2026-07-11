@@ -1871,6 +1871,11 @@
     const root = document.documentElement;
     const panel = $('#themePanel');
     const openBtn = $('#themePanelToggle');
+    // Move the panel to <body> so it isn't trapped inside the nav drawer's
+    // transform (a transformed ancestor breaks position:fixed centering).
+    if (panel && panel.parentElement !== document.body) {
+      document.body.appendChild(panel);
+    }
     const swatches = $$('.accent-swatch');
     if (!openBtn || !panel) return;
 
@@ -1976,13 +1981,46 @@
       if (!inField && e.shiftKey && e.key.toLowerCase() === 'a') { e.preventDefault(); cycleAccent(); }
     });
 
-    function open() { panel.hidden = false; openBtn.setAttribute('aria-expanded', 'true'); }
-    function close() { panel.hidden = true; openBtn.setAttribute('aria-expanded', 'false'); }
+    // Backdrop element for the centered popup
+    let backdrop = document.querySelector('.theme-panel-backdrop');
+    if (!backdrop) {
+      backdrop = document.createElement('div');
+      backdrop.className = 'theme-panel-backdrop';
+      document.body.appendChild(backdrop);
+    }
+    function isMobile() { return window.matchMedia('(max-width:860px)').matches; }
+    function open() {
+      // close the mobile nav drawer so the popup is centered over the page
+      const navMenu = document.getElementById('navMenu');
+      const navToggle = document.getElementById('navToggle');
+      if (navMenu && navMenu.classList.contains('is-open')) {
+        navMenu.classList.remove('is-open');
+        if (navToggle) navToggle.setAttribute('aria-expanded', 'false');
+        document.body.classList.remove('nav-open');
+      }
+      panel.hidden = false;
+      openBtn.setAttribute('aria-expanded', 'true');
+      if (isMobile()) {
+        backdrop.classList.add('is-open');
+        document.body.style.overflow = 'hidden';
+      }
+      if (window.__agqSound) window.__agqSound.play('modal');
+    }
+    function close() {
+      panel.hidden = true;
+      backdrop.classList.remove('is-open');
+      document.body.style.overflow = '';
+      openBtn.setAttribute('aria-expanded', 'false');
+    }
     openBtn.addEventListener('click', () => (panel.hidden ? open() : close()));
+    backdrop.addEventListener('click', close);
+    document.getElementById('themePanelClose')?.addEventListener('click', close);
+    // Desktop: click outside the dropdown closes it
     document.addEventListener('click', (e) => {
-      if (!panel.hidden && !panel.contains(e.target) && e.target !== openBtn && !openBtn.contains(e.target)) close();
+      if (panel.hidden || isMobile()) return;
+      if (!panel.contains(e.target) && e.target !== openBtn && !openBtn.contains(e.target)) close();
     });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !panel.hidden) close(); });
 
     // theme toggle mirror inside the panel
     const panelThemeBtn = $('#panelThemeToggle');

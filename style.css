@@ -72,7 +72,7 @@ html.theme-anim *:not(.aurora):not(.progress-fill):not(.cursor-ring){
 }
 
 *,*::before,*::after{ box-sizing:border-box; }
-html{ scroll-behavior:smooth; }
+html{ scroll-behavior:smooth; width:100%; overflow-x:hidden; }
 
 @media (prefers-reduced-motion: reduce){
   html{ scroll-behavior:auto; }
@@ -1272,7 +1272,9 @@ html{ scrollbar-width:thin; scrollbar-color:var(--grad-2) var(--bg); }
   .card-cols{ grid-template-columns:1fr; }
   .hero-stats{ gap:28px; }
   .projects-toolbar{ flex-direction:column; align-items:stretch; }
-  .project-search{ max-width:none; }
+  .project-search{ max-width:none; flex:0 0 auto; width:100%; min-width:0; padding:11px 16px; border-radius:14px; }
+  .project-search input{ font-size:16px; }
+  .filter-row{ width:100%; }
 }
 
 /* =========================================================
@@ -1402,10 +1404,36 @@ html{ scrollbar-width:thin; scrollbar-color:var(--grad-2) var(--bg); }
 /* ---------- Nav tools cluster ---------- */
 .nav-tools{ display:flex; align-items:center; gap:8px; margin-left:6px; }
 .theme-panel-wrap{ position:relative; }
+/* DESKTOP (default): dropdown anchored under the theme button, top-right */
 .theme-panel{
-  position:absolute; top:calc(100% + 12px); right:0; width:260px; z-index:120;
+  position:fixed; top:70px; right:26px; width:300px; max-height:min(80vh, 620px); overflow-y:auto;
+  overscroll-behavior:contain; -webkit-overflow-scrolling:touch; z-index:600;
   background:var(--bg-panel); border:1px solid var(--border-strong); border-radius:16px;
-  padding:16px; box-shadow:var(--shadow-lg); animation:panelIn .18s ease;
+  padding:18px; box-shadow:var(--shadow-lg); opacity:0; visibility:hidden; transform:translateY(-6px) scale(.98);
+  transition:opacity .18s var(--ease), transform .18s var(--ease), visibility .18s var(--ease);
+}
+.theme-panel:not([hidden]){ opacity:1; visibility:visible; transform:translateY(0) scale(1); }
+.theme-panel[hidden]{ display:block; opacity:0; visibility:hidden; pointer-events:none; }
+/* Backdrop only used on mobile */
+.theme-panel-backdrop{
+  position:fixed; inset:0; z-index:590; background:color-mix(in srgb, var(--bg) 72%, transparent);
+  -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
+  opacity:0; visibility:hidden; transition:opacity .2s var(--ease), visibility .2s var(--ease);
+  display:none;
+}
+.theme-panel-backdrop.is-open{ opacity:1; visibility:visible; }
+/* Close button hidden on desktop (dropdown closes on outside-click) */
+.theme-panel-close{ display:none; }
+
+/* MOBILE: centered modal popup with backdrop + close button */
+@media (max-width:860px){
+  .theme-panel{
+    top:50%; left:50%; right:auto; transform:translate(-50%,-50%) scale(.96);
+    width:min(420px, calc(100vw - 32px)); max-height:min(84vh, 640px); padding:22px; border-radius:18px;
+  }
+  .theme-panel:not([hidden]){ transform:translate(-50%,-50%) scale(1); }
+  .theme-panel-backdrop{ display:block; }
+  .theme-panel-close{ display:grid; }
 }
 @keyframes panelIn{ from{ opacity:0; transform:translateY(-6px) scale(.98);} to{ opacity:1; transform:none;} }
 .theme-panel-title{ font-size:.66rem; letter-spacing:.14em; text-transform:uppercase; color:var(--text-faint); margin:0 0 8px; }
@@ -1543,7 +1571,7 @@ html{ scrollbar-width:thin; scrollbar-color:var(--grad-2) var(--bg); }
 }
 
 /* Wider accent panel so 12 presets breathe */
-.theme-panel{ width:288px; }
+/* .theme-panel width now handled by modal rule */
 .accent-grid{ grid-template-columns:repeat(3,1fr); max-height:none; }
 
 /* Keyboard shortcuts overlay */
@@ -1649,7 +1677,7 @@ html{ scrollbar-width:thin; scrollbar-color:var(--grad-2) var(--bg); }
     order:10; width:100%; margin:14px 0 0; padding-top:14px;
     border-top:1px solid var(--border); display:flex; gap:12px; align-items:center; flex-wrap:wrap;
   }
-  .theme-panel{ position:static; width:100%; box-shadow:none; margin-top:12px; }
+  /* theme-panel is now a centered modal on all sizes */
   .accent-grid{ grid-template-columns:repeat(4,1fr); }
 }
 
@@ -1802,14 +1830,14 @@ html{ scrollbar-width:thin; scrollbar-color:var(--grad-2) var(--bg); }
 /* =========================================================
    THEME PANEL — scrollable, grouped, custom scrollbar
 ========================================================= */
-.theme-panel{ max-height:min(70vh, 520px); overflow-y:auto; overscroll-behavior:contain; scroll-behavior:smooth; }
+/* theme-panel max-height handled by modal rule */
 .theme-panel::-webkit-scrollbar{ width:9px; }
 .theme-panel::-webkit-scrollbar-track{ background:transparent; }
 .theme-panel::-webkit-scrollbar-thumb{ background:var(--gradient-main); border-radius:10px; border:2px solid var(--bg-panel); background-clip:padding-box; }
 .theme-panel{ scrollbar-width:thin; scrollbar-color:var(--grad-2) transparent; }
 .theme-panel .theme-panel-title{ position:sticky; top:0; z-index:2; background:var(--bg-panel); padding-top:10px; padding-bottom:4px; margin-top:6px; }
 .theme-panel .theme-panel-title:first-child{ margin-top:0; padding-top:0; }
-@media (max-width:860px){ .theme-panel{ max-height:none; overflow:visible; } }
+/* theme-panel is a body-level modal; keep its own max-height/scroll on all sizes */
 
 /* =========================================================
    MOTION SPEED + CIRCULAR + EXTRA CORNERS + EXTRA BACKGROUNDS
@@ -1969,8 +1997,8 @@ html{ scrollbar-width:thin; scrollbar-color:var(--grad-2) var(--bg); }
 .theme-panel-mode#soundToggle{ margin-top:2px; }
 .sound-switch{ width:40px; height:23px; border-radius:100px; background:var(--bg-panel-2); border:1px solid var(--border-strong); position:relative; flex-shrink:0; transition:background .25s var(--ease); }
 .sound-switch-knob{ position:absolute; top:2px; left:2px; width:17px; height:17px; border-radius:50%; background:var(--text-faint); transition:transform .25s var(--ease), background .25s var(--ease); }
-#soundToggle.is-on .sound-switch{ background:var(--gradient-main); border-color:transparent; }
-#soundToggle.is-on .sound-switch-knob{ transform:translateX(17px); background:#fff; }
+.theme-panel-mode.is-on .sound-switch{ background:var(--gradient-main); border-color:transparent; }
+.theme-panel-mode.is-on .sound-switch-knob{ transform:translateX(17px); background:#fff; }
 .sound-volume{ display:flex; align-items:center; gap:10px; margin-top:12px; padding:0 2px; }
 .sound-vol-label{ font-size:.68rem; color:var(--text-faint); flex-shrink:0; }
 .sound-volume input[type="range"]{ -webkit-appearance:none; appearance:none; flex:1; height:5px; border-radius:100px; background:var(--bg-panel-2); outline:none; }
@@ -2369,3 +2397,22 @@ body{ -webkit-overflow-scrolling:touch; }
 @media (max-height:520px) and (orientation:landscape){
   .hero{ min-height:auto; padding-top:96px; padding-bottom:60px; }
 }
+
+/* Theme popup close button */
+.theme-panel-close{
+  position:sticky; top:0; margin-left:auto; margin-bottom:-20px; width:34px; height:34px; display:grid; place-items:center;
+  border-radius:9px; cursor:pointer; color:var(--text-dim); background:var(--bg-panel-2); border:1px solid var(--border); z-index:5;
+}
+.theme-panel-close:hover{ color:var(--grad-3); border-color:var(--grad-3); }
+.theme-panel-title:first-of-type{ margin-top:6px; }
+
+/* =========================================================
+   HARD RESPONSIVENESS SAFEGUARD — nothing exceeds viewport
+========================================================= */
+html, body{ max-width:100%; }
+img, svg, canvas, video, iframe{ max-width:100%; height:auto; }
+/* media/images with explicit height (avatars) shouldn't be forced to auto */
+.avatar-img, .photo-frame img{ height:100%; }
+*, *::before, *::after{ box-sizing:border-box; }
+/* Long words/URLs won't push width on small screens */
+p, h1, h2, h3, h4, li, span, a{ overflow-wrap:break-word; }
