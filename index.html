@@ -10,30 +10,16 @@
 
 <script>
 /* Apply saved/system theme + accent before paint to avoid flash.
-   First-time visitors get the clean white default. */
+   Default (and first visit) = the original dark theme with aurora accent. */
 (function(){
   var root = document.documentElement;
-  var firstVisit = false;
-  try { firstVisit = !localStorage.getItem('agq-visited'); } catch(e){}
   try{
     var savedTheme = localStorage.getItem('agq-theme');
     var savedAccent = localStorage.getItem('agq-accent');
     var savedClean = localStorage.getItem('agq-clean');
-    if (firstVisit && !savedTheme){
-      // Clean, minimal, professional default: white light theme + neutral accent
-      root.setAttribute('data-theme','light');
-      root.setAttribute('data-accent','mono');
-      root.setAttribute('data-clean','on');
-      try{
-        localStorage.setItem('agq-theme','light');
-        localStorage.setItem('agq-accent','mono');
-        localStorage.setItem('agq-clean','1');
-      }catch(e){}
-    } else {
-      root.setAttribute('data-theme', savedTheme || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light':'dark'));
-      root.setAttribute('data-accent', savedAccent || 'aurora');
-      if (savedClean === '1') root.setAttribute('data-clean','on');
-    }
+    root.setAttribute('data-theme', savedTheme || 'dark');
+    root.setAttribute('data-accent', savedAccent || 'aurora');
+    if (savedClean === '1') root.setAttribute('data-clean','on');
   }catch(e){ root.setAttribute('data-theme','dark'); root.setAttribute('data-accent','aurora'); }
   try { localStorage.setItem('agq-visited','1'); } catch(e){}
 })();
@@ -672,7 +658,7 @@
 
       <div class="projects-viewall" data-reveal>
         <button class="btn btn-ghost magnetic" id="projectsViewAll" aria-expanded="false">
-          <span id="projectsViewAllLabel">View all projects</span>
+          <span id="projectsViewAllLabel">View more projects</span>
           <svg class="viewall-chev" viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
       </div>
@@ -953,11 +939,23 @@
               <b>+63 966-136-6539</b>
               <span class="contact-link-action mono">Call</span>
             </a>
-            <div class="contact-link contact-link-static">
+            <a class="contact-link" href="https://www.google.com/maps/search/?api=1&query=San+Roque+Dau,+Lubao,+Pampanga,+Philippines" target="_blank" rel="noopener noreferrer">
               <span class="mono">Location</span>
               <b>San Roque Dau, Lubao, Pampanga, PH</b>
-            </div>
+              <span class="contact-link-action mono">Open in Maps</span>
+            </a>
           </div>
+
+          <a class="contact-map" href="https://www.google.com/maps/search/?api=1&query=San+Roque+Dau,+Lubao,+Pampanga,+Philippines" target="_blank" rel="noopener noreferrer" aria-label="Open my location in Google Maps">
+            <iframe
+              title="Map showing San Roque Dau, Lubao, Pampanga"
+              src="https://www.google.com/maps?q=San%20Roque%20Dau,%20Lubao,%20Pampanga,%20Philippines&z=13&output=embed"
+              loading="lazy" referrerpolicy="no-referrer-when-downgrade" tabindex="-1"></iframe>
+            <span class="contact-map-pin" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="26" height="26" fill="none"><path d="M12 22s7-6.2 7-12A7 7 0 005 10c0 5.8 7 12 7 12z" fill="var(--grad-2)" stroke="#fff" stroke-width="1.5"/><circle cx="12" cy="10" r="2.6" fill="#fff"/></svg>
+            </span>
+            <span class="contact-map-hint mono">Open in Google Maps ↗</span>
+          </a>
 
           <div class="social-row">
             <a class="social-btn" href="https://www.linkedin.com/in/allyssa-geanne-quinit-a01793378" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn profile">

@@ -1208,9 +1208,9 @@
     }
 
     let expanded = false;
-    // Show 4 collapsed cards on landscape phones/tablets, otherwise 3.
+    // Landscape phones show 2 collapsed cards (nicely sized); portrait shows 3.
     function collapsedCount() {
-      return window.matchMedia('(orientation:landscape) and (max-height:600px)').matches ? 4 : 3;
+      return window.matchMedia('(orientation:landscape) and (max-height:600px)').matches ? 2 : 3;
     }
     let COLLAPSED_COUNT = collapsedCount();
     const toolbar = $('#projectsToolbar');
@@ -1246,7 +1246,7 @@
       }).length;
       if (empty) empty.hidden = total !== 0;
       if (viewAllBtn) viewAllBtn.hidden = total <= COLLAPSED_COUNT && !expanded;
-      if (viewAllLabel) viewAllLabel.textContent = expanded ? 'Show less' : 'View all projects';
+      if (viewAllLabel) viewAllLabel.textContent = expanded ? 'Show less' : 'View more projects';
     }
 
     function setExpanded(on) {
