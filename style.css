@@ -757,6 +757,8 @@ html{ scrollbar-width:thin; scrollbar-color:var(--grad-2) var(--bg); }
 .project-grid{ display:grid; gap:22px; grid-template-columns:repeat(3,1fr); }
 @media (max-width:920px){ .project-grid{ grid-template-columns:repeat(2,1fr); } }
 @media (max-width:600px){ .project-grid{ grid-template-columns:1fr; } }
+/* Landscape phones: show 4 across so 4 projects fit in one row */
+@media (orientation:landscape) and (max-height:600px){ .project-grid{ grid-template-columns:repeat(4,1fr); gap:14px; } }
 
 .project-empty{ color:var(--text-faint); font-size:0.95rem; margin-top:8px; }
 
@@ -785,6 +787,8 @@ html{ scrollbar-width:thin; scrollbar-color:var(--grad-2) var(--bg); }
   display:flex; flex-direction:column; background:var(--bg-panel);
 }
 .pcard:hover .pcard-mock{ transform:translateY(0); }
+/* Touch devices have no hover — show the mockup in its resting (flush) position */
+@media (hover:none){ .pcard-mock{ transform:translateY(0); } }
 .pcard-mock-bar{
   display:flex; align-items:center; gap:5px; padding:8px 10px; flex-shrink:0;
   background:color-mix(in srgb, var(--text) 6%, var(--bg-panel)); border-bottom:1px solid var(--border);
@@ -2177,9 +2181,9 @@ html{ scrollbar-width:thin; scrollbar-color:var(--grad-2) var(--bg); }
 .snap-overlay{ position:fixed; inset:0; z-index:540; display:flex; align-items:center; justify-content:center; padding:22px;
   background:color-mix(in srgb, var(--bg) 76%, transparent); -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); animation:overlayIn .25s var(--ease); }
 .snap-overlay[hidden]{ display:none; }
-.snap-card{ position:relative; width:100%; max-width:520px; background:var(--bg-panel); border:1px solid var(--border-strong);
+.snap-card{ position:relative; width:100%; max-width:520px; max-height:calc(100vh - 44px); max-height:calc(100dvh - 44px); overflow-y:auto; -webkit-overflow-scrolling:touch; background:var(--bg-panel); border:1px solid var(--border-strong);
   border-radius:20px; box-shadow:var(--shadow-lg); padding:30px; animation:pmodalIn .3s var(--ease); }
-.snap-x{ position:absolute; top:14px; right:14px; width:32px; height:32px; border-radius:9px; display:grid; place-items:center; cursor:pointer; color:var(--text-dim); background:var(--bg-panel-2); border:1px solid var(--border); }
+.snap-x{ position:sticky; float:right; top:0; margin:-6px -6px 0 0; width:32px; height:32px; border-radius:9px; display:grid; place-items:center; cursor:pointer; color:var(--text-dim); background:var(--bg-panel-2); border:1px solid var(--border); z-index:3; }
 .snap-x:hover{ color:var(--grad-3); border-color:var(--grad-3); }
 .snap-head{ display:flex; align-items:center; gap:15px; margin-bottom:22px; padding-bottom:20px; border-bottom:1px solid var(--border); }
 .snap-mono{ width:54px; height:54px; flex-shrink:0; border-radius:14px; display:grid; place-items:center; font-family:var(--font-display); font-weight:800; font-size:1.2rem; color:var(--on-gradient); background:var(--gradient-main); }
@@ -2209,13 +2213,27 @@ html{ scrollbar-width:thin; scrollbar-color:var(--grad-2) var(--bg); }
 :root[data-theme="light"][data-clean="on"]{
   --bg:            #ffffff;
   --bg-panel:      #ffffff;
-  --bg-panel-2:    #f4f5f8;
-  --border:        rgba(16,19,29,0.08);
-  --border-strong: rgba(16,19,29,0.14);
-  --aurora-opacity: 0.10;
-  --grain-opacity:  0.02;
+  --bg-panel-2:    #f7f8fb;
+  --text:          #0e1220;
+  --text-dim:      #444b5e;
+  --text-faint:    #8b91a3;
+  --border:        rgba(16,19,29,0.09);
+  --border-strong: rgba(16,19,29,0.16);
+  /* Refined professional accent (slate-blue) for the clean look */
+  --grad-1:        #4f5b76;
+  --grad-2:        #5b7cb8;
+  --grad-3:        #6d8fc9;
+  --grad-accent:   #5b7cb8;
+  --aurora-opacity: 0.06;
+  --grain-opacity:  0.015;
+  --shadow-lg:     0 24px 60px -28px rgba(30,41,90,0.22);
+  --shadow-md:     0 12px 30px -18px rgba(30,41,90,0.18);
 }
-:root[data-theme="light"][data-clean="on"] .bg-aurora{ opacity:.5; }
+:root[data-theme="light"][data-clean="on"] .bg-aurora{ opacity:.35; }
+:root[data-theme="light"][data-clean="on"] .section-alt{ background:#fafbfd; }
+:root[data-theme="light"][data-clean="on"] .pcard,
+:root[data-theme="light"][data-clean="on"] .timeline-card,
+:root[data-theme="light"][data-clean="on"] .spot{ box-shadow:0 1px 3px rgba(16,19,29,0.04), 0 8px 24px -16px rgba(16,19,29,0.12); }
 
 /* =========================================================
    ROLE-MATCH HIGHLIGHTER

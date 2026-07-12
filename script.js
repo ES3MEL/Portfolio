@@ -401,24 +401,40 @@
     if (sub) sub.textContent = pm.sub;
 
     // --- Real global count (best-effort) via a free hosted counter ---
-    // Uses api.counterapi.dev; if it's unreachable we simply keep the personal message.
-    // Namespace/key are unique to this portfolio so the number is real and shared across all visitors.
+    // Tries counterapi v2, falls back to v1; if all fail we keep the personal message.
     const NS = 'allyssa-geanne-quinit-portfolio';
     const KEY = 'site-visits';
-    const endpoint = countedThisSession
-      ? `https://api.counterapi.dev/v1/${NS}/${KEY}/`          // already counted this session → just read
-      : `https://api.counterapi.dev/v1/${NS}/${KEY}/up`;       // new session → increment once
+    const shouldIncrement = !countedThisSession;
 
-    fetch(endpoint, { cache: 'no-store' })
+    function showGlobal(total) {
+      if (typeof total === 'number' && total > 0) {
+        line.textContent = `You're visitor #${total.toLocaleString()}! 🎉`;
+        if (sub) sub.textContent = myVisits > 1 ? `Welcome back — your ${ordinal(myVisits)} visit. 💛` : 'Thanks for being one of them.';
+      }
+    }
+
+    // counterapi v2: /v2/{namespace}/{key}/up  (increment) or /v2/{namespace}/{key}  (read)
+    const v2Base = `https://api.counterapi.dev/v2/${NS}/${KEY}`;
+    const v2Url = shouldIncrement ? `${v2Base}/up` : v2Base;
+    fetch(v2Url, { cache: 'no-store' })
       .then(r => r.ok ? r.json() : Promise.reject())
       .then(data => {
-        const total = data && (data.count ?? data.value);
-        if (typeof total === 'number' && total > 0) {
-          line.textContent = `You're visitor #${total.toLocaleString()}! 🎉`;
-          if (sub) sub.textContent = myVisits > 1 ? `Welcome back — this is your ${ordinal(myVisits)} visit. 💛` : 'Thanks for being one of them.';
-        }
+        // v2 returns { data: { up_count / count } }
+        const d = data && data.data ? data.data : data;
+        const total = d && (d.up_count ?? d.count ?? d.value);
+        if (typeof total === 'number' && total > 0) showGlobal(total);
+        else return Promise.reject();
       })
-      .catch(() => { /* offline or blocked → keep the accurate per-browser message */ });
+      .catch(() => {
+        // Fallback to v1 endpoint format
+        const v1Url = shouldIncrement
+          ? `https://api.counterapi.dev/v1/${NS}/${KEY}/up`
+          : `https://api.counterapi.dev/v1/${NS}/${KEY}/`;
+        fetch(v1Url, { cache: 'no-store' })
+          .then(r => r.ok ? r.json() : Promise.reject())
+          .then(data => { const total = data && (data.count ?? data.value); showGlobal(total); })
+          .catch(() => { /* offline/blocked → keep accurate per-browser message */ });
+      });
   }
 
   /* ---------- Guided tour ---------- */
@@ -784,42 +800,115 @@
       bubbleTimer = setTimeout(() => bubble.classList.remove('is-show'), 2600);
     }
     function currentState() { return frame.getAttribute('data-avatar') || 'day'; }
-    // Hover: capture the sleeping state FIRST (for the right message), then wake
-    frame.addEventListener('pointerenter', () => {
-      const prev = currentState();               // day | sleepy | sleeping (before waking)
-      const pool = hoverMsgs[prev] || hoverMsgs.day;
-      showBubble(pool[Math.floor(Math.random() * pool.length)]);
-      hovering = true; apply();
-    });
-    frame.addEventListener('pointerleave', () => {
-      hovering = false; frame.style.transform = '';
-      apply();
-    });
-    frame.addEventListener('click', () => {
-      if (!prefersReducedMotion) {
-        frame.style.transform = '';
-        frame.classList.remove('is-waving'); void frame.offsetWidth; frame.classList.add('is-waving');
-        setTimeout(() => frame.classList.remove('is-waving'), 900);
-        if (sparkles) {
-          sparkles.innerHTML = '';
-          for (let i = 0; i < 7; i++) {
-            const s = document.createElement('i');
-            s.style.left = (15 + Math.random() * 70) + '%';
-            s.style.top = (10 + Math.random() * 70) + '%';
-            s.style.animationDelay = (Math.random() * 0.2).toFixed(2) + 's';
-            sparkles.appendChild(s);
-          }
-          setTimeout(() => { sparkles.innerHTML = ''; }, 1100);
+
+    // ----- Wake / sleep interaction -----
+    // `hovering` (reused as "awake override") forces the normal photo when true.
+    // Desktop: hover wakes, leave sleeps (only meaningful outside daytime).
+    // Touch: tap runs a sequence — at night: sleeping -> (tap) sleepy -> (tap) awake,
+    //        with a "tap again to let me sleep" hint; tapping once more returns to sleep.
+    let nightWakeStep = 0; // 0=asleep, 1=sleepy shown, 2=awake
+    let wakeHintTimer = null;
+
+    function setHint(text) {
+      const note = $('#avatarSleepNote');
+      if (!note) return;
+      if (text) { note.textContent = text; note.classList.add('is-show'); }
+      else { note.classList.remove('is-show'); }
+    }
+
+    if (supportsFinePointer) {
+      // DESKTOP: hover to wake, leave to return to time-based state
+      frame.addEventListener('pointerenter', () => {
+        const prev = currentState();
+        const pool = hoverMsgs[prev] || hoverMsgs.day;
+        showBubble(pool[Math.floor(Math.random() * pool.length)]);
+        hovering = true; apply();
+      });
+      frame.addEventListener('pointerleave', () => {
+        hovering = false; frame.style.transform = '';
+        apply();
+      });
+    }
+
+    function playWakeFx() {
+      if (prefersReducedMotion) return;
+      frame.style.transform = '';
+      frame.classList.remove('is-waving'); void frame.offsetWidth; frame.classList.add('is-waving');
+      setTimeout(() => frame.classList.remove('is-waving'), 900);
+      if (sparkles) {
+        sparkles.innerHTML = '';
+        for (let i = 0; i < 7; i++) {
+          const s = document.createElement('i');
+          s.style.left = (15 + Math.random() * 70) + '%';
+          s.style.top = (10 + Math.random() * 70) + '%';
+          s.style.animationDelay = (Math.random() * 0.2).toFixed(2) + 's';
+          sparkles.appendChild(s);
         }
+        setTimeout(() => { sparkles.innerHTML = ''; }, 1100);
       }
-      showBubble(greetings[Math.floor(Math.random() * greetings.length)]);
+    }
+
+    frame.addEventListener('click', () => {
+      const night = isNightNow();
+      const sleepy = !night && isSleepyNow();
+
+      if (night) {
+        // Night wake sequence: asleep -> sleepy -> awake -> (tap) back to sleep
+        if (nightWakeStep === 0) {
+          nightWakeStep = 1;
+          hovering = false;            // still not fully awake
+          frame.setAttribute('data-avatar', 'sleepy'); // show sleepy pic first
+          applyVisibilityFor('sleepy');
+          showBubble('Mmm… *yawn* who\'s there? 😴');
+          setHint('Tap again to fully wake me up ☀️');
+          return;
+        }
+        if (nightWakeStep === 1) {
+          nightWakeStep = 2;
+          hovering = true;             // fully awake -> normal photo
+          apply();
+          playWakeFx();
+          showBubble('I\'m up! Thanks for the wake-up 👋');
+          setHint('Tap again to let me sleep 🌙');
+          return;
+        }
+        // step 2 -> back to sleep
+        nightWakeStep = 0;
+        hovering = false;
+        apply();
+        showBubble('Goodnight… 😴💤');
+        clearTimeout(wakeHintTimer);
+        wakeHintTimer = setTimeout(() => setHint(''), 400);
+        return;
+      }
+
+      // Daytime / sleepy: single tap wakes to the normal photo
+      if (sleepy || !hovering) {
+        hovering = true; apply(); playWakeFx();
+        showBubble(greetings[Math.floor(Math.random() * greetings.length)]);
+        if (sleepy) setHint('Tap again to let me rest ☕'); else setHint('');
+      } else {
+        // already awake in daytime → just a friendly greeting + sparkle
+        playWakeFx();
+        showBubble(greetings[Math.floor(Math.random() * greetings.length)]);
+      }
       if (window.__agqUnlock) window.__agqUnlock('avatar');
     });
 
+    // Helper: force which layer shows (used by the night sequence's sleepy step)
+    function applyVisibilityFor(state) {
+      const sleepMissing = frame.classList.contains('sleep-img-missing');
+      const sleepyMissing = frame.classList.contains('sleepy-img-missing');
+      const showSleep = state === 'sleeping' && !sleepMissing;
+      const showSleepy = state === 'sleepy' && !sleepyMissing;
+      img.style.opacity = (showSleep || showSleepy) ? '0' : '1';
+      if (sleepImg) sleepImg.style.opacity = showSleep ? '1' : '0';
+      if (sleepyImg) sleepyImg.style.opacity = showSleepy ? '1' : '0';
+    }
+
     // Manual preview for testing regardless of time:
-    //   window.__agqPreviewNight(true|false)  ·  window.__agqPreviewSleepy(true|false)
-    window.__agqPreviewNight = function (on) { isNightNow = () => !!on; if (on) isSleepyNow = () => false; apply(); };
-    window.__agqPreviewSleepy = function (on) { isSleepyNow = () => !!on; if (on) isNightNow = () => false; apply(); };
+    window.__agqPreviewNight = function (on) { isNightNow = () => !!on; if (on) isSleepyNow = () => false; nightWakeStep = 0; hovering = false; apply(); };
+    window.__agqPreviewSleepy = function (on) { isSleepyNow = () => !!on; if (on) isNightNow = () => false; hovering = false; apply(); };
   }
 
   /* ---------- Sliding nav pill (desktop only) ---------- */
@@ -897,6 +986,33 @@
      PROJECTS DATA + RENDER + FILTER/SEARCH + MODAL
   ========================================================= */
   const PROJECTS = [
+    {
+      id: 'portfolio',
+      title: 'Personal Portfolio',
+      category: 'Website',
+      role: 'Designer · Front-End',
+      year: '2025',
+      status: 'Live',
+      featured: true,
+      tagline: 'This very site — a hand-built, interactive portfolio designed and coded from scratch.',
+      desc: 'A responsive personal portfolio featuring 50+ interactive touches: theming, smart avatar, project narrator, and more.',
+      accent: ['#7C5CFC', '#33E5C4'],
+      tech: ['HTML/CSS', 'JavaScript', 'UI/UX', 'Responsive Design'],
+      overview: 'The site you\'re on right now. Designed and built end-to-end to showcase both design sensibility and front-end skill — from the theming system and smart day/night avatar to the guided tour, project narrator, and fully responsive layout across all devices.',
+      features: [
+        '50+ accent themes with live customization, motion, and background styles.',
+        'Smart avatar that reacts to time of day and to visitor interaction.',
+        'Fully responsive across mobile, tablet, and desktop with a mobile design popup.',
+        'Accessibility controls, guided tour, and a recruiter snapshot card.'
+      ],
+      process: [
+        { title: 'Design', body: 'Defined the visual language, typography, and a flexible theming system.' },
+        { title: 'Build', body: 'Coded the layout, components, and interactions in vanilla HTML, CSS, and JavaScript.' },
+        { title: 'Polish', body: 'Tuned responsiveness, micro-interactions, and accessibility across devices.' }
+      ],
+      gallery: ['Hero', 'Projects', 'Theming'],
+      links: []
+    },
     {
       id: 'moodmenu',
       title: 'MoodMenu',
@@ -1092,7 +1208,11 @@
     }
 
     let expanded = false;
-    const COLLAPSED_COUNT = 3;
+    // Show 4 collapsed cards on landscape phones/tablets, otherwise 3.
+    function collapsedCount() {
+      return window.matchMedia('(orientation:landscape) and (max-height:600px)').matches ? 4 : 3;
+    }
+    let COLLAPSED_COUNT = collapsedCount();
     const toolbar = $('#projectsToolbar');
     const viewAllBtn = $('#projectsViewAll');
     const viewAllLabel = $('#projectsViewAllLabel');
@@ -1126,7 +1246,7 @@
       }).length;
       if (empty) empty.hidden = total !== 0;
       if (viewAllBtn) viewAllBtn.hidden = total <= COLLAPSED_COUNT && !expanded;
-      if (viewAllLabel) viewAllLabel.textContent = expanded ? 'Show less' : `View all projects (${PROJECTS.length})`;
+      if (viewAllLabel) viewAllLabel.textContent = expanded ? 'Show less' : 'View all projects';
     }
 
     function setExpanded(on) {
@@ -1147,6 +1267,12 @@
       }
     }
     viewAllBtn?.addEventListener('click', () => setExpanded(!expanded));
+
+    // Recompute collapsed count when orientation flips (landscape shows 4)
+    const orientationMq = window.matchMedia('(orientation:landscape) and (max-height:600px)');
+    const onOrient = () => { COLLAPSED_COUNT = collapsedCount(); if (!expanded) applyFilters(); };
+    if (orientationMq.addEventListener) orientationMq.addEventListener('change', onOrient);
+    else if (orientationMq.addListener) orientationMq.addListener(onOrient);
 
     filters?.addEventListener('click', (e) => {
       const btn = e.target.closest('.filter-btn');
@@ -1759,26 +1885,65 @@
       if (!voiceOn && 'speechSynthesis' in window) speechSynthesis.cancel();
     });
 
-    // Voice: speech-to-text mic input
+    // Voice: speech-to-text mic input (improved)
     const mic = $('#chatMic');
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (mic && SR) {
       const rec = new SR();
-      rec.lang = 'en-US'; rec.interimResults = false; rec.maxAlternatives = 1;
+      rec.lang = 'en-US';
+      rec.interimResults = true;   // live transcription as you speak
+      rec.continuous = false;
+      rec.maxAlternatives = 1;
       let listening = false;
-      rec.onresult = (ev) => {
-        const said = ev.results[0][0].transcript;
-        input.value = said;
-        respond(said); input.value = '';
+      let finalText = '';
+
+      function stopListening() {
+        listening = false;
+        mic.classList.remove('is-listening');
+        mic.setAttribute('aria-pressed', 'false');
+      }
+
+      rec.onstart = () => {
+        finalText = '';
+        listening = true;
+        mic.classList.add('is-listening');
+        mic.setAttribute('aria-pressed', 'true');
+        input.placeholder = 'Listening… speak now';
       };
-      rec.onend = () => { listening = false; mic.classList.remove('is-listening'); };
-      rec.onerror = () => { listening = false; mic.classList.remove('is-listening'); };
+      rec.onresult = (ev) => {
+        let interim = '';
+        for (let i = ev.resultIndex; i < ev.results.length; i++) {
+          const t = ev.results[i][0].transcript;
+          if (ev.results[i].isFinal) finalText += t; else interim += t;
+        }
+        input.value = (finalText + ' ' + interim).trim(); // show live text, editable
+      };
+      rec.onerror = (ev) => {
+        stopListening();
+        input.placeholder = 'Ask me anything…';
+        if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') {
+          if (window.__agqToast) window.__agqToast('🎤 Microphone access blocked — enable it in your browser settings.');
+        } else if (ev.error === 'no-speech') {
+          if (window.__agqToast) window.__agqToast("🎤 Didn't catch that — try again.");
+        }
+      };
+      rec.onend = () => {
+        stopListening();
+        input.placeholder = 'Ask me anything…';
+        // Auto-send only if we captured something final; leave editable otherwise
+        const text = input.value.trim();
+        if (text && finalText.trim()) { respond(text); input.value = ''; }
+        else if (text) { input.focus(); }
+      };
       mic.addEventListener('click', () => {
         if (listening) { rec.stop(); return; }
-        try { rec.start(); listening = true; mic.classList.add('is-listening'); } catch (e) {}
+        try { rec.start(); } catch (e) { /* already started */ }
       });
     } else if (mic) {
-      mic.style.display = 'none'; // browser without speech recognition
+      // No speech support (e.g. Firefox) — keep the button but explain on click
+      mic.addEventListener('click', () => {
+        if (window.__agqToast) window.__agqToast('🎤 Voice input isn\'t supported in this browser — try Chrome, Edge, or Safari.');
+      });
     }
   }
 
