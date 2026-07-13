@@ -9,15 +9,23 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%237C5CFC'/%3E%3Cstop offset='0.5' stop-color='%234FA0FF'/%3E%3Cstop offset='1' stop-color='%2333E5C4'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='22' fill='%2305060c'/%3E%3Ctext x='50' y='64' font-family='monospace' font-size='32' font-weight='700' fill='url(%23g)' text-anchor='middle'%3EAQ%3C/text%3E%3C/svg%3E">
 
 <script>
-/* Apply saved/system theme + accent before paint to avoid flash.
-   Default (and first visit) = the original dark theme with aurora accent. */
+/* Apply theme + accent before paint to avoid flash.
+   - If the visitor manually picked a theme, always respect it.
+   - Otherwise choose automatically by local time: light 6AM–6PM, dark 6PM–6AM. */
 (function(){
   var root = document.documentElement;
   try{
-    var savedTheme = localStorage.getItem('agq-theme');
+    var manual = localStorage.getItem('agq-theme-manual'); // 'light' | 'dark' when user chose
     var savedAccent = localStorage.getItem('agq-accent');
     var savedClean = localStorage.getItem('agq-clean');
-    root.setAttribute('data-theme', savedTheme || 'dark');
+    var theme;
+    if (manual === 'light' || manual === 'dark') {
+      theme = manual;
+    } else {
+      var h = new Date().getHours();
+      theme = (h >= 6 && h < 18) ? 'light' : 'dark';
+    }
+    root.setAttribute('data-theme', theme);
     root.setAttribute('data-accent', savedAccent || 'aurora');
     if (savedClean === '1') root.setAttribute('data-clean','on');
   }catch(e){ root.setAttribute('data-theme','dark'); root.setAttribute('data-accent','aurora'); }
@@ -357,7 +365,12 @@
         <p class="pitch-line" id="pitchLine" aria-live="polite" hidden></p>
 
         <div class="role-match" data-reveal>
-          <span class="role-match-label mono">Hiring for a specific role? Highlight what matters:</span>
+          <div class="role-match-head">
+            <span class="role-match-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>
+            </span>
+            <span class="role-match-label">Hiring for a specific role? <b>Tap one to highlight what matters:</b></span>
+          </div>
           <div class="role-match-btns" id="roleMatch">
             <button class="role-chip" data-role="uxui">UI/UX</button>
             <button class="role-chip" data-role="qa">QA</button>
@@ -396,7 +409,7 @@
         <span class="avatar-bubble" id="avatarBubble" role="status" aria-live="polite"></span>
 
         <p class="avatar-sleep-note" id="avatarSleepNote" aria-hidden="true">
-          <span class="asn-emoji">😴</span> Shhh… I'm asleep. <b>Hover to wake me up!</b>
+          <span class="asn-emoji">😴</span> Shhh… I'm asleep. <b>Tap to wake me up!</b>
         </p>
 
         <div class="orbit-chip chip-a" aria-hidden="true">UI/UX</div>
@@ -511,31 +524,13 @@
         </article>
 
         <article class="dash-card dash-metric tilt spot">
-          <span class="dash-metric-num"><b class="count-up" data-target="4">0</b></span>
-          <span class="dash-label mono">Years learning design &amp; dev</span>
-        </article>
-
-        <article class="dash-card dash-metric tilt spot">
           <span class="dash-metric-num"><b class="count-up" data-target="5">0</b><i>+</i></span>
           <span class="dash-label mono">Projects shipped</span>
-        </article>
-
-        <article class="dash-card dash-card--stack tilt spot">
-          <span class="dash-label mono">Favorite stack</span>
-          <div class="dash-stack">
-            <span class="chip">Figma</span><span class="chip">Webflow</span><span class="chip">HTML / CSS</span>
-            <span class="chip">ClickUp</span><span class="chip">Manual QA</span>
-          </div>
         </article>
 
         <article class="dash-card dash-card--focus tilt spot">
           <span class="dash-label mono">Current focus</span>
           <span class="dash-focus">Bridging design, QA &amp; documentation on real products at Twala.</span>
-        </article>
-
-        <article class="dash-card dash-card--fact tilt spot">
-          <span class="dash-label mono">☕ Fun fact</span>
-          <span class="dash-fact" id="dashFact">I test my own designs — designer by day, bug-hunter by afternoon.</span>
         </article>
 
         <article class="dash-card dash-card--session tilt spot">
@@ -638,8 +633,30 @@
         <p class="section-sub">Click any card for a full breakdown — overview, features, process, and links.</p>
       </div>
 
-      <!-- Filter + search toolbar (shown when expanded) -->
-      <div class="projects-toolbar" id="projectsToolbar" data-reveal hidden>
+      <div class="project-grid" id="projectGrid"></div>
+
+      <div class="projects-viewall" data-reveal>
+        <button class="btn btn-primary magnetic" id="projectsViewAll" aria-haspopup="dialog">
+          <span id="projectsViewAllLabel">View all projects</span>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== ALL-PROJECTS POPUP ===== -->
+  <div class="allproj-overlay" id="allprojOverlay" hidden>
+    <div class="allproj" role="dialog" aria-modal="true" aria-labelledby="allprojTitle">
+      <div class="allproj-head">
+        <div>
+          <h3 id="allprojTitle">All projects</h3>
+          <p class="allproj-sub mono" id="allprojCount"></p>
+        </div>
+        <button class="allproj-close" id="allprojClose" aria-label="Close all projects">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="projects-toolbar" id="projectsToolbar">
         <div class="filter-row" id="projectFilters" role="tablist" aria-label="Filter projects by category">
           <button class="filter-btn is-active" data-filter="all" role="tab" aria-selected="true">All</button>
           <button class="filter-btn" data-filter="UI/UX Design" role="tab" aria-selected="false">UI/UX Design</button>
@@ -647,23 +664,27 @@
           <button class="filter-btn" data-filter="Website" role="tab" aria-selected="false">Website</button>
           <button class="filter-btn" data-filter="Mobile" role="tab" aria-selected="false">Mobile</button>
         </div>
-        <div class="project-search">
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.6"/><path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-          <input type="text" id="projectSearch" placeholder="Search projects…" aria-label="Search projects" autocomplete="off">
+        <div class="allproj-tools-right">
+          <div class="project-search">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.6"/><path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            <input type="text" id="projectSearch" placeholder="Search projects…" aria-label="Search projects" autocomplete="off">
+          </div>
+          <div class="view-toggle" id="projViewToggle" role="group" aria-label="Layout">
+            <button class="view-toggle-btn is-active" data-view="grid" aria-label="Grid view" title="Grid view">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/></svg>
+            </button>
+            <button class="view-toggle-btn" data-view="list" aria-label="List view" title="List view">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </button>
+          </div>
         </div>
       </div>
-
-      <div class="project-grid" id="projectGrid"></div>
-      <p class="project-empty" id="projectEmpty" hidden>No projects match that search — try another term.</p>
-
-      <div class="projects-viewall" data-reveal>
-        <button class="btn btn-ghost magnetic" id="projectsViewAll" aria-expanded="false">
-          <span id="projectsViewAllLabel">View more projects</span>
-          <svg class="viewall-chev" viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
+      <div class="allproj-scroll">
+        <div class="project-grid" id="allprojGrid"></div>
+        <p class="project-empty" id="projectEmpty" hidden>No projects match that search — try another term.</p>
       </div>
     </div>
-  </section>
+  </div>
 
   <!-- ===== PROJECT MODAL ===== -->
   <div class="pmodal-overlay" id="pmodalOverlay" hidden>
@@ -682,8 +703,19 @@
         <span class="tag-label">04 — Skills</span>
         <h2>The toolkit</h2>
       </div>
+      <div class="skills-view-bar" data-reveal>
+        <span class="skills-view-label mono">View:</span>
+        <div class="view-toggle" id="skillsViewToggle" role="group" aria-label="Skills layout">
+          <button class="view-toggle-btn is-active" data-view="grid" aria-label="Grid view" title="Grid view">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/></svg>
+          </button>
+          <button class="view-toggle-btn" data-view="list" aria-label="List view" title="List view">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+      </div>
 
-      <div class="skill-groups">
+      <div class="skill-groups" id="skillGroups">
         <div class="skill-group" data-reveal data-rolegroup="uxui">
           <h3 class="mono">Design &amp; UI/UX</h3>
           <div class="chip-row">
@@ -751,11 +783,27 @@
         <p class="section-sub">A quick-swipe look at the core toolkit and the credentials behind it.</p>
       </div>
 
+      <div class="highlights-bar" data-reveal>
+        <div class="filter-row" id="highlightFilters" role="tablist" aria-label="Filter highlights">
+          <button class="filter-btn is-active" data-hfilter="all" role="tab" aria-selected="true">All</button>
+          <button class="filter-btn" data-hfilter="skill" role="tab" aria-selected="false">Skills</button>
+          <button class="filter-btn" data-hfilter="cert" role="tab" aria-selected="false">Certifications</button>
+        </div>
+        <div class="view-toggle" id="highlightViewToggle" role="group" aria-label="Highlights layout">
+          <button class="view-toggle-btn is-active" data-hview="carousel" aria-label="Carousel view" title="Carousel view">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none"><rect x="8" y="5" width="8" height="14" rx="1.5" stroke="currentColor" stroke-width="1.8"/><path d="M4 8v8M20 8v8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </button>
+          <button class="view-toggle-btn" data-hview="list" aria-label="List view" title="List view">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+      </div>
+
       <div class="carousel" data-reveal>
         <div class="carousel-viewport" id="carouselViewport">
           <div class="carousel-track" id="carouselTrack">
 
-            <article class="slide">
+            <article class="slide" data-htype="skill">
               <span class="badge badge-skill">Skill</span>
               <h3>Design &amp; UI/UX</h3>
               <p>Figma, Adobe Photoshop, Adobe Illustrator, Canva — wireframing and prototyping from blank canvas to polished flow.</p>
@@ -764,16 +812,7 @@
               </div>
             </article>
 
-            <article class="slide">
-              <span class="badge badge-cert">Certification</span>
-              <h3>Business Analysis Fundamentals</h3>
-              <p>IIBA-endorsed course covering core BA concepts, requirements gathering, and stakeholder analysis.</p>
-              <div class="slide-tags">
-                <span class="chip">Udemy · 2026</span>
-              </div>
-            </article>
-
-            <article class="slide">
+            <article class="slide" data-htype="skill">
               <span class="badge badge-skill">Skill</span>
               <h3>Quality Assurance</h3>
               <p>Manual testing and structured bug reporting — the same process used daily on Doxu.AI's mobile QA.</p>
@@ -782,16 +821,7 @@
               </div>
             </article>
 
-            <article class="slide">
-              <span class="badge badge-cert">Certification</span>
-              <h3>UI/UX Design Certificate</h3>
-              <p>Foundational and applied UI/UX coursework covering design systems, usability, and interaction design.</p>
-              <div class="slide-tags">
-                <span class="chip">Udemy · 2025</span>
-              </div>
-            </article>
-
-            <article class="slide">
+            <article class="slide" data-htype="skill">
               <span class="badge badge-skill">Skill</span>
               <h3>Business Analysis</h3>
               <p>Backlog creation, competitive analysis, and product documentation for TwalaSign and Doxu.AI.</p>
@@ -800,16 +830,7 @@
               </div>
             </article>
 
-            <article class="slide">
-              <span class="badge badge-cert">Certification</span>
-              <h3>Project Management: Beginner to PM</h3>
-              <p>Planning, scoping, and delivery fundamentals — applied directly to tracking Doxu.AI's mobile-responsiveness work.</p>
-              <div class="slide-tags">
-                <span class="chip">Udemy · 2026</span>
-              </div>
-            </article>
-
-            <article class="slide">
+            <article class="slide" data-htype="skill">
               <span class="badge badge-skill">Skill</span>
               <h3>Front-End Development</h3>
               <p>Working knowledge of HTML, CSS, and Webflow — enough to implement designs directly, not just hand them off.</p>
@@ -818,7 +839,34 @@
               </div>
             </article>
 
-            <article class="slide">
+            <article class="slide" data-htype="cert">
+              <span class="badge badge-cert">Certification</span>
+              <h3>Business Analysis Fundamentals</h3>
+              <p>IIBA-endorsed course covering core BA concepts, requirements gathering, and stakeholder analysis.</p>
+              <div class="slide-tags">
+                <span class="chip">Udemy · 2026</span>
+              </div>
+            </article>
+
+            <article class="slide" data-htype="cert">
+              <span class="badge badge-cert">Certification</span>
+              <h3>UI/UX Design Certificate</h3>
+              <p>Foundational and applied UI/UX coursework covering design systems, usability, and interaction design.</p>
+              <div class="slide-tags">
+                <span class="chip">Udemy · 2025</span>
+              </div>
+            </article>
+
+            <article class="slide" data-htype="cert">
+              <span class="badge badge-cert">Certification</span>
+              <h3>Project Management: Beginner to PM</h3>
+              <p>Planning, scoping, and delivery fundamentals — applied directly to tracking Doxu.AI's mobile-responsiveness work.</p>
+              <div class="slide-tags">
+                <span class="chip">Udemy · 2026</span>
+              </div>
+            </article>
+
+            <article class="slide" data-htype="cert">
               <span class="badge badge-cert">Certification</span>
               <h3>Cloud Computing Fundamentals</h3>
               <p>IBM SkillsBuild coursework covering core cloud concepts and infrastructure basics.</p>
@@ -1064,9 +1112,13 @@
         <p class="chat-subtitle"><span class="chat-online-dot"></span>Instant answers · not a live chat</p>
       </div>
     </div>
-    <button class="chat-voice-toggle" id="chatVoiceToggle" role="switch" aria-checked="false" aria-label="Read answers aloud" title="Read answers aloud">
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true"><path d="M11 5L6 9H3v6h3l5 4V5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M15.5 8.5a5 5 0 010 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    <button class="chat-voice-toggle is-on" id="chatVoiceToggle" role="switch" aria-checked="true" aria-label="Read answers aloud" title="Voice: on">
+      <svg class="cvt-on" viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true"><path d="M11 5L6 9H3v6h3l5 4V5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M15.5 8.5a5 5 0 010 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M18.5 6a9 9 0 010 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <svg class="cvt-off" viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true"><path d="M11 5L6 9H3v6h3l5 4V5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M17 9l4 6M21 9l-4 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
     </button>
+    <div class="chat-vol-wrap" id="chatVolWrap">
+      <input type="range" id="chatVol" class="chat-vol" min="0" max="100" value="90" aria-label="Voice volume" title="Voice volume">
+    </div>
     <button class="chat-close" id="chatClose" aria-label="Close chat">
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
     </button>

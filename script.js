@@ -106,13 +106,16 @@
     const toggle = $('#themeToggle');
     const root = document.documentElement;
 
-    function setTheme(theme, animate) {
+    function setTheme(theme, animate, manual) {
       if (animate && !prefersReducedMotion) {
         root.classList.add('theme-anim');
         window.setTimeout(() => root.classList.remove('theme-anim'), 480);
       }
       root.setAttribute('data-theme', theme);
-      try { localStorage.setItem('agq-theme', theme); } catch (e) {}
+      try {
+        localStorage.setItem('agq-theme', theme);
+        if (manual) localStorage.setItem('agq-theme-manual', theme); // user's explicit pick
+      } catch (e) {}
       const meta = $('meta[name="theme-color"]');
       if (meta) meta.setAttribute('content', theme === 'light' ? '#f6f7fb' : '#05060c');
       if (toggle) toggle.setAttribute('aria-pressed', String(theme === 'light'));
@@ -120,7 +123,7 @@
 
     function toggleTheme() {
       const next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
-      setTheme(next, true);
+      setTheme(next, true, true); // manual override
       if (window.__agqSound) window.__agqSound.play('theme');
       if (window.__agqUnlock) window.__agqUnlock('theme');
     }
@@ -135,13 +138,15 @@
       }
     });
 
-    // follow system change only if user hasn't explicitly chosen
-    try {
-      const mq = window.matchMedia('(prefers-color-scheme: light)');
-      mq.addEventListener('change', (e) => {
-        if (!localStorage.getItem('agq-theme')) setTheme(e.matches ? 'light' : 'dark', true);
-      });
-    } catch (e) {}
+    // Auto-switch by time of day, but ONLY if the user hasn't manually chosen.
+    function autoThemeByTime() {
+      try { if (localStorage.getItem('agq-theme-manual')) return; } catch (e) {}
+      const h = new Date().getHours();
+      const want = (h >= 6 && h < 18) ? 'light' : 'dark';
+      if (root.getAttribute('data-theme') !== want) setTheme(want, true, false);
+    }
+    autoThemeByTime();
+    setInterval(autoThemeByTime, 60 * 1000); // re-check each minute so it flips at 6AM/6PM
 
     // expose for command palette
     window.__agqToggleTheme = toggleTheme;
@@ -490,23 +495,79 @@
     btn.addEventListener('click', run);
   }
 
-  /* ---------- Elevator pitch (30-second typed intro) ---------- */
+  /* ---------- Elevator pitch (30-second typed + spoken intro) ---------- */
   function initPitch() {
     const btn = $('#pitchBtn'), line = $('#pitchLine');
     if (!btn || !line) return;
     const text = "I'm Allyssa — an IT student who designs user-centered interfaces, tests them until they're solid, and writes the documentation that keeps a team aligned. I work across UI/UX design, QA, and business analysis, and I'm looking for a role where I can help ship thoughtful, reliable products. Let's build something great together.";
-    let typing = false;
+    const label = btn.querySelector('span');
+    const origLabel = label ? label.textContent : '';
+    let typing = false, speaking = false;
+
+    function pickFemale() {
+      const vs = (window.speechSynthesis && speechSynthesis.getVoices()) || [];
+      return vs.find(v => /female|samantha|victoria|karen|zira|susan|hazel|eva|google uk english female|google us english/i.test(v.name)) || vs.find(v => /^en/i.test(v.lang)) || null;
+    }
+    function stopPitch() {
+      speaking = false; typing = false;
+      if ('speechSynthesis' in window) { try { speechSynthesis.cancel(); } catch (e) {} }
+      btn.classList.remove('is-playing');
+      if (label) label.textContent = origLabel;
+      if (line) { line.textContent = ''; line.hidden = true; }  // clear the displayed text
+    }
+    // Stop the voice if the user navigates away or closes the tab
+    window.addEventListener('beforeunload', () => { if ('speechSynthesis' in window) try { speechSynthesis.cancel(); } catch (e) {} });
+
     btn.addEventListener('click', () => {
-      if (typing) return;
+      // Toggle: clicking while playing stops it
+      if (typing || speaking) { stopPitch(); return; }
       typing = true;
       line.hidden = false; line.textContent = '';
+      btn.classList.add('is-playing');
+      if (label) label.textContent = '■ Stop pitch';
       if (window.__agqSound) window.__agqSound.play('click');
-      if (prefersReducedMotion) { line.textContent = text; typing = false; return; }
+
+      // Speak (female voice)
+      if ('speechSynthesis' in window) {
+        try {
+          speechSynthesis.cancel();
+          const u = new SpeechSynthesisUtterance(text);
+          const fv = pickFemale();
+          if (fv) u.voice = fv;
+          u.rate = 1; u.pitch = 1.12; u.volume = 1;
+          speaking = true;
+          u.onend = () => { speaking = false; if (!typing) { btn.classList.remove('is-playing'); if (label) label.textContent = origLabel; } };
+          speechSynthesis.speak(u);
+        } catch (e) {}
+      }
+
+      // Type in sync
+      if (prefersReducedMotion) {
+        line.textContent = text; typing = false;
+        if (!speaking) { btn.classList.remove('is-playing'); if (label) label.textContent = origLabel; }
+        return;
+      }
       let i = 0;
       (function step() {
-        if (i <= text.length) { line.textContent = text.slice(0, i); i++; setTimeout(step, 22); }
-        else { typing = false; }
+        if (!typing) return; // stopped
+        if (i <= text.length) { line.textContent = text.slice(0, i); i++; setTimeout(step, 34); }
+        else { typing = false; if (!speaking) { btn.classList.remove('is-playing'); if (label) label.textContent = origLabel; } }
       })();
+    });
+  }
+
+  /* ---------- Skills grid/list view toggle ---------- */
+  function initSkillsView() {
+    const toggle = $('#skillsViewToggle');
+    const groups = $('#skillGroups');
+    if (!toggle || !groups) return;
+    toggle.addEventListener('click', (e) => {
+      const btn = e.target.closest('.view-toggle-btn');
+      if (!btn) return;
+      const view = btn.dataset.view;
+      $$('.view-toggle-btn', toggle).forEach(b => b.classList.toggle('is-active', b === btn));
+      groups.classList.toggle('is-list', view === 'list');
+      if (window.__agqSound) window.__agqSound.play('click');
     });
   }
 
@@ -769,15 +830,7 @@
     // Re-check every 30s so it flips automatically if the clock crosses the boundary
     setInterval(apply, 30000);
 
-    // Desktop tilt (day) — kept subtle, doesn't fight the float (float is on parent)
-    if (supportsFinePointer && !prefersReducedMotion) {
-      frame.addEventListener('mousemove', (e) => {
-        const rect = frame.getBoundingClientRect();
-        const x = (e.clientX - rect.left) / rect.width - 0.5;
-        const y = (e.clientY - rect.top) / rect.height - 0.5;
-        frame.style.transform = `rotateY(${x * 12}deg) rotateX(${-y * 12}deg)`;
-      });
-    }
+    // (Desktop mouse-tilt removed — the avatar is tap/click only now.)
 
     // (hover handlers are defined below, after the message pools)
 
@@ -816,19 +869,8 @@
       else { note.classList.remove('is-show'); }
     }
 
-    if (supportsFinePointer) {
-      // DESKTOP: hover to wake, leave to return to time-based state
-      frame.addEventListener('pointerenter', () => {
-        const prev = currentState();
-        const pool = hoverMsgs[prev] || hoverMsgs.day;
-        showBubble(pool[Math.floor(Math.random() * pool.length)]);
-        hovering = true; apply();
-      });
-      frame.addEventListener('pointerleave', () => {
-        hovering = false; frame.style.transform = '';
-        apply();
-      });
-    }
+    // Profile is TAP/CLICK only (no hover-to-wake) so it behaves the same on
+    // mobile and desktop. Hover no longer changes the avatar state.
 
     function playWakeFx() {
       if (prefersReducedMotion) return;
@@ -1162,7 +1204,8 @@
   };
 
   function initProjects() {
-    const grid = $('#projectGrid');
+    const grid = $('#projectGrid');            // collapsed preview grid (in section)
+    const allGrid = $('#allprojGrid');          // full grid (in popup)
     const empty = $('#projectEmpty');
     const filters = $('#projectFilters');
     const search = $('#projectSearch');
@@ -1207,72 +1250,75 @@
         </button>`;
     }
 
-    let expanded = false;
-    // Landscape phones show 2 collapsed cards (nicely sized); portrait shows 3.
+    // Mobile (<=760px) shows 2 collapsed cards; desktop shows 3.
     function collapsedCount() {
-      return window.matchMedia('(orientation:landscape) and (max-height:600px)').matches ? 2 : 3;
+      return window.matchMedia('(max-width:760px)').matches ? 2 : 3;
     }
     let COLLAPSED_COUNT = collapsedCount();
-    const toolbar = $('#projectsToolbar');
     const viewAllBtn = $('#projectsViewAll');
-    const viewAllLabel = $('#projectsViewAllLabel');
 
-    function render() {
-      grid.innerHTML = PROJECTS.map(cardHtml).join('');
+    // ----- Collapsed preview grid (in the section) -----
+    function renderPreview() {
+      COLLAPSED_COUNT = collapsedCount();
+      const shown = PROJECTS.slice(0, COLLAPSED_COUNT);
+      grid.innerHTML = shown.map(cardHtml).join('');
       grid.querySelectorAll('.pcard').forEach(card => {
+        card.addEventListener('click', () => openModal(card.dataset.id));
+      });
+    }
+
+    // ----- Full grid inside the popup -----
+    function renderAll() {
+      if (!allGrid) return;
+      allGrid.innerHTML = PROJECTS.map(cardHtml).join('');
+      allGrid.querySelectorAll('.pcard').forEach(card => {
         card.addEventListener('click', () => openModal(card.dataset.id));
       });
       applyFilters();
     }
 
     function applyFilters() {
+      if (!allGrid) return;
       let visible = 0;
-      grid.querySelectorAll('.pcard').forEach(card => {
+      allGrid.querySelectorAll('.pcard').forEach(card => {
         const p = PROJECTS.find(x => x.id === card.dataset.id);
         const matchesFilter = activeFilter === 'all' || p.category === activeFilter;
         const haystack = (p.title + ' ' + p.desc + ' ' + p.tech.join(' ') + ' ' + p.role + ' ' + p.category).toLowerCase();
         const matchesQuery = !query || haystack.includes(query);
-        let show = matchesFilter && matchesQuery;
-        // In collapsed view, only show the first few (featured first via PROJECTS order)
-        if (show && !expanded && visible >= COLLAPSED_COUNT) show = false;
+        const show = matchesFilter && matchesQuery;
         card.classList.toggle('is-hidden', !show);
-        if (matchesFilter && matchesQuery) visible++;
+        if (show) visible++;
       });
-      // Count how many actually match (for the label), independent of the collapse cap
-      const total = PROJECTS.filter(p => {
-        const matchesFilter = activeFilter === 'all' || p.category === activeFilter;
-        const haystack = (p.title + ' ' + p.desc + ' ' + p.tech.join(' ') + ' ' + p.role + ' ' + p.category).toLowerCase();
-        return matchesFilter && (!query || haystack.includes(query));
-      }).length;
-      if (empty) empty.hidden = total !== 0;
-      if (viewAllBtn) viewAllBtn.hidden = total <= COLLAPSED_COUNT && !expanded;
-      if (viewAllLabel) viewAllLabel.textContent = expanded ? 'Show less' : 'View more projects';
+      if (empty) empty.hidden = visible !== 0;
+      const countEl = $('#allprojCount');
+      if (countEl) countEl.textContent = `${visible} of ${PROJECTS.length} project${PROJECTS.length === 1 ? '' : 's'}`;
     }
 
-    function setExpanded(on) {
-      expanded = on;
-      if (toolbar) toolbar.hidden = !on;
-      if (viewAllBtn) viewAllBtn.setAttribute('aria-expanded', String(on));
-      if (viewAllBtn) viewAllBtn.classList.toggle('is-expanded', on);
-      applyFilters();
-      if (window.__agqSound) window.__agqSound.play('click');
-      if (!on) {
-        // collapsing: reset filters/search and scroll back to the section top
-        activeFilter = 'all'; query = '';
-        const s = $('#projectSearch'); if (s) s.value = '';
-        $$('.filter-btn', filters).forEach(b => { const a = b.dataset.filter === 'all'; b.classList.toggle('is-active', a); b.setAttribute('aria-selected', String(a)); });
-        applyFilters();
-        const sec = document.getElementById('projects');
-        if (sec) sec.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' });
-      }
+    // ----- All-projects popup open/close -----
+    const overlayAll = $('#allprojOverlay');
+    function openAll() {
+      if (!overlayAll) return;
+      overlayAll.hidden = false;
+      document.body.style.overflow = 'hidden';
+      if (window.__agqSound) window.__agqSound.play('modal');
+      const c = $('#allprojClose'); if (c) setTimeout(() => c.focus(), 60);
     }
-    viewAllBtn?.addEventListener('click', () => setExpanded(!expanded));
+    function closeAll() {
+      if (!overlayAll) return;
+      overlayAll.hidden = true;
+      document.body.style.overflow = '';
+      if (viewAllBtn) viewAllBtn.focus();
+    }
+    viewAllBtn?.addEventListener('click', openAll);
+    $('#allprojClose')?.addEventListener('click', closeAll);
+    overlayAll?.addEventListener('click', (e) => { if (e.target === overlayAll) closeAll(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && overlayAll && !overlayAll.hidden) closeAll(); });
 
-    // Recompute collapsed count when orientation flips (landscape shows 4)
-    const orientationMq = window.matchMedia('(orientation:landscape) and (max-height:600px)');
-    const onOrient = () => { COLLAPSED_COUNT = collapsedCount(); if (!expanded) applyFilters(); };
-    if (orientationMq.addEventListener) orientationMq.addEventListener('change', onOrient);
-    else if (orientationMq.addListener) orientationMq.addListener(onOrient);
+    // Re-render preview when crossing the mobile/desktop breakpoint
+    const widthMq = window.matchMedia('(max-width:760px)');
+    const onWidth = () => renderPreview();
+    if (widthMq.addEventListener) widthMq.addEventListener('change', onWidth);
+    else if (widthMq.addListener) widthMq.addListener(onWidth);
 
     filters?.addEventListener('click', (e) => {
       const btn = e.target.closest('.filter-btn');
@@ -1290,6 +1336,19 @@
       query = search.value.trim().toLowerCase();
       applyFilters();
     });
+
+    // Grid / list view toggle (inside popup)
+    const viewToggle = $('#projViewToggle');
+    viewToggle?.addEventListener('click', (e) => {
+      const btn = e.target.closest('.view-toggle-btn');
+      if (!btn || !allGrid) return;
+      const view = btn.dataset.view;
+      $$('.view-toggle-btn', viewToggle).forEach(b => b.classList.toggle('is-active', b === btn));
+      allGrid.classList.toggle('is-list', view === 'list');
+      if (window.__agqSound) window.__agqSound.play('click');
+    });
+
+    function render() { renderPreview(); renderAll(); }
 
     /* ---------- Modal ---------- */
     const overlay = $('#pmodalOverlay');
@@ -1630,10 +1689,13 @@
     const dotsContainer = $('#carouselDots');
     const prevBtn = $('#carouselPrev');
     const nextBtn = $('#carouselNext');
+    const carousel = $('.carousel');
+    const filters = $('#highlightFilters');
+    const viewToggle = $('#highlightViewToggle');
     if (!viewport || !track || !dotsContainer) return;
 
-    const slides = $$('.slide', track);
-    if (!slides.length) return;
+    const allSlides = $$('.slide', track);
+    if (!allSlides.length) return;
 
     let index = 0;
     let autoplayId = null;
@@ -1641,9 +1703,26 @@
     let gap = 20;
     let visibleCount = 1;
     let currentOffset = 0;
+    let activeFilter = 'all';
+    let listMode = false;
+
+    function slides() { return allSlides.filter(s => !s.classList.contains('is-filtered')); }
+
+    function applyFilter(f) {
+      activeFilter = f;
+      allSlides.forEach(s => {
+        const hide = f !== 'all' && s.dataset.htype !== f;
+        s.classList.toggle('is-filtered', hide);
+      });
+      index = 0;
+      computeMetrics(); renderDots(); goTo(0);
+      restartAutoplay();
+    }
 
     function computeMetrics() {
-      const rect = slides[0].getBoundingClientRect();
+      const vis = slides();
+      if (!vis.length) return;
+      const rect = vis[0].getBoundingClientRect();
       slideWidth = rect.width;
       const styles = getComputedStyle(track);
       gap = parseFloat(styles.gap || styles.columnGap) || 20;
@@ -1651,11 +1730,12 @@
     }
 
     function maxIndex() {
-      return Math.max(0, slides.length - visibleCount);
+      return Math.max(0, slides().length - visibleCount);
     }
 
     function renderDots() {
       dotsContainer.innerHTML = '';
+      if (listMode) return;
       const dotCount = maxIndex() + 1;
       for (let i = 0; i < dotCount; i++) {
         const dot = document.createElement('button');
@@ -1669,6 +1749,7 @@
     }
 
     function goTo(i) {
+      if (listMode) return;
       index = clamp(i, 0, maxIndex());
       currentOffset = index * (slideWidth + gap);
       track.style.transform = `translateX(-${currentOffset}px)`;
@@ -1679,11 +1760,36 @@
     function prev() { goTo(index - 1 < 0 ? maxIndex() : index - 1); }
 
     function startAutoplay() {
-      if (prefersReducedMotion) return;
+      if (prefersReducedMotion || listMode) return;
       autoplayId = setInterval(next, 4200);
     }
     function stopAutoplay() { if (autoplayId) clearInterval(autoplayId); autoplayId = null; }
     function restartAutoplay() { stopAutoplay(); startAutoplay(); }
+
+    // Filter buttons
+    filters?.addEventListener('click', (e) => {
+      const btn = e.target.closest('.filter-btn');
+      if (!btn) return;
+      $$('.filter-btn', filters).forEach(b => { const on = b === btn; b.classList.toggle('is-active', on); b.setAttribute('aria-selected', String(on)); });
+      applyFilter(btn.dataset.hfilter);
+      if (window.__agqSound) window.__agqSound.play('click');
+    });
+
+    // Carousel / list view toggle
+    function setView(view) {
+      listMode = (view === 'list');
+      if (carousel) carousel.classList.toggle('is-list', listMode);
+      track.style.transform = listMode ? 'none' : `translateX(-${currentOffset}px)`;
+      if (listMode) stopAutoplay(); else { computeMetrics(); goTo(0); startAutoplay(); }
+      renderDots();
+    }
+    viewToggle?.addEventListener('click', (e) => {
+      const btn = e.target.closest('.view-toggle-btn');
+      if (!btn) return;
+      $$('.view-toggle-btn', viewToggle).forEach(b => b.classList.toggle('is-active', b === btn));
+      setView(btn.dataset.hview);
+      if (window.__agqSound) window.__agqSound.play('click');
+    });
 
     prevBtn?.addEventListener('click', () => { prev(); restartAutoplay(); });
     nextBtn?.addEventListener('click', () => { next(); restartAutoplay(); });
@@ -1697,6 +1803,7 @@
     let dragStartOffset = 0;
 
     track.addEventListener('pointerdown', (e) => {
+      if (listMode) return;
       isDragging = true;
       track.classList.add('is-dragging');
       dragStartX = e.clientX;
@@ -1706,7 +1813,7 @@
     });
 
     track.addEventListener('pointermove', (e) => {
-      if (!isDragging) return;
+      if (!isDragging || listMode) return;
       const dx = e.clientX - dragStartX;
       const maxOffset = maxIndex() * (slideWidth + gap);
       const newOffset = clamp(dragStartOffset - dx, 0, maxOffset);
@@ -1728,6 +1835,7 @@
     track.addEventListener('pointercancel', endDrag);
 
     window.addEventListener('resize', debounce(() => {
+      if (listMode) return;
       computeMetrics();
       renderDots();
       goTo(Math.min(index, maxIndex()));
@@ -1749,6 +1857,19 @@
     const form = $('#chatForm');
     const input = $('#chatInput');
     if (!toggle || !panel || !body || !form || !input) return;
+
+    // Voice state (declared early so respond()/speakAnswer() can use them)
+    const voiceToggle = $('#chatVoiceToggle');
+    const volSlider = $('#chatVol');
+    let voiceOn = true;                 // auto-on by default
+    let voiceVol = 0.9;                 // 0..1
+    let currentUtterance = null;
+    try {
+      const sv = localStorage.getItem('agq-chat-voice');
+      if (sv === '0') voiceOn = false;
+      const svv = localStorage.getItem('agq-chat-vol');
+      if (svv != null) voiceVol = Math.max(0, Math.min(1, parseFloat(svv)));
+    } catch (e) {}
 
     const knowledge = [
       { keywords: ['skill', 'skills', 'toolkit', 'tools', 'tech stack', 'technologies'],
@@ -1797,6 +1918,39 @@
       return best ? best.answer : fallback;
     }
 
+    // Adaptive follow-up suggestions based on the last question's topic
+    function followupsFor(text) {
+      const q = text.toLowerCase();
+      if (/skill|tool|tech/.test(q)) return ['Which design tools does she use?', 'Tell me about her QA experience', 'See her projects'];
+      if (/experience|work|intern|twala|role/.test(q)) return ['What did she do at Twala?', 'What are her top skills?', 'Is she available for work?'];
+      if (/project/.test(q)) return ['What tools were used?', 'Tell me about her experience', 'How do I contact her?'];
+      if (/contact|email|reach|hire|available/.test(q)) return ['Where is she based?', 'Can I see her CV?', 'What roles is she open to?'];
+      if (/education|school|study|degree/.test(q)) return ['What are her skills?', 'Tell me about her experience', 'See her projects'];
+      if (/cv|resume|résumé/.test(q)) return ['How do I contact her?', 'What are her skills?', 'Is she available for work?'];
+      return ['What are her skills?', 'Tell me about her experience', 'See her projects', 'How do I contact her?'];
+    }
+
+    function speakAnswer(answer) {
+      if (!voiceOn || !('speechSynthesis' in window)) return;
+      try {
+        speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(answer);
+        const vs = speechSynthesis.getVoices() || [];
+        const fv = vs.find(v => /female|samantha|victoria|karen|zira|susan|hazel|eva|google uk english female|google us english/i.test(v.name)) || vs.find(v => /^en/i.test(v.lang));
+        if (fv) u.voice = fv;
+        u.rate = 1; u.pitch = 1.15; u.volume = voiceVol;
+        u.onstart = () => { toggle.classList.add('is-speaking'); voiceToggle && voiceToggle.classList.add('is-speaking'); };
+        u.onend = () => { toggle.classList.remove('is-speaking'); voiceToggle && voiceToggle.classList.remove('is-speaking'); };
+        currentUtterance = u;
+        speechSynthesis.speak(u);
+      } catch (e) {}
+    }
+    function stopSpeaking() {
+      if ('speechSynthesis' in window) { try { speechSynthesis.cancel(); } catch (e) {} }
+      toggle.classList.remove('is-speaking');
+      voiceToggle && voiceToggle.classList.remove('is-speaking');
+    }
+
     function respond(userText) {
       addMessage(userText, 'user');
 
@@ -1814,29 +1968,34 @@
         typing.remove();
         const answer = findAnswer(userText);
         addMessage(answer, 'bot');
-        if (voiceOn && 'speechSynthesis' in window) {
-          try {
-            speechSynthesis.cancel();
-            const u = new SpeechSynthesisUtterance(answer);
-            const vs = speechSynthesis.getVoices() || [];
-            const fv = vs.find(v => /female|samantha|victoria|karen|zira|susan|hazel|eva|google uk english female|google us english/i.test(v.name)) || vs.find(v => /^en/i.test(v.lang));
-            if (fv) u.voice = fv;
-            u.rate = 1; u.pitch = 1.15; u.onstart = () => toggle.classList.add('is-speaking');
-            u.onend = () => toggle.classList.remove('is-speaking');
-            speechSynthesis.speak(u);
-          } catch (e) {}
-        }
+        speakAnswer(answer);
+        renderQuickReplies(followupsFor(userText)); // adaptive follow-up suggestions
       }, delay);
     }
 
-    function renderQuickReplies() {
+    function renderQuickReplies(prompts) {
+      const list = prompts || quickPrompts;
       quickReplies.innerHTML = '';
-      quickPrompts.forEach(prompt => {
+      list.forEach(prompt => {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'chat-quick-reply';
         btn.textContent = prompt;
-        btn.addEventListener('click', () => respond(prompt));
+        btn.addEventListener('click', () => {
+          if (/see her projects|see projects/i.test(prompt)) {
+            const sec = document.getElementById('projects');
+            if (sec) sec.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' });
+            addMessage(prompt, 'user');
+            addMessage('Scroll down to the Projects section — tap “View all projects” to browse everything with filters and search.', 'bot');
+            return;
+          }
+          if (/can i see her cv|see her cv|her cv/i.test(prompt)) {
+            addMessage(prompt, 'user');
+            addMessage('You can open her CV from the “Preview CV” button in the hero or contact area (it may ask for an access code).', 'bot');
+            return;
+          }
+          respond(prompt);
+        });
         quickReplies.appendChild(btn);
       });
     }
@@ -1855,6 +2014,7 @@
     function closeChat() {
       panel.hidden = true;
       toggle.setAttribute('aria-expanded', 'false');
+      stopSpeaking();          // stop any ongoing voice when the bot is closed
       toggle.focus();
     }
 
@@ -1875,15 +2035,37 @@
       respond(text);
     });
 
-    // Voice: read answers aloud (TTS)
-    let voiceOn = false;
-    const voiceToggle = $('#chatVoiceToggle');
-    voiceToggle?.addEventListener('click', () => {
-      voiceOn = !voiceOn;
+    // Voice: read answers aloud (TTS) — on/off + volume, persisted
+    function reflectVoice() {
+      if (!voiceToggle) return;
       voiceToggle.setAttribute('aria-checked', String(voiceOn));
       voiceToggle.classList.toggle('is-on', voiceOn);
-      if (!voiceOn && 'speechSynthesis' in window) speechSynthesis.cancel();
+      voiceToggle.classList.toggle('is-off', !voiceOn);
+      voiceToggle.title = voiceOn ? 'Voice: on' : 'Voice: off';
+      const wrap = $('#chatVolWrap');
+      if (wrap) wrap.style.display = voiceOn ? '' : 'none';
+    }
+    reflectVoice();
+    if (volSlider) volSlider.value = String(Math.round(voiceVol * 100));
+
+    voiceToggle?.addEventListener('click', () => {
+      voiceOn = !voiceOn;
+      try { localStorage.setItem('agq-chat-voice', voiceOn ? '1' : '0'); } catch (e) {}
+      reflectVoice();
+      if (!voiceOn) stopSpeaking();
+      if (window.__agqSound) window.__agqSound.play('toggle');
     });
+    volSlider?.addEventListener('input', () => {
+      voiceVol = Math.max(0, Math.min(1, (parseInt(volSlider.value, 10) || 0) / 100));
+      try { localStorage.setItem('agq-chat-vol', String(voiceVol)); } catch (e) {}
+    });
+    // On release, preview the new volume by speaking a short cue (so it feels responsive)
+    function previewVolume() {
+      if (!voiceOn || !('speechSynthesis' in window)) return;
+      speakAnswer(voiceVol === 0 ? '' : 'Volume set.');
+    }
+    volSlider?.addEventListener('change', previewVolume);   // fires on release (mouse/touch)
+    volSlider?.addEventListener('keyup', previewVolume);    // keyboard adjust
 
     // Voice: speech-to-text mic input (improved)
     const mic = $('#chatMic');
@@ -3067,7 +3249,6 @@
     const dayEl = $('#dashDay');
     const tzEl = $('#dashTz');
     const sessionEl = $('#dashSession');
-    const factEl = $('#dashFact');
     const started = Date.now();
 
     function greeting(h) {
@@ -3122,23 +3303,6 @@
     }
     sessionTick();
     setInterval(sessionTick, 5000);
-
-    // Rotating fun fact
-    if (factEl && !prefersReducedMotion) {
-      const facts = [
-        'I test my own designs — designer by day, bug-hunter by afternoon.',
-        'High Honors student who genuinely enjoys writing documentation.',
-        'Four concurrent internship roles at Twala — and I loved it.',
-        'I helped take a capstone web app (Signor) to a live release.',
-        'Press "/" anywhere on this site to jump around instantly.'
-      ];
-      let fi = 0;
-      setInterval(() => {
-        fi = (fi + 1) % facts.length;
-        factEl.style.opacity = '0';
-        setTimeout(() => { factEl.textContent = facts[fi]; factEl.style.opacity = '1'; }, 260);
-      }, 6000);
-    }
   }
 
 
@@ -3211,6 +3375,7 @@
     initSnapshot();
     initA11y();
     initRoleMatch();
+    initSkillsView();
     initSectionShare();
     initIdleGreeter();
     initPitch();
