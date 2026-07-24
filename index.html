@@ -37,7 +37,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Playfair+Display:wght@600;700&family=Poppins:wght@500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Sora:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Playfair+Display:wght@600;700&family=Poppins:wght@500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Sora:wght@500;600;700&family=DM+Serif+Display&family=Outfit:wght@400;500;600;700&family=Bricolage+Grotesque:wght@500;600;700&family=Nunito:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="style.css">
 </head>
@@ -86,6 +86,12 @@
       <span class="brand-mark">AGQ</span>
     </a>
 
+    <button class="cmdk-trigger" id="cmdkTrigger" aria-haspopup="dialog" aria-controls="cmdkOverlay" title="Jump to a section (press /)">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.7"/><path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+      <span class="cmdk-trigger-label">Jump to a section</span>
+      <span class="cmdk-kbd mono">/</span>
+    </button>
+
     <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation menu">
       <span></span><span></span>
     </button>
@@ -99,7 +105,7 @@
       <a href="#tools" class="nav-link" data-section="tools"><span>Tools</span></a>
       <a href="#highlights" class="nav-link" data-section="highlights"><span>Highlights</span></a>
       <a href="#honors" class="nav-link" data-section="honors"><span>Honors</span></a>
-      <a href="#community" class="nav-link" data-section="community"><span>Community</span></a>
+      <a href="#community" class="nav-link" data-section="community"><span>Forum</span></a>
       <a href="#contact" class="nav-cta"><span>Contact</span></a>
 
       <div class="nav-tools">
@@ -211,6 +217,10 @@
               <button class="anim-opt" data-font="classic" aria-pressed="false">Classic</button>
               <button class="anim-opt" data-font="modern" aria-pressed="false">Modern</button>
               <button class="anim-opt" data-font="playful" aria-pressed="false">Playful</button>
+              <button class="anim-opt" data-font="elegant" aria-pressed="false">Elegant</button>
+              <button class="anim-opt" data-font="editorial" aria-pressed="false">Editorial</button>
+              <button class="anim-opt" data-font="techy" aria-pressed="false">Techy</button>
+              <button class="anim-opt" data-font="warm" aria-pressed="false">Warm</button>
               <button class="anim-opt" data-font="mono" aria-pressed="false">Mono</button>
             </div>
             <p class="theme-panel-title mono">Corners</p>
@@ -271,17 +281,16 @@
 </header>
 
 <!-- ===== COMMAND PALETTE ===== -->
-<button class="cmdk-fab" id="cmdkTrigger" aria-haspopup="dialog" aria-controls="cmdkOverlay" title="Quick navigation (press /)">
-  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.7"/><path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-  <span class="cmdk-fab-label mono">Quick nav</span>
-  <span class="cmdk-kbd mono">/</span>
+<!-- Mobile-only centered-top search icon (desktop uses the in-nav trigger) -->
+<button class="cmdk-fab-mobile" id="cmdkTriggerMobile" aria-haspopup="dialog" aria-controls="cmdkOverlay" aria-label="Jump to a section">
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.7"/><path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
 </button>
 
 <div class="cmdk-overlay" id="cmdkOverlay" hidden>
   <div class="cmdk-panel" role="dialog" aria-modal="true" aria-label="Quick navigation">
     <div class="cmdk-input-row">
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.6"/><path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-      <input type="text" id="cmdkInput" class="cmdk-input" placeholder="Jump to a section or run a quick action…" autocomplete="off" aria-label="Search sections and actions">
+      <input type="text" id="cmdkInput" class="cmdk-input" placeholder="Jump to a section" autocomplete="off" aria-label="Search sections and actions">
       <span class="cmdk-kbd mono">esc</span>
     </div>
     <ul class="cmdk-list" id="cmdkList" role="listbox"></ul>
@@ -917,7 +926,7 @@
             <span class="mono edu-year">2022—2026</span>
             <div>
               <h4>BS Information Technology</h4>
-              <p>Pampanga State University</p>
+              <p>Pampanga State University · Cum Laude</p>
             </div>
           </article>
           <article class="edu-item">
@@ -980,7 +989,7 @@
   <section id="community" class="section section-alt" aria-label="Community forum">
     <div class="container">
       <div class="section-head" data-reveal>
-        <span class="tag-label">08 — Community</span>
+        <span class="tag-label">08 — Forum</span>
         <h2>Community forum</h2>
         <p class="section-sub">Leave a message, say hi, or ask a question — everyone here can see and reply. Recent visitors show on the right.</p>
         <p class="community-privacy mono">ℹ️ Heads up: posts are public, and your visit (with the name you enter, or “Anonymous”) is logged and shown in Recent visitors.</p>
@@ -993,20 +1002,27 @@
             <span class="community-chat-title">Live community chat</span>
             <span class="community-chat-live mono" id="communityLive">connecting…</span>
           </div>
+          <div class="community-stats" id="communityStats" hidden>
+            <span class="community-stat"><b id="communityMsgCount">0</b> messages</span>
+            <span class="community-stat"><b id="communityVisitorStat">0</b> visitors</span>
+          </div>
           <div class="community-setup" id="communitySetup" hidden>
             <p><b>Live chat isn't connected yet.</b> Add your Supabase URL and key in <code>script.js</code> (see the setup steps) to turn this on.</p>
           </div>
           <div class="community-feed" id="communityFeed" aria-live="polite">
             <p class="community-empty" id="communityEmpty" hidden>No messages yet — be the first to say hello 👋</p>
           </div>
+          <button class="community-jump" id="communityJump" hidden aria-label="Jump to newest messages">↓ New messages</button>
           <form class="community-form" id="communityForm">
             <input type="text" id="communityName" class="community-name" placeholder="Your name" maxlength="40" autocomplete="name" aria-label="Your name">
             <div class="community-send-row">
+              <button type="button" class="community-emoji-btn" id="communityEmojiBtn" aria-label="Insert emoji" title="Insert emoji">😊</button>
               <input type="text" id="communityMessage" class="community-message" placeholder="Write a message…" maxlength="500" autocomplete="off" aria-label="Your message">
               <button type="submit" class="btn btn-primary community-send" id="communitySend" aria-label="Send message">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none"><path d="M4 12l16-8-6 16-3-6-7-2z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
               </button>
             </div>
+            <div class="community-emoji-tray" id="communityEmojiTray" hidden></div>
             <p class="community-note mono" id="communityStatus"></p>
             <span class="community-charcount mono" id="communityCharCount" aria-hidden="true"></span>
           </form>
@@ -1161,24 +1177,28 @@
 
 <div class="chat-panel" id="chatPanel" role="dialog" aria-modal="false" aria-label="Quick chat about Allyssa" hidden>
   <div class="chat-header">
-    <div class="chat-header-info">
-      <span class="chat-avatar mono">AQ</span>
-      <div>
-        <p class="chat-title">Ask about Allyssa</p>
-        <p class="chat-subtitle"><span class="chat-online-dot"></span>Instant answers · not a live chat</p>
+    <div class="chat-header-top">
+      <div class="chat-header-info">
+        <span class="chat-avatar mono">AQ</span>
+        <div class="chat-header-text">
+          <p class="chat-title">Ask about Allyssa</p>
+          <p class="chat-subtitle"><span class="chat-online-dot"></span>Instant answers · not a live chat</p>
+        </div>
+      </div>
+      <button class="chat-close" id="chatClose" aria-label="Close chat">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="chat-header-controls">
+      <button class="chat-lang-toggle" id="chatLangToggle" aria-label="Switch language" title="Switch language">EN</button>
+      <button class="chat-voice-toggle is-on" id="chatVoiceToggle" role="switch" aria-checked="true" aria-label="Read answers aloud" title="Voice: on">
+        <svg class="cvt-on" viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true"><path d="M11 5L6 9H3v6h3l5 4V5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M15.5 8.5a5 5 0 010 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M18.5 6a9 9 0 010 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <svg class="cvt-off" viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true"><path d="M11 5L6 9H3v6h3l5 4V5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M17 9l4 6M21 9l-4 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+      <div class="chat-vol-wrap" id="chatVolWrap">
+        <input type="range" id="chatVol" class="chat-vol" min="0" max="100" value="90" aria-label="Voice volume" title="Voice volume">
       </div>
     </div>
-    <button class="chat-lang-toggle" id="chatLangToggle" aria-label="Switch language" title="Switch language">EN</button>
-    <button class="chat-voice-toggle is-on" id="chatVoiceToggle" role="switch" aria-checked="true" aria-label="Read answers aloud" title="Voice: on">
-      <svg class="cvt-on" viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true"><path d="M11 5L6 9H3v6h3l5 4V5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M15.5 8.5a5 5 0 010 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M18.5 6a9 9 0 010 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-      <svg class="cvt-off" viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true"><path d="M11 5L6 9H3v6h3l5 4V5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M17 9l4 6M21 9l-4 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-    </button>
-    <div class="chat-vol-wrap" id="chatVolWrap">
-      <input type="range" id="chatVol" class="chat-vol" min="0" max="100" value="90" aria-label="Voice volume" title="Voice volume">
-    </div>
-    <button class="chat-close" id="chatClose" aria-label="Close chat">
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-    </button>
   </div>
 
   <div class="chat-body" id="chatBody"></div>

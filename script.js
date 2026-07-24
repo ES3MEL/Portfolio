@@ -1535,6 +1535,7 @@
       { label: 'Tools', hint: 'Software carousel', group: 'Navigate', icon: I.arrow, target: '#tools' },
       { label: 'Highlights', hint: 'Skills & certifications', group: 'Navigate', icon: I.arrow, target: '#highlights' },
       { label: 'Education & Honors', hint: 'Background & awards', group: 'Navigate', icon: I.arrow, target: '#honors' },
+      { label: 'Forum', hint: 'Community live chat', group: 'Navigate', icon: I.arrow, target: '#community' },
       { label: 'Contact', hint: 'Email, socials & form', group: 'Navigate', icon: I.arrow, target: '#contact' },
 
       { label: 'MoodMenu', hint: 'UI/UX · 2024', group: 'Open project', icon: I.proj, run: () => window.__agqOpenProject && window.__agqOpenProject('moodmenu') },
@@ -1638,6 +1639,8 @@
     }
 
     trigger?.addEventListener('click', open);
+    const triggerMobile = $('#cmdkTriggerMobile');
+    triggerMobile?.addEventListener('click', open);
     overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
 
     input.addEventListener('input', () => {
@@ -1915,14 +1918,14 @@
         answer: "Her projects include: MoodMenu (a mood-driven food discovery UI/UX concept), Mobile Banking (a clean banking app concept), ClassIQ Web Application (a classroom app with a full visual system + manual QA), Signor Website (her capstone — UI/UX + QA, now live), Golden Pups, and this Personal Portfolio itself. Open the Projects section and tap 'View all projects' for the full breakdown of each.",
         fil: "Kasama sa mga proyekto niya: MoodMenu (mood-driven food discovery UI/UX concept), Mobile Banking (malinis na banking app concept), ClassIQ Web Application (classroom app na may kompletong visual system + manual QA), Signor Website (ang capstone niya — UI/UX + QA, live na), Golden Pups, at itong Personal Portfolio mismo. Buksan ang Projects section at pindutin ang 'View all projects' para sa buong detalye." },
       { keywords: ['education', 'school', 'university', 'study', 'studied', 'degree', 'psu', 'course', 'pampanga state', 'pag-aaral', 'eskwela', 'kurso'],
-        answer: "She's completing a BS in Information Technology at Pampanga State University (2022–2026). She finished Senior High (ABM) at Pampanga State University with High Honors (2020–2022), and Junior High at Wenceslao Village High School, also with High Honors (2016–2020).",
-        fil: "Tinatapos niya ang BS in Information Technology sa Pampanga State University (2022–2026). Natapos niya ang Senior High (ABM) sa Pampanga State University nang may High Honors (2020–2022), at Junior High sa Wenceslao Village High School, may High Honors din (2016–2020)." },
+        answer: "She's completing a BS in Information Technology at Pampanga State University (2022–2026) as a Cum Laude. She finished Senior High (ABM) at Pampanga State University with High Honors (2020–2022), and Junior High at Wenceslao Village High School, also with High Honors (2016–2020).",
+        fil: "Tinatapos niya ang BS in Information Technology sa Pampanga State University (2022–2026) bilang Cum Laude. Natapos niya ang Senior High (ABM) sa Pampanga State University nang may High Honors (2020–2022), at Junior High sa Wenceslao Village High School, may High Honors din (2016–2020)." },
       { keywords: ['certification', 'certifications', 'certificate', 'certificates', 'sertipiko', 'kurso online'],
         answer: "Her certifications include: Project Management: Beginner to PM (Udemy, 2026), Business Analysis Fundamentals — IIBA Endorsed (Udemy, 2026), AI Learning Modules (AIClassASEAN.org, 2026), Project Management & Business Analysis Basics (SimpliLearn, 2026), UI/UX Design (Udemy, 2025), and Cloud Computing Fundamentals (IBM SkillsBuild, 2025).",
         fil: "Kasama sa mga sertipiko niya: Project Management: Beginner to PM (Udemy, 2026), Business Analysis Fundamentals — IIBA Endorsed (Udemy, 2026), AI Learning Modules (AIClassASEAN.org, 2026), Project Management at Business Analysis Basics (SimpliLearn, 2026), UI/UX Design (Udemy, 2025), at Cloud Computing Fundamentals (IBM SkillsBuild, 2025)." },
       { keywords: ['award', 'awards', 'honor', 'honors', 'lister', 'dean', 'president', 'recognition', 'parangal', 'karangalan'],
-        answer: "She's earned several honors at CCS: Top 19 Awardee (3rd Year, 2nd Sem, 2025), President's Lister (3rd Year 1st Sem 2025, and 2nd Year 2024), and Dean's Lister (1st Year, 2023) — plus High Honors in both senior and junior high.",
-        fil: "May ilang karangalan siya sa CCS: Top 19 Awardee (3rd Year, 2nd Sem, 2025), President's Lister (3rd Year 1st Sem 2025, at 2nd Year 2024), at Dean's Lister (1st Year, 2023) — pati High Honors noong senior at junior high." },
+        answer: "She's graduating Cum Laude, and has earned several honors at CCS: Top 19 Awardee (3rd Year, 2nd Sem, 2025), President's Lister (3rd Year 1st Sem 2025, and 2nd Year 2024), and Dean's Lister (1st Year, 2023) — plus High Honors in both senior and junior high.",
+        fil: "Magtatapos siya nang Cum Laude, at may ilang karangalan siya sa CCS: Top 19 Awardee (3rd Year, 2nd Sem, 2025), President's Lister (3rd Year 1st Sem 2025, at 2nd Year 2024), at Dean's Lister (1st Year, 2023) — pati High Honors noong senior at junior high." },
       { keywords: ['tool', 'tools', 'software', 'app', 'apps', 'ginagamit', 'gamit'],
         answer: "Day-to-day she works with Figma, Adobe Photoshop and Illustrator, Canva, Webflow, Intercom, ClickUp, and the Microsoft/Google productivity suites — covering design, development, testing, and delivery.",
         fil: "Araw-araw, gumagamit siya ng Figma, Adobe Photoshop at Illustrator, Canva, Webflow, Intercom, ClickUp, at ng Microsoft/Google productivity suites — para sa design, development, testing, at delivery." },
@@ -2642,25 +2645,85 @@
       return `hsl(${h} 65% 55%)`;
     }
 
-    function addMessageEl(row, prepend) {
+    // Track the current user's display name to align their own messages
+    function myName() {
+      try { return (localStorage.getItem('agq-community-name') || '').trim(); } catch (e) { return ''; }
+    }
+    // Track IDs of messages this browser created, so they can be deleted
+    function mineIds() {
+      try { return JSON.parse(localStorage.getItem('agq-community-mine') || '[]'); } catch (e) { return []; }
+    }
+    function rememberMine(id) {
+      try { const a = mineIds(); if (!a.includes(id)) { a.push(id); localStorage.setItem('agq-community-mine', JSON.stringify(a.slice(-200))); } } catch (e) {}
+    }
+    function isMineId(id) { return mineIds().includes(id); }
+    async function deleteMessage(id, el) {
+      const { error } = await sb.from('messages').delete().eq('id', id);
+      if (error) {
+        console.error('[community] delete failed:', error);
+        if (statusEl) statusEl.textContent = 'Delete failed: ' + (error.message || 'unknown');
+        return;
+      }
+      if (el && el.parentNode) el.parentNode.removeChild(el);
+      msgCount = Math.max(0, msgCount - 1);
+      if (msgCountEl) msgCountEl.textContent = msgCount.toLocaleString();
+    }
+    let lastSender = null;
+    let msgCount = 0;
+    const msgCountEl = $('#communityMsgCount');
+    const statsBar = $('#communityStats');
+    const jumpBtn = $('#communityJump');
+
+    function nearBottom() {
+      if (!feed) return true;
+      return feed.scrollHeight - feed.scrollTop - feed.clientHeight < 80;
+    }
+
+    function addMessageEl(row, opts) {
       if (!feed) return;
       if (emptyMsg) emptyMsg.hidden = true;
       const who = row.name && row.name.trim() ? row.name.trim() : 'Anonymous';
+      const mine = myName() && who.toLowerCase() === myName().toLowerCase();
+      const grouped = lastSender === who; // consecutive message from same person
+      const wasNear = nearBottom();
+
       const wrap = document.createElement('div');
-      wrap.className = 'community-msg';
+      wrap.className = 'community-msg' + (mine ? ' is-mine' : '') + (grouped ? ' is-grouped' : '');
+      if (row.id != null) wrap.setAttribute('data-mid', row.id);
       const av = document.createElement('span');
       av.className = 'community-msg-av'; av.textContent = initials(who);
       av.style.background = colorFor(who);
+      if (grouped) av.style.visibility = 'hidden';
       const bubble = document.createElement('div'); bubble.className = 'community-msg-bubble';
-      const head = document.createElement('div'); head.className = 'community-msg-head';
-      const nameEl = document.createElement('span'); nameEl.className = 'community-msg-who'; nameEl.textContent = who;
-      const time = document.createElement('span'); time.className = 'community-msg-time mono'; time.textContent = fmtTime(row.created_at);
-      head.append(nameEl, time);
+      if (!grouped) {
+        const head = document.createElement('div'); head.className = 'community-msg-head';
+        const nameEl = document.createElement('span'); nameEl.className = 'community-msg-who'; nameEl.textContent = mine ? 'You' : who;
+        const time = document.createElement('span'); time.className = 'community-msg-time mono'; time.textContent = fmtTime(row.created_at);
+        head.append(nameEl, time);
+        bubble.append(head);
+      }
       const text = document.createElement('p'); text.className = 'community-msg-text'; text.textContent = row.message;
-      bubble.append(head, text);
+      bubble.append(text);
+      // Delete button for this browser's own messages
+      if (row.id != null && isMineId(row.id)) {
+        const del = document.createElement('button');
+        del.type = 'button'; del.className = 'community-msg-del'; del.textContent = 'Delete';
+        del.setAttribute('aria-label', 'Delete your message');
+        del.addEventListener('click', () => {
+          if (confirm('Delete this message?')) deleteMessage(row.id, wrap);
+        });
+        bubble.append(del);
+      }
       wrap.append(av, bubble);
       feed.appendChild(wrap);
-      feed.scrollTop = feed.scrollHeight;
+      lastSender = who;
+      msgCount++;
+      if (msgCountEl) msgCountEl.textContent = msgCount.toLocaleString();
+      if (statsBar) statsBar.hidden = false;
+
+      // Auto-scroll only if the user is already near the bottom (or it's their own message)
+      if (wasNear || mine || (opts && opts.initial)) { feed.scrollTop = feed.scrollHeight; if (jumpBtn) jumpBtn.hidden = true; }
+      else if (jumpBtn) jumpBtn.hidden = false;
     }
 
     // Load recent messages
@@ -2668,14 +2731,43 @@
       .then(({ data, error }) => {
         if (error) { if (statusEl) statusEl.textContent = 'Could not load messages.'; return; }
         if (!data || !data.length) { if (emptyMsg) emptyMsg.hidden = false; return; }
-        data.forEach(row => addMessageEl(row));
+        data.forEach(row => addMessageEl(row, { initial: true }));
       });
+
+    // Jump-to-newest button
+    jumpBtn?.addEventListener('click', () => {
+      if (feed) feed.scrollTop = feed.scrollHeight;
+      jumpBtn.hidden = true;
+    });
+    feed?.addEventListener('scroll', () => { if (nearBottom() && jumpBtn) jumpBtn.hidden = true; });
+
+    // Emoji quick-insert tray
+    const emojiBtn = $('#communityEmojiBtn');
+    const emojiTray = $('#communityEmojiTray');
+    const EMOJIS = ['😊','😂','❤️','👍','🎉','🔥','👏','🙌','✨','😍','🤝','💯','🙏','😎','👀','💡'];
+    if (emojiBtn && emojiTray) {
+      EMOJIS.forEach(em => {
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'community-emoji'; b.textContent = em;
+        b.addEventListener('click', () => {
+          if (msgInput) { msgInput.value += em; msgInput.focus(); msgInput.dispatchEvent(new Event('input')); }
+        });
+        emojiTray.appendChild(b);
+      });
+      emojiBtn.addEventListener('click', () => { emojiTray.hidden = !emojiTray.hidden; });
+    }
 
     // Realtime: new messages appear instantly for everyone
     const liveEl = $('#communityLive');
     sb.channel('public:messages')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
         addMessageEl(payload.new);
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'messages' }, (payload) => {
+        const id = payload.old && payload.old.id;
+        if (id == null || !feed) return;
+        const node = feed.querySelector(`[data-mid="${id}"]`);
+        if (node && node.parentNode) { node.parentNode.removeChild(node); msgCount = Math.max(0, msgCount - 1); if (msgCountEl) msgCountEl.textContent = msgCount.toLocaleString(); }
       })
       .subscribe((status) => {
         if (liveEl) {
@@ -2732,12 +2824,14 @@
 
       try { if (name) localStorage.setItem('agq-community-name', name); } catch (err) {}
       if (statusEl) statusEl.textContent = 'Sending…';
-      const { error } = await sb.from('messages').insert({ name: name || 'Anonymous', message });
+      const { data, error } = await sb.from('messages').insert({ name: name || 'Anonymous', message }).select();
       if (error) {
         console.error('[community] message insert failed:', error);
         if (statusEl) statusEl.textContent = 'Message failed: ' + (error.message || 'unknown error');
         return;
       }
+      // Remember this message's id as "mine" so it can be deleted later
+      if (data && data[0] && data[0].id != null) rememberMine(data[0].id);
       lastPostAt = Date.now(); lastPostText = message; postsThisSession++;
       if (msgInput) msgInput.value = '';
       updateCount();
@@ -2777,6 +2871,8 @@
       renderVisitors(data);
       const { count } = await sb.from('visitors').select('*', { count: 'exact', head: true });
       if (visitorCount && typeof count === 'number') visitorCount.textContent = '· ' + count.toLocaleString() + ' total';
+      const vStat = $('#communityVisitorStat');
+      if (vStat && typeof count === 'number') { vStat.textContent = count.toLocaleString(); if (statsBar) statsBar.hidden = false; }
     })();
 
     // Realtime visitor updates
