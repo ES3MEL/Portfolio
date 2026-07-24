@@ -1191,6 +1191,8 @@ html{ scrollbar-width:thin; scrollbar-color:var(--grad-2) var(--bg); }
 }
 .cert-row:hover{ color:var(--text); padding-left:6px; }
 .cert-row span:first-child{ color:var(--grad-3); min-width:44px; flex-shrink:0; }
+.cert-row--highlight{ color:var(--text); font-weight:600; }
+.cert-row--highlight span:last-child{ background:linear-gradient(90deg, var(--grad-2), var(--grad-3)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
 
 /* =========================================================
    CONTACT
@@ -2957,14 +2959,19 @@ img, svg, video, canvas, iframe, table, pre{ max-width:100%; }
 .community-visitors{ background:var(--bg-panel); border:1px solid var(--border); border-radius:20px; padding:20px 22px; box-shadow:var(--shadow-md); position:sticky; top:90px; }
 .community-visitors-title{ font-size:.98rem; margin-bottom:16px; display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
 .community-visitor-count{ font-size:.68rem; color:var(--text-faint); font-weight:400; }
-.community-visitor-list{ list-style:none; display:flex; flex-direction:column; gap:12px; max-height:380px; overflow-y:auto; }
-.community-visitor{ display:flex; align-items:center; gap:10px; font-size:.86rem; padding-bottom:12px; border-bottom:1px solid var(--border); }
-.community-visitor:last-child{ border-bottom:none; padding-bottom:0; }
-.community-visitor-dot{ width:8px; height:8px; border-radius:50%; background:var(--grad-3); flex-shrink:0; box-shadow:0 0 6px var(--grad-3); }
-.community-visitor-name{ color:var(--text); font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.community-visitor-time{ margin-left:auto; font-size:.64rem; color:var(--text-faint); flex-shrink:0; }
+.community-visitor-list{ list-style:none; display:flex; flex-direction:column; gap:6px; max-height:400px; overflow-y:auto; }
+.community-visitor{ display:flex; align-items:center; gap:11px; font-size:.86rem; padding:8px; border-radius:12px; transition:background .18s; }
+.community-visitor:hover{ background:var(--bg-panel-2); }
+.community-visitor-av{ width:32px; height:32px; flex-shrink:0; border-radius:50%; display:grid; place-items:center; font-size:.68rem; font-weight:700; color:#fff; font-family:var(--font-mono); box-shadow:0 2px 6px -2px rgba(0,0,0,.35); }
+.community-visitor-info{ min-width:0; display:flex; flex-direction:column; gap:1px; }
+.community-visitor-name{ color:var(--text); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.community-visitor-time{ font-size:.64rem; color:var(--text-faint); }
 .community-visitors-note{ margin-top:16px; padding-top:14px; border-top:1px solid var(--border); font-size:.66rem; color:var(--text-faint); line-height:1.5; }
 @media (max-width:860px){ .community-visitors{ position:static; } }
+
+/* Message links */
+.community-msg-link{ color:var(--grad-3); text-decoration:underline; overflow-wrap:anywhere; }
+.community-msg.is-mine .community-msg-link{ color:#fff; }
 
 
 /* Community privacy notice */
@@ -3010,3 +3017,28 @@ img, svg, video, canvas, iframe, table, pre{ max-width:100%; }
 .community-msg:hover .community-msg-del, .community-msg.is-mine .community-msg-del{ opacity:.7; }
 .community-msg-del:hover{ color:#ff5f57; opacity:1; }
 .community-msg.is-mine .community-msg-del{ align-self:flex-end; }
+
+/* =========================================================
+   COMMUNITY — reactions
+========================================================= */
+.community-msg-reacts{ display:flex; flex-wrap:wrap; gap:5px; margin-top:6px; }
+.community-msg.is-mine .community-msg-reacts{ justify-content:flex-end; }
+.community-react{
+  display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:100px;
+  background:var(--bg); border:1px solid var(--border); cursor:pointer; font-size:.75rem;
+  color:var(--text-dim); transition:border-color .15s, background .15s, transform .12s;
+}
+.community-react:hover{ border-color:var(--grad-3); transform:translateY(-1px); }
+.community-react.is-picked{ background:color-mix(in srgb, var(--grad-3) 16%, transparent); border-color:var(--grad-3); color:var(--text); }
+.community-react-em{ font-size:.85rem; line-height:1; }
+.community-react-n{ font-family:var(--font-mono); font-size:.68rem; min-width:6px; }
+.community-react-n:empty{ display:none; }
+
+/* Rotating eyebrow phrases (crossfade) */
+.eyebrow-rotate{ position:relative; display:inline-grid; }
+.eyebrow-phrase{
+  grid-area:1 / 1; white-space:nowrap; opacity:0; transform:translateY(6px);
+  transition:opacity .5s var(--ease), transform .5s var(--ease); pointer-events:none;
+}
+.eyebrow-phrase.is-active{ opacity:1; transform:translateY(0); pointer-events:auto; }
+@media (prefers-reduced-motion: reduce){ .eyebrow-phrase{ transition:none; } }

@@ -499,7 +499,7 @@
   function initPitch() {
     const btn = $('#pitchBtn'), line = $('#pitchLine');
     if (!btn || !line) return;
-    const text = "I'm Allyssa — an IT student who designs user-centered interfaces, tests them until they're solid, and writes the documentation that keeps a team aligned. I work across UI/UX design, QA, and business analysis, and I'm looking for a role where I can help ship thoughtful, reliable products. Let's build something great together.";
+    const text = "I'm Allyssa — an IT graduate who designs user-centered interfaces, tests them until they're solid, and writes the documentation that keeps a team aligned. I work across UI/UX design, QA, and business analysis, and I'm looking for a role where I can help ship thoughtful, reliable products. Let's build something great together.";
     const label = btn.querySelector('span');
     const origLabel = label ? label.textContent : '';
     let typing = false, speaking = false;
@@ -557,6 +557,20 @@
   }
 
   /* ---------- Skills grid/list view toggle ---------- */
+  /* ---------- Rotating hero eyebrow ---------- */
+  function initEyebrowRotate() {
+    const wrap = $('#eyebrowRotate');
+    if (!wrap) return;
+    const phrases = $$('.eyebrow-phrase', wrap);
+    if (phrases.length < 2) return;
+    let i = 0;
+    setInterval(() => {
+      phrases[i].classList.remove('is-active');
+      i = (i + 1) % phrases.length;
+      phrases[i].classList.add('is-active');
+    }, 3200);
+  }
+
   function initSkillsView() {
     const toggle = $('#skillsViewToggle');
     const groups = $('#skillGroups');
@@ -1948,8 +1962,8 @@
         answer: "This site has light and dark modes plus font and accent options — use the controls in the top nav and the design panel. You can also press the T key to toggle the theme.",
         fil: "May light at dark mode ang site pati font at accent options — gamitin ang mga kontrol sa itaas at sa design panel. Maaari mo ring pindutin ang T key para palitan ang tema." },
       { keywords: ['who', 'about', 'herself', 'sino', 'tungkol'],
-        answer: "Allyssa Geanne Quinit is an Information Technology student who has spent the past year moving between interface design, manual QA, and product documentation at Twala (Ohelio, Inc.). She's now looking for a junior role where she can bring all three together.",
-        fil: "Si Allyssa Geanne Quinit ay isang Information Technology student na ginugol ang nakaraang taon sa interface design, manual QA, at product documentation sa Twala (Ohelio, Inc.). Naghahanap siya ngayon ng junior role kung saan pwede niyang pagsamahin ang tatlong ito." },
+        answer: "Allyssa Geanne Quinit is an Information Technology graduate with experience in UI/UX design, manual QA, business analysis, and product documentation — built through academic projects and an internship at Twala (Ohelio, Inc.). She's now seeking a junior role where she can apply her skills and keep growing.",
+        fil: "Si Allyssa Geanne Quinit ay isang Information Technology graduate na may karanasan sa UI/UX design, manual QA, business analysis, at product documentation — mula sa academic projects at internship sa Twala (Ohelio, Inc.). Naghahanap siya ngayon ng junior role kung saan magagamit niya ang kanyang kasanayan at patuloy na matututo." },
       { keywords: ['hello', 'hi', 'hey', 'sup', 'kumusta', 'kamusta', 'musta'],
         answer: "Hi! Ask me anything about Allyssa's skills, experience, projects, education, certifications, or how to get in touch.",
         fil: "Kumusta! Magtanong ka tungkol sa skills, karanasan, proyekto, pag-aaral, sertipiko ni Allyssa, o kung paano siya makokontak." },
@@ -2657,6 +2671,73 @@
       try { const a = mineIds(); if (!a.includes(id)) { a.push(id); localStorage.setItem('agq-community-mine', JSON.stringify(a.slice(-200))); } } catch (e) {}
     }
     function isMineId(id) { return mineIds().includes(id); }
+
+    // ---- Reactions (shared via Supabase, realtime) ----
+    // A stable per-browser id so each visitor reacts once per emoji.
+    function clientId() {
+      let c;
+      try { c = localStorage.getItem('agq-client-id'); } catch (e) {}
+      if (!c) { c = 'c_' + Math.random().toString(36).slice(2) + Date.now().toString(36); try { localStorage.setItem('agq-client-id', c); } catch (e) {} }
+      return c;
+    }
+    const CID = clientId();
+    // reactionData[messageId][emoji] = Set of client ids
+    const reactionData = {};
+    function ensureR(mid) { if (!reactionData[mid]) reactionData[mid] = {}; return reactionData[mid]; }
+    function countReacts(id, em) { const m = reactionData[id]; return (m && m[em]) ? m[em].size : 0; }
+    function iReacted(id, em) { const m = reactionData[id]; return !!(m && m[em] && m[em].has(CID)); }
+
+    function applyReaction(mid, em, cid, add) {
+      const m = ensureR(mid);
+      if (!m[em]) m[em] = new Set();
+      if (add) m[em].add(cid); else m[em].delete(cid);
+      // update any visible button for this message+emoji
+      const node = feed && feed.querySelector(`[data-mid="${mid}"]`);
+      if (node) {
+        const btn = node.querySelector(`.community-react[data-em="${em}"]`);
+        if (btn) {
+          btn.classList.toggle('is-picked', iReacted(mid, em));
+          const n = btn.querySelector('.community-react-n');
+          const c = countReacts(mid, em);
+          if (n) n.textContent = c > 0 ? c : '';
+        }
+      }
+    }
+
+    async function toggleReact(id, em, btn) {
+      if (id == null) return;
+      const had = iReacted(id, em);
+      // optimistic UI
+      applyReaction(id, em, CID, !had);
+      try {
+        if (had) {
+          await sb.from('reactions').delete().eq('message_id', id).eq('emoji', em).eq('client_id', CID);
+        } else {
+          await sb.from('reactions').insert({ message_id: id, emoji: em, client_id: CID });
+        }
+      } catch (e) {
+        console.error('[community] reaction failed:', e);
+        applyReaction(id, em, CID, had); // revert
+      }
+    }
+
+    // Load existing reactions once, then keep them live
+    (async function loadReactions() {
+      try {
+        const { data } = await sb.from('reactions').select('message_id,emoji,client_id').limit(5000);
+        (data || []).forEach(r => { const m = ensureR(r.message_id); if (!m[r.emoji]) m[r.emoji] = new Set(); m[r.emoji].add(r.client_id); });
+        // refresh any already-rendered buttons
+        Object.keys(reactionData).forEach(mid => Object.keys(reactionData[mid]).forEach(em => applyReaction(mid, em, '__noop__', false)));
+      } catch (e) {}
+    })();
+    sb.channel('public:reactions')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'reactions' }, (p) => {
+        const r = p.new; if (r) applyReaction(r.message_id, r.emoji, r.client_id, true);
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'reactions' }, (p) => {
+        const r = p.old; if (r) applyReaction(r.message_id, r.emoji, r.client_id, false);
+      })
+      .subscribe();
     async function deleteMessage(id, el) {
       const { error } = await sb.from('messages').delete().eq('id', id);
       if (error) {
@@ -2702,10 +2783,39 @@
         head.append(nameEl, time);
         bubble.append(head);
       }
-      const text = document.createElement('p'); text.className = 'community-msg-text'; text.textContent = row.message;
+      const text = document.createElement('p'); text.className = 'community-msg-text';
+      // Auto-linkify URLs (safe: build via DOM, escape everything else)
+      const parts = String(row.message).split(/(https?:\/\/[^\s]+)/g);
+      parts.forEach(part => {
+        if (/^https?:\/\//.test(part)) {
+          const a = document.createElement('a');
+          a.href = part; a.target = '_blank'; a.rel = 'noopener noreferrer nofollow';
+          a.className = 'community-msg-link'; a.textContent = part;
+          text.appendChild(a);
+        } else if (part) {
+          text.appendChild(document.createTextNode(part));
+        }
+      });
       bubble.append(text);
-      // Delete button for this browser's own messages
-      if (row.id != null && isMineId(row.id)) {
+
+      // Reactions row
+      const reactRow = document.createElement('div');
+      reactRow.className = 'community-msg-reacts';
+      const REACTS = ['👍','❤️','😂','🎉','👏'];
+      REACTS.forEach(em => {
+        const rb = document.createElement('button');
+        rb.type = 'button'; rb.className = 'community-react' + (iReacted(row.id, em) ? ' is-picked' : '');
+        rb.setAttribute('data-em', em);
+        const c0 = countReacts(row.id, em);
+        rb.innerHTML = `<span class="community-react-em">${em}</span><span class="community-react-n">${c0 > 0 ? c0 : ''}</span>`;
+        rb.setAttribute('aria-label', 'React ' + em);
+        rb.addEventListener('click', () => toggleReact(row.id, em, rb));
+        reactRow.appendChild(rb);
+      });
+      bubble.append(reactRow);
+
+      // Delete button for this browser's own messages (by stored id OR name match)
+      if (mine || (row.id != null && isMineId(row.id))) {
         const del = document.createElement('button');
         del.type = 'button'; del.className = 'community-msg-del'; del.textContent = 'Delete';
         del.setAttribute('aria-label', 'Delete your message');
@@ -2832,6 +2942,7 @@
       }
       // Remember this message's id as "mine" so it can be deleted later
       if (data && data[0] && data[0].id != null) rememberMine(data[0].id);
+      if (name) updateVisitorName(name);
       lastPostAt = Date.now(); lastPostText = message; postsThisSession++;
       if (msgInput) msgInput.value = '';
       updateCount();
@@ -2839,31 +2950,52 @@
     });
 
     // ---- Visitor log ----
+    function relTime(ts) {
+      const d = new Date(ts).getTime();
+      if (isNaN(d)) return '';
+      const s = Math.floor((Date.now() - d) / 1000);
+      if (s < 60) return 'just now';
+      if (s < 3600) return Math.floor(s / 60) + 'm ago';
+      if (s < 86400) return Math.floor(s / 3600) + 'h ago';
+      return Math.floor(s / 86400) + 'd ago';
+    }
     function renderVisitors(rows) {
       if (!visitorList) return;
       visitorList.innerHTML = '';
+      // De-duplicate by name (keep most recent), so the list feels like "who's around"
+      const seen = new Set(); const uniq = [];
       (rows || []).forEach(v => {
+        const key = (v.name && v.name.trim() ? v.name.trim() : 'Anonymous').toLowerCase();
+        if (key !== 'anonymous' && seen.has(key)) return;
+        if (key !== 'anonymous') seen.add(key);
+        uniq.push(v);
+      });
+      uniq.slice(0, 14).forEach(v => {
+        const nm = v.name && v.name.trim() ? v.name.trim() : 'Anonymous';
         const li = document.createElement('li');
         li.className = 'community-visitor';
-        const dot = document.createElement('span'); dot.className = 'community-visitor-dot';
-        const nm = document.createElement('span'); nm.className = 'community-visitor-name';
-        nm.textContent = v.name && v.name.trim() ? v.name.trim() : 'Anonymous';
-        const t = document.createElement('span'); t.className = 'community-visitor-time mono'; t.textContent = fmtTime(v.created_at);
-        li.append(dot, nm, t);
+        const av = document.createElement('span');
+        av.className = 'community-visitor-av'; av.textContent = initials(nm); av.style.background = colorFor(nm);
+        const info = document.createElement('div'); info.className = 'community-visitor-info';
+        const name = document.createElement('span'); name.className = 'community-visitor-name'; name.textContent = nm;
+        const t = document.createElement('span'); t.className = 'community-visitor-time mono'; t.textContent = relTime(v.created_at);
+        info.append(name, t);
+        li.append(av, info);
         visitorList.appendChild(li);
       });
     }
 
-    // Log this visit once per browser session
+    // Log this visit once per browser session; update the name if they set it later
+    let myVisitId = null;
+    try { myVisitId = sessionStorage.getItem('agq-visit-id'); } catch (e) {}
+
     (async function logVisit() {
-      let already = false;
-      try { already = sessionStorage.getItem('agq-visit-logged') === '1'; } catch (e) {}
-      let vname = 'Anonymous';
-      try { vname = localStorage.getItem('agq-community-name') || 'Anonymous'; } catch (e) {}
-      if (!already) {
+      let vname = '';
+      try { vname = (localStorage.getItem('agq-community-name') || '').trim(); } catch (e) {}
+      if (!myVisitId) {
         try {
-          await sb.from('visitors').insert({ name: vname });
-          sessionStorage.setItem('agq-visit-logged', '1');
+          const { data } = await sb.from('visitors').insert({ name: vname || 'Anonymous' }).select();
+          if (data && data[0]) { myVisitId = data[0].id; try { sessionStorage.setItem('agq-visit-id', String(myVisitId)); } catch (e) {} }
         } catch (e) {}
       }
       // Load recent visitors + total count
@@ -2874,6 +3006,21 @@
       const vStat = $('#communityVisitorStat');
       if (vStat && typeof count === 'number') { vStat.textContent = count.toLocaleString(); if (statsBar) statsBar.hidden = false; }
     })();
+
+    // When the user types/sets their name, update their visitor row so it isn't "Anonymous"
+    async function updateVisitorName(newName) {
+      const n = (newName || '').trim();
+      if (!n || !myVisitId) return;
+      try { await sb.from('visitors').update({ name: n }).eq('id', myVisitId); } catch (e) {}
+    }
+    let nameSaveTimer = null;
+    nameInput?.addEventListener('input', () => {
+      clearTimeout(nameSaveTimer);
+      nameSaveTimer = setTimeout(() => {
+        const n = (nameInput.value || '').trim();
+        if (n) { try { localStorage.setItem('agq-community-name', n); } catch (e) {} updateVisitorName(n); }
+      }, 700);
+    });
 
     // Realtime visitor updates
     sb.channel('public:visitors')
@@ -3795,6 +3942,7 @@
     initA11y();
     initRoleMatch();
     initSkillsView();
+    initEyebrowRotate();
     initCommunity();
     initSectionShare();
     initIdleGreeter();
