@@ -805,6 +805,7 @@
     function isSleepyNow() { const h = new Date().getHours(); return h >= 12 && h < 15; }
 
     let hovering = false;
+    let manualHint = false;   // when true, apply() won't overwrite the sleep-note text
     function apply() {
       const night = isNightNow();
       const sleepy = !night && isSleepyNow();
@@ -822,9 +823,17 @@
       img.style.opacity = (showSleep || showSleepy) ? '0' : '1';
       if (sleepImg) sleepImg.style.opacity = showSleep ? '1' : '0';
       if (sleepyImg) sleepyImg.style.opacity = showSleepy ? '1' : '0';
-      // Friendly sleeping caption — only while actually sleeping (night, not hovering)
+      // Friendly sleeping caption — only while actually sleeping (night, not awake).
+      // But don't clobber a manual hint (e.g. "Tap again to let me rest") when one is active.
       const note = $('#avatarSleepNote');
-      if (note) note.classList.toggle('is-show', state === 'sleeping');
+      if (note && !manualHint) {
+        if (state === 'sleeping') {
+          note.innerHTML = '<span class="asn-emoji">😴</span> Shhh… I\'m asleep. <b>Tap to wake me up!</b>';
+          note.classList.add('is-show');
+        } else {
+          note.classList.remove('is-show');
+        }
+      }
     }
     apply();
     // Re-check every 30s so it flips automatically if the clock crosses the boundary
@@ -865,8 +874,8 @@
     function setHint(text) {
       const note = $('#avatarSleepNote');
       if (!note) return;
-      if (text) { note.textContent = text; note.classList.add('is-show'); }
-      else { note.classList.remove('is-show'); }
+      if (text) { manualHint = true; note.textContent = text; note.classList.add('is-show'); }
+      else { manualHint = false; note.classList.remove('is-show'); }
     }
 
     // Profile is TAP/CLICK only (no hover-to-wake) so it behaves the same on
@@ -917,22 +926,30 @@
         // step 2 -> back to sleep
         nightWakeStep = 0;
         hovering = false;
+        setHint('');        // clear manual hint so apply() can restore the sleep caption
         apply();
         showBubble('Goodnight… 😴💤');
-        clearTimeout(wakeHintTimer);
-        wakeHintTimer = setTimeout(() => setHint(''), 400);
         return;
       }
 
-      // Daytime / sleepy: single tap wakes to the normal photo
-      if (sleepy || !hovering) {
+      // Daytime / sleepy: tap wakes; if in sleepy window, a second tap lets her rest again
+      if (sleepy) {
+        if (!hovering) {
+          // wake up from the sleepy state
+          hovering = true; apply(); playWakeFx();
+          showBubble(greetings[Math.floor(Math.random() * greetings.length)]);
+          setHint('Tap again to let me rest ☕');
+        } else {
+          // let her rest again → back to the sleepy photo
+          hovering = false; apply();
+          showBubble('Mmm… back to my break ☕😴');
+          setHint('');
+        }
+      } else {
+        // Pure daytime: just a friendly greeting + sparkle each tap
         hovering = true; apply(); playWakeFx();
         showBubble(greetings[Math.floor(Math.random() * greetings.length)]);
-        if (sleepy) setHint('Tap again to let me rest ☕'); else setHint('');
-      } else {
-        // already awake in daytime → just a friendly greeting + sparkle
-        playWakeFx();
-        showBubble(greetings[Math.floor(Math.random() * greetings.length)]);
+        setHint('');
       }
       if (window.__agqUnlock) window.__agqUnlock('avatar');
     });
@@ -1751,8 +1768,15 @@
     function goTo(i) {
       if (listMode) return;
       index = clamp(i, 0, maxIndex());
-      currentOffset = index * (slideWidth + gap);
-      track.style.transform = `translateX(-${currentOffset}px)`;
+      // Base offset to bring slide[index] to the left edge
+      let offset = index * (slideWidth + gap);
+      // If only one slide is visible (mobile), center it within the viewport
+      if (visibleCount <= 1) {
+        const centerPad = (viewport.clientWidth - slideWidth) / 2;
+        offset -= Math.max(0, centerPad);
+      }
+      currentOffset = offset;
+      track.style.transform = `translateX(${-currentOffset}px)`;
       $$('.carousel-dot', dotsContainer).forEach((d, di) => d.classList.toggle('is-active', di === index));
     }
 
@@ -1760,7 +1784,9 @@
     function prev() { goTo(index - 1 < 0 ? maxIndex() : index - 1); }
 
     function startAutoplay() {
-      if (prefersReducedMotion || listMode) return;
+      if (listMode) return;
+      stopAutoplay();
+      if (slides().length <= visibleCount) return; // nothing to scroll
       autoplayId = setInterval(next, 4200);
     }
     function stopAutoplay() { if (autoplayId) clearInterval(autoplayId); autoplayId = null; }
@@ -1794,8 +1820,15 @@
     prevBtn?.addEventListener('click', () => { prev(); restartAutoplay(); });
     nextBtn?.addEventListener('click', () => { next(); restartAutoplay(); });
 
-    viewport.addEventListener('mouseenter', stopAutoplay);
-    viewport.addEventListener('mouseleave', startAutoplay);
+    // Pause on hover for fine-pointer (desktop) devices only; touch keeps auto-playing
+    if (supportsFinePointer) {
+      viewport.addEventListener('mouseenter', stopAutoplay);
+      viewport.addEventListener('mouseleave', startAutoplay);
+    }
+    // Pause while the tab is hidden, resume when visible
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) stopAutoplay(); else startAutoplay();
+    });
 
     // drag / swipe support
     let isDragging = false;
@@ -1872,30 +1905,60 @@
     } catch (e) {}
 
     const knowledge = [
-      { keywords: ['skill', 'skills', 'toolkit', 'tools', 'tech stack', 'technologies'],
-        answer: "Her core toolkit spans UI/UX design (Figma, Photoshop, Illustrator), manual QA and bug reporting, business analysis (backlog creation, product documentation, competitive analysis), and basic front-end work (HTML, CSS, Webflow)." },
-      { keywords: ['experience', 'work', 'job', 'role', 'roles', 'career', 'twala', 'internship'],
-        answer: "She recently completed an internship at Twala (Ohelio, Inc.), where she held four parallel roles: Business Analyst, QA Engineer, Project Coordinator, and earlier UI/UX Designer — working across TwalaSign and Doxu.AI." },
-      { keywords: ['project', 'projects', 'signor', 'classiq', 'moodmenu', 'banking', 'golden', 'built', 'build'],
-        answer: "Her featured projects are MoodMenu, Mobile Banking, ClassIQ, Signor (live), and Golden Pups. Open the Projects section and click any card for a full breakdown with design and live links." },
-      { keywords: ['education', 'school', 'university', 'study', 'studied', 'degree', 'psu'],
-        answer: "She's finishing a BS in Information Technology at Pampanga State University (2022–2026), with High Honors in both senior and junior high school." },
-      { keywords: ['certification', 'certifications', 'certificate', 'certificates', 'award', 'awards', 'honors'],
-        answer: "She holds certifications in Business Analysis (IIBA-endorsed), UI/UX Design, Project Management, and Cloud Computing Fundamentals (IBM SkillsBuild), plus several Dean's and President's Lister honors." },
-      { keywords: ['contact', 'email', 'phone', 'reach', 'call'],
-        answer: "You can reach her directly at allyssageannequinit@gmail.com or +63 966-136-6539 — there's a one-click copy button in the Contact section too." },
-      { keywords: ['available', 'availability', 'open to work', 'hiring', 'looking for', 'hire'],
-        answer: "Yes — she's just completed her internship at Twala and is now open to junior-level roles in UX, QA, or product." },
-      { keywords: ['location', 'where', 'based', 'pampanga', 'manila', 'philippines'],
-        answer: "She's based in San Roque Dau, Lubao, Pampanga, Philippines, and comfortable working with Manila-based teams remotely or on-site." },
-      { keywords: ['theme', 'dark', 'light', 'mode'],
-        answer: "This site has light and dark mode — use the toggle in the top nav, or just press the T key anywhere." },
-      { keywords: ['hello', 'hi', 'hey', 'sup'],
-        answer: "Hi! Ask me anything about Allyssa's skills, experience, projects, education, or how to get in touch." },
+      { keywords: ['skill', 'skills', 'toolkit', 'tech stack', 'technologies', 'kakayahan', 'kasanayan', 'alam niya'],
+        answer: "Allyssa's toolkit spans four areas: Design & UI/UX (Figma, Photoshop, Illustrator, Canva, wireframing, prototyping, layout, graphic design, video editing); Front-End (basic HTML, CSS, Webflow); Quality Assurance (manual testing, bug reporting); and Project Management & Analysis (backlog creation, product documentation, competitive analysis). She also uses Word, Excel, Google Sheets, PowerPoint, and ClickUp.",
+        fil: "Ang toolkit ni Allyssa ay nasa apat na bahagi: Design & UI/UX (Figma, Photoshop, Illustrator, Canva, wireframing, prototyping, layout, graphic design, video editing); Front-End (basic na HTML, CSS, Webflow); Quality Assurance (manual testing, bug reporting); at Project Management & Analysis (backlog creation, product documentation, competitive analysis). Gumagamit din siya ng Word, Excel, Google Sheets, PowerPoint, at ClickUp." },
+      { keywords: ['experience', 'work', 'job', 'career', 'twala', 'internship', 'ohelio', 'karanasan', 'trabaho', 'nagtrabaho'],
+        answer: "All four of her roles were at Twala (Ohelio, Inc.) in Manila, run in parallel — not one after another. As Business Analyst (Mar–Jul 2026) she built competitive matrices for TwalaSign, developed feature backlogs for TwalaSign and Doxu.AI, and drafted product docs. As QA Engineer she ran manual tests on Doxu.AI's mobile responsiveness and filed bug tickets. In Project Management she monitored Doxu.AI (Twala v2) responsiveness tasks. Earlier, as UI/UX Designer (Feb–May 2025) she redesigned landing pages in Webflow and restructured Twala's help center in Intercom.",
+        fil: "Lahat ng apat na tungkulin niya ay sa Twala (Ohelio, Inc.) sa Manila, sabay-sabay — hindi sunud-sunod. Bilang Business Analyst (Mar–Jul 2026) gumawa siya ng competitive matrices para sa TwalaSign, feature backlogs para sa TwalaSign at Doxu.AI, at product docs. Bilang QA Engineer, nag-manual test siya sa mobile responsiveness ng Doxu.AI at nag-file ng bug tickets. Sa Project Management, minonitor niya ang responsiveness tasks ng Doxu.AI (Twala v2). Dati, bilang UI/UX Designer (Feb–May 2025), nag-redesign siya ng landing pages sa Webflow at nag-ayos ng help center sa Intercom." },
+      { keywords: ['project', 'projects', 'signor', 'classiq', 'moodmenu', 'mood menu', 'banking', 'golden', 'pups', 'portfolio', 'built', 'proyekto', 'ginawa'],
+        answer: "Her projects include: MoodMenu (a mood-driven food discovery UI/UX concept), Mobile Banking (a clean banking app concept), ClassIQ Web Application (a classroom app with a full visual system + manual QA), Signor Website (her capstone — UI/UX + QA, now live), Golden Pups, and this Personal Portfolio itself. Open the Projects section and tap 'View all projects' for the full breakdown of each.",
+        fil: "Kasama sa mga proyekto niya: MoodMenu (mood-driven food discovery UI/UX concept), Mobile Banking (malinis na banking app concept), ClassIQ Web Application (classroom app na may kompletong visual system + manual QA), Signor Website (ang capstone niya — UI/UX + QA, live na), Golden Pups, at itong Personal Portfolio mismo. Buksan ang Projects section at pindutin ang 'View all projects' para sa buong detalye." },
+      { keywords: ['education', 'school', 'university', 'study', 'studied', 'degree', 'psu', 'course', 'pampanga state', 'pag-aaral', 'eskwela', 'kurso'],
+        answer: "She's completing a BS in Information Technology at Pampanga State University (2022–2026). She finished Senior High (ABM) at Pampanga State University with High Honors (2020–2022), and Junior High at Wenceslao Village High School, also with High Honors (2016–2020).",
+        fil: "Tinatapos niya ang BS in Information Technology sa Pampanga State University (2022–2026). Natapos niya ang Senior High (ABM) sa Pampanga State University nang may High Honors (2020–2022), at Junior High sa Wenceslao Village High School, may High Honors din (2016–2020)." },
+      { keywords: ['certification', 'certifications', 'certificate', 'certificates', 'sertipiko', 'kurso online'],
+        answer: "Her certifications include: Project Management: Beginner to PM (Udemy, 2026), Business Analysis Fundamentals — IIBA Endorsed (Udemy, 2026), AI Learning Modules (AIClassASEAN.org, 2026), Project Management & Business Analysis Basics (SimpliLearn, 2026), UI/UX Design (Udemy, 2025), and Cloud Computing Fundamentals (IBM SkillsBuild, 2025).",
+        fil: "Kasama sa mga sertipiko niya: Project Management: Beginner to PM (Udemy, 2026), Business Analysis Fundamentals — IIBA Endorsed (Udemy, 2026), AI Learning Modules (AIClassASEAN.org, 2026), Project Management at Business Analysis Basics (SimpliLearn, 2026), UI/UX Design (Udemy, 2025), at Cloud Computing Fundamentals (IBM SkillsBuild, 2025)." },
+      { keywords: ['award', 'awards', 'honor', 'honors', 'lister', 'dean', 'president', 'recognition', 'parangal', 'karangalan'],
+        answer: "She's earned several honors at CCS: Top 19 Awardee (3rd Year, 2nd Sem, 2025), President's Lister (3rd Year 1st Sem 2025, and 2nd Year 2024), and Dean's Lister (1st Year, 2023) — plus High Honors in both senior and junior high.",
+        fil: "May ilang karangalan siya sa CCS: Top 19 Awardee (3rd Year, 2nd Sem, 2025), President's Lister (3rd Year 1st Sem 2025, at 2nd Year 2024), at Dean's Lister (1st Year, 2023) — pati High Honors noong senior at junior high." },
+      { keywords: ['tool', 'tools', 'software', 'app', 'apps', 'ginagamit', 'gamit'],
+        answer: "Day-to-day she works with Figma, Adobe Photoshop and Illustrator, Canva, Webflow, Intercom, ClickUp, and the Microsoft/Google productivity suites — covering design, development, testing, and delivery.",
+        fil: "Araw-araw, gumagamit siya ng Figma, Adobe Photoshop at Illustrator, Canva, Webflow, Intercom, ClickUp, at ng Microsoft/Google productivity suites — para sa design, development, testing, at delivery." },
+      { keywords: ['contact', 'email', 'phone', 'reach', 'call', 'number', 'kontak', 'tawag', 'makipag-ugnayan', 'numero'],
+        answer: "You can reach Allyssa at allyssageannequinit@gmail.com or +63 966-136-6539. There's a one-click copy button in the Contact section, plus links to her LinkedIn and Facebook.",
+        fil: "Maaari mong kontakin si Allyssa sa allyssageannequinit@gmail.com o +63 966-136-6539. May one-click copy button sa Contact section, pati links sa LinkedIn at Facebook niya." },
+      { keywords: ['available', 'availability', 'open to work', 'hiring', 'looking for', 'hire', 'bakante', 'available ba', 'kukuha'],
+        answer: "Yes — she's open to junior roles in UI/UX design, QA, or business analysis, and she's happy to talk through a project, an internship, or just compare notes on good design.",
+        fil: "Oo — bukas siya sa junior roles sa UI/UX design, QA, o business analysis, at masaya siyang pag-usapan ang isang proyekto, internship, o kahit magpalitan lang ng ideya tungkol sa magandang design." },
+      { keywords: ['language', 'languages', 'speak', 'english', 'filipino', 'tagalog', 'wika', 'salita'],
+        answer: "She's fluent in English and a native Filipino speaker.",
+        fil: "Bihasa siya sa English at katutubong nagsasalita ng Filipino." },
+      { keywords: ['cv', 'resume', 'résumé', 'download'],
+        answer: "You can preview her CV via the 'Preview CV' button in the hero and contact areas — it may ask for an access code. Recruiters can request the code at allyssageannequinit@gmail.com.",
+        fil: "Maaari mong tingnan ang CV niya sa pamamagitan ng 'Preview CV' button sa hero at contact sections — maaaring humingi ito ng access code. Ang mga recruiter ay maaaring humingi ng code sa allyssageannequinit@gmail.com." },
+      { keywords: ['location', 'where', 'based', 'pampanga', 'manila', 'philippines', 'saan', 'lugar', 'tirahan'],
+        answer: "She's based in San Roque Dau, Lubao, Pampanga, Philippines, and comfortable working with Manila-based teams remotely or on-site.",
+        fil: "Nakabase siya sa San Roque Dau, Lubao, Pampanga, Philippines, at kaya niyang makipagtrabaho sa mga Manila-based na team nang remote o on-site." },
+      { keywords: ['theme', 'dark', 'light', 'mode', 'font', 'tema', 'madilim', 'maliwanag'],
+        answer: "This site has light and dark modes plus font and accent options — use the controls in the top nav and the design panel. You can also press the T key to toggle the theme.",
+        fil: "May light at dark mode ang site pati font at accent options — gamitin ang mga kontrol sa itaas at sa design panel. Maaari mo ring pindutin ang T key para palitan ang tema." },
+      { keywords: ['who', 'about', 'herself', 'sino', 'tungkol'],
+        answer: "Allyssa Geanne Quinit is an Information Technology student who has spent the past year moving between interface design, manual QA, and product documentation at Twala (Ohelio, Inc.). She's now looking for a junior role where she can bring all three together.",
+        fil: "Si Allyssa Geanne Quinit ay isang Information Technology student na ginugol ang nakaraang taon sa interface design, manual QA, at product documentation sa Twala (Ohelio, Inc.). Naghahanap siya ngayon ng junior role kung saan pwede niyang pagsamahin ang tatlong ito." },
+      { keywords: ['hello', 'hi', 'hey', 'sup', 'kumusta', 'kamusta', 'musta'],
+        answer: "Hi! Ask me anything about Allyssa's skills, experience, projects, education, certifications, or how to get in touch.",
+        fil: "Kumusta! Magtanong ka tungkol sa skills, karanasan, proyekto, pag-aaral, sertipiko ni Allyssa, o kung paano siya makokontak." },
     ];
 
-    const fallback = "I don't have a canned answer for that one — but you can reach Allyssa directly through the Contact section, or try asking about her skills, experience, projects, or education.";
+    const fallback = "I don't have a canned answer for that one — but you can reach Allyssa directly through the Contact section, or try asking about her skills, experience, projects, education, or certifications.";
+    const fallbackFil = "Wala akong handang sagot para diyan — pero maaari mong kontakin si Allyssa sa Contact section, o magtanong tungkol sa kanyang skills, karanasan, proyekto, pag-aaral, o sertipiko.";
     const quickPrompts = ['What are her skills?', 'Tell me about her experience', 'Is she available for work?', 'How do I contact her?'];
+    const quickPromptsFil = ['Ano ang mga skills niya?', 'Kwentuhan mo ako tungkol sa karanasan niya', 'Available ba siya magtrabaho?', 'Paano siya kontakin?'];
+
+    let chatLang = 'en';
+    try { chatLang = localStorage.getItem('agq-chat-lang') || 'en'; } catch (e) {}
 
     let hasOpenedOnce = false;
 
@@ -1915,15 +1978,25 @@
         entry.keywords.forEach(k => { if (q.includes(k)) score++; });
         if (score > bestScore) { bestScore = score; best = entry; }
       });
-      return best ? best.answer : fallback;
+      if (!best) return chatLang === 'fil' ? fallbackFil : fallback;
+      return (chatLang === 'fil' && best.fil) ? best.fil : best.answer;
     }
 
     // Adaptive follow-up suggestions based on the last question's topic
     function followupsFor(text) {
       const q = text.toLowerCase();
+      if (chatLang === 'fil') {
+        if (/skill|tool|tech|kasanayan|kakayahan|ginagamit/.test(q)) return ['Anong design tools ang gamit niya?', 'Kwento tungkol sa QA niya', 'Tingnan ang mga proyekto'];
+        if (/experience|work|intern|twala|role|karanasan|trabaho/.test(q)) return ['Ano ginawa niya sa Twala?', 'Ano ang top skills niya?', 'Available ba siya?'];
+        if (/project|proyekto/.test(q)) return ['Anong tools ang ginamit?', 'Kwento tungkol sa karanasan', 'Paano siya kontakin?'];
+        if (/cert|sertipiko/.test(q)) return ['Anong mga parangal niya?', 'Ano ang mga skills niya?', 'Available ba siya?'];
+        if (/contact|email|kontak|hire|available/.test(q)) return ['Saan siya nakabase?', 'Pwede bang makita ang CV?', 'Anong roles ang bukas?'];
+        return ['Ano ang mga skills niya?', 'Kwento tungkol sa karanasan', 'Tingnan ang mga proyekto', 'Paano siya kontakin?'];
+      }
       if (/skill|tool|tech/.test(q)) return ['Which design tools does she use?', 'Tell me about her QA experience', 'See her projects'];
       if (/experience|work|intern|twala|role/.test(q)) return ['What did she do at Twala?', 'What are her top skills?', 'Is she available for work?'];
       if (/project/.test(q)) return ['What tools were used?', 'Tell me about her experience', 'How do I contact her?'];
+      if (/cert/.test(q)) return ['What awards has she won?', 'What are her skills?', 'Is she available for work?'];
       if (/contact|email|reach|hire|available/.test(q)) return ['Where is she based?', 'Can I see her CV?', 'What roles is she open to?'];
       if (/education|school|study|degree/.test(q)) return ['What are her skills?', 'Tell me about her experience', 'See her projects'];
       if (/cv|resume|résumé/.test(q)) return ['How do I contact her?', 'What are her skills?', 'Is she available for work?'];
@@ -1936,7 +2009,16 @@
         speechSynthesis.cancel();
         const u = new SpeechSynthesisUtterance(answer);
         const vs = speechSynthesis.getVoices() || [];
-        const fv = vs.find(v => /female|samantha|victoria|karen|zira|susan|hazel|eva|google uk english female|google us english/i.test(v.name)) || vs.find(v => /^en/i.test(v.lang));
+        let fv;
+        if (chatLang === 'fil') {
+          // Prefer a Filipino/Tagalog voice, then any female, then English
+          fv = vs.find(v => /fil|tl-|tl_|tagalog|filipino/i.test(v.lang + ' ' + v.name))
+            || vs.find(v => /female|samantha|victoria|karen|zira/i.test(v.name))
+            || vs[0];
+          u.lang = (fv && fv.lang) || 'fil-PH';
+        } else {
+          fv = vs.find(v => /female|samantha|victoria|karen|zira|susan|hazel|eva|google uk english female|google us english/i.test(v.name)) || vs.find(v => /^en/i.test(v.lang));
+        }
         if (fv) u.voice = fv;
         u.rate = 1; u.pitch = 1.15; u.volume = voiceVol;
         u.onstart = () => { toggle.classList.add('is-speaking'); voiceToggle && voiceToggle.classList.add('is-speaking'); };
@@ -1974,7 +2056,7 @@
     }
 
     function renderQuickReplies(prompts) {
-      const list = prompts || quickPrompts;
+      const list = prompts || (chatLang === 'fil' ? quickPromptsFil : quickPrompts);
       quickReplies.innerHTML = '';
       list.forEach(prompt => {
         const btn = document.createElement('button');
@@ -1982,16 +2064,20 @@
         btn.className = 'chat-quick-reply';
         btn.textContent = prompt;
         btn.addEventListener('click', () => {
-          if (/see her projects|see projects/i.test(prompt)) {
+          if (/see her projects|see projects|tingnan ang mga proyekto/i.test(prompt)) {
             const sec = document.getElementById('projects');
             if (sec) sec.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' });
             addMessage(prompt, 'user');
-            addMessage('Scroll down to the Projects section — tap “View all projects” to browse everything with filters and search.', 'bot');
+            addMessage(chatLang === 'fil'
+              ? 'Mag-scroll pababa sa Projects section — pindutin ang "View all projects" para makita lahat na may filter at search.'
+              : 'Scroll down to the Projects section — tap "View all projects" to browse everything with filters and search.', 'bot');
             return;
           }
-          if (/can i see her cv|see her cv|her cv/i.test(prompt)) {
+          if (/can i see her cv|see her cv|her cv|makita ang cv/i.test(prompt)) {
             addMessage(prompt, 'user');
-            addMessage('You can open her CV from the “Preview CV” button in the hero or contact area (it may ask for an access code).', 'bot');
+            addMessage(chatLang === 'fil'
+              ? 'Mabubuksan mo ang CV niya sa "Preview CV" button sa hero o contact area (maaaring humingi ng access code).'
+              : 'You can open her CV from the "Preview CV" button in the hero or contact area (it may ask for an access code).', 'bot');
             return;
           }
           respond(prompt);
@@ -2005,11 +2091,31 @@
       toggle.setAttribute('aria-expanded', 'true');
       if (!hasOpenedOnce) {
         hasOpenedOnce = true;
-        addMessage("Hi! I'm a quick assistant with answers about Allyssa — her skills, experience, projects, and how to reach her. Try a question below, or type your own.", 'bot');
+        const greet = chatLang === 'fil'
+          ? "Kumusta! Ako ang mabilis na assistant na may sagot tungkol kay Allyssa — ang kanyang skills, karanasan, proyekto, at kung paano siya kontakin. Magtanong sa ibaba, o mag-type ng sarili mong tanong."
+          : "Hi! I'm a quick assistant with answers about Allyssa — her skills, experience, projects, and how to reach her. Try a question below, or type your own.";
+        addMessage(greet, 'bot');
         renderQuickReplies();
       }
       setTimeout(() => input.focus(), 100);
     }
+
+    // Language toggle (EN / FIL)
+    const langToggle = $('#chatLangToggle');
+    function reflectLang() {
+      if (langToggle) langToggle.textContent = chatLang === 'fil' ? 'FIL' : 'EN';
+      if (input) input.placeholder = chatLang === 'fil' ? 'Magtanong tungkol sa kanya…' : 'Ask about her skills, experience…';
+    }
+    reflectLang();
+    langToggle?.addEventListener('click', () => {
+      chatLang = chatLang === 'fil' ? 'en' : 'fil';
+      try { localStorage.setItem('agq-chat-lang', chatLang); } catch (e) {}
+      reflectLang();
+      renderQuickReplies();
+      const note = chatLang === 'fil' ? 'Nakalipat sa Filipino 🇵🇭 — magtanong ka lang!' : 'Switched to English 🇬🇧 — ask away!';
+      addMessage(note, 'bot');
+      if (window.__agqSound) window.__agqSound.play('toggle');
+    });
 
     function closeChat() {
       panel.hidden = true;
@@ -2393,6 +2499,26 @@
       if (btn) setAnim(btn.dataset.anim);
     });
 
+    // font family selector
+    const fontBox = $('#fontOptions');
+    function setFont(name) {
+      if (name && name !== 'default') root.setAttribute('data-font', name);
+      else root.removeAttribute('data-font');
+      try { localStorage.setItem('agq-font', name || 'default'); } catch (e) {}
+      if (fontBox) $$('.anim-opt', fontBox).forEach(b => {
+        const on = b.dataset.font === (name || 'default');
+        b.classList.toggle('is-active', on);
+        b.setAttribute('aria-pressed', String(on));
+      });
+    }
+    let fontName = 'default';
+    try { fontName = localStorage.getItem('agq-font') || 'default'; } catch (e) {}
+    setFont(fontName);
+    fontBox?.addEventListener('click', (e) => {
+      const btn = e.target.closest('.anim-opt');
+      if (btn) { setFont(btn.dataset.font); if (window.__agqSound) window.__agqSound.play('click'); }
+    });
+
     // corner-radius style selector
     const radBox = $('#radiusOptions');
     function setRadius(name) {
@@ -2464,6 +2590,203 @@
   }
 
   /* ---------- Contact form validation ---------- */
+  /* ---------- Community forum: live chat + visitor log (Supabase) ---------- */
+  // ============================================================
+  //  SUPABASE SETUP — paste your project's values here.
+  //  Leave them blank to keep the section in "not connected" mode.
+  //  (See the setup steps Allyssa was given.)
+  const SUPABASE_URL = 'https://hvfkebtjamejvdtzjgoz.supabase.co';       // e.g. 'https://abcdxyz.supabase.co'
+  const SUPABASE_ANON_KEY = 'sb_publishable_aoS1sMUbtifmtTfZ1oGTzQ_8-78yq2k';  // your project's public anon key
+  // ============================================================
+
+  function initCommunity() {
+    const section = document.getElementById('community');
+    if (!section) return;
+    const feed = $('#communityFeed');
+    const emptyMsg = $('#communityEmpty');
+    const form = $('#communityForm');
+    const nameInput = $('#communityName');
+    const msgInput = $('#communityMessage');
+    const statusEl = $('#communityStatus');
+    const setupEl = $('#communitySetup');
+    const visitorList = $('#communityVisitorList');
+    const visitorCount = $('#communityVisitorCount');
+
+    const configured = SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase;
+    if (!configured) {
+      // Not connected yet — show a gentle setup note, disable the form.
+      if (setupEl) setupEl.hidden = false;
+      if (emptyMsg) emptyMsg.hidden = false;
+      if (form) form.querySelectorAll('input,button').forEach(el => el.disabled = true);
+      if (statusEl) statusEl.textContent = 'Live chat is not connected yet.';
+      return;
+    }
+
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Restore a saved display name
+    try { const n = localStorage.getItem('agq-community-name'); if (n && nameInput) nameInput.value = n; } catch (e) {}
+
+    function fmtTime(ts) {
+      try { return new Date(ts).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); }
+      catch (e) { return ''; }
+    }
+
+    function initials(name) {
+      const n = (name && name.trim()) ? name.trim() : 'Anonymous';
+      return n.split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+    }
+    function colorFor(name) {
+      const n = (name && name.trim()) ? name.trim() : 'Anonymous';
+      let h = 0; for (let i = 0; i < n.length; i++) h = (h * 31 + n.charCodeAt(i)) % 360;
+      return `hsl(${h} 65% 55%)`;
+    }
+
+    function addMessageEl(row, prepend) {
+      if (!feed) return;
+      if (emptyMsg) emptyMsg.hidden = true;
+      const who = row.name && row.name.trim() ? row.name.trim() : 'Anonymous';
+      const wrap = document.createElement('div');
+      wrap.className = 'community-msg';
+      const av = document.createElement('span');
+      av.className = 'community-msg-av'; av.textContent = initials(who);
+      av.style.background = colorFor(who);
+      const bubble = document.createElement('div'); bubble.className = 'community-msg-bubble';
+      const head = document.createElement('div'); head.className = 'community-msg-head';
+      const nameEl = document.createElement('span'); nameEl.className = 'community-msg-who'; nameEl.textContent = who;
+      const time = document.createElement('span'); time.className = 'community-msg-time mono'; time.textContent = fmtTime(row.created_at);
+      head.append(nameEl, time);
+      const text = document.createElement('p'); text.className = 'community-msg-text'; text.textContent = row.message;
+      bubble.append(head, text);
+      wrap.append(av, bubble);
+      feed.appendChild(wrap);
+      feed.scrollTop = feed.scrollHeight;
+    }
+
+    // Load recent messages
+    sb.from('messages').select('*').order('created_at', { ascending: true }).limit(100)
+      .then(({ data, error }) => {
+        if (error) { if (statusEl) statusEl.textContent = 'Could not load messages.'; return; }
+        if (!data || !data.length) { if (emptyMsg) emptyMsg.hidden = false; return; }
+        data.forEach(row => addMessageEl(row));
+      });
+
+    // Realtime: new messages appear instantly for everyone
+    const liveEl = $('#communityLive');
+    sb.channel('public:messages')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
+        addMessageEl(payload.new);
+      })
+      .subscribe((status) => {
+        if (liveEl) {
+          if (status === 'SUBSCRIBED') { liveEl.textContent = '● live'; liveEl.classList.add('is-live'); }
+          else { liveEl.textContent = 'connecting…'; liveEl.classList.remove('is-live'); }
+        }
+      });
+
+    // Live character counter
+    const charCount = $('#communityCharCount');
+    function updateCount() {
+      if (!charCount || !msgInput) return;
+      const n = msgInput.value.length;
+      charCount.textContent = n ? `${n}/500` : '';
+      charCount.classList.toggle('is-near', n > 440);
+    }
+    msgInput?.addEventListener('input', updateCount);
+
+    // ---- Basic anti-spam safeguards (front-end) ----
+    let lastPostAt = 0;
+    let lastPostText = '';
+    let postsThisSession = 0;
+    const COOLDOWN_MS = 8000;       // min gap between messages
+    const MAX_PER_SESSION = 25;     // soft cap per browser session
+    const BANNED = ['viagra', 'casino', 'porn', 'crypto pump', 'free money', 'click here', 'buy now', 'loan offer'];
+
+    function spamReason(name, message) {
+      const now = Date.now();
+      if (now - lastPostAt < COOLDOWN_MS) {
+        const wait = Math.ceil((COOLDOWN_MS - (now - lastPostAt)) / 1000);
+        return `Please wait ${wait}s before posting again.`;
+      }
+      if (postsThisSession >= MAX_PER_SESSION) return 'You\'ve posted a lot this session — take a short break 🙂';
+      if (message.length < 2) return 'Message is too short.';
+      if (message === lastPostText) return 'That looks like a duplicate.';
+      const low = message.toLowerCase();
+      if (BANNED.some(w => low.includes(w))) return 'That message looks like spam and wasn\'t posted.';
+      const links = (message.match(/https?:\/\//g) || []).length;
+      if (links > 2) return 'Too many links.';
+      // crude "shouting/spam" check: excessive repeated characters
+      if (/(.)\1{9,}/.test(message)) return 'Please avoid spammy repeated characters.';
+      return null;
+    }
+
+    // Send a message
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = (nameInput?.value || '').trim().slice(0, 40);
+      const message = (msgInput?.value || '').trim().slice(0, 500);
+      if (!message) return;
+
+      const reason = spamReason(name, message);
+      if (reason) { if (statusEl) statusEl.textContent = reason; return; }
+
+      try { if (name) localStorage.setItem('agq-community-name', name); } catch (err) {}
+      if (statusEl) statusEl.textContent = 'Sending…';
+      const { error } = await sb.from('messages').insert({ name: name || 'Anonymous', message });
+      if (error) {
+        console.error('[community] message insert failed:', error);
+        if (statusEl) statusEl.textContent = 'Message failed: ' + (error.message || 'unknown error');
+        return;
+      }
+      lastPostAt = Date.now(); lastPostText = message; postsThisSession++;
+      if (msgInput) msgInput.value = '';
+      updateCount();
+      if (statusEl) statusEl.textContent = '';
+    });
+
+    // ---- Visitor log ----
+    function renderVisitors(rows) {
+      if (!visitorList) return;
+      visitorList.innerHTML = '';
+      (rows || []).forEach(v => {
+        const li = document.createElement('li');
+        li.className = 'community-visitor';
+        const dot = document.createElement('span'); dot.className = 'community-visitor-dot';
+        const nm = document.createElement('span'); nm.className = 'community-visitor-name';
+        nm.textContent = v.name && v.name.trim() ? v.name.trim() : 'Anonymous';
+        const t = document.createElement('span'); t.className = 'community-visitor-time mono'; t.textContent = fmtTime(v.created_at);
+        li.append(dot, nm, t);
+        visitorList.appendChild(li);
+      });
+    }
+
+    // Log this visit once per browser session
+    (async function logVisit() {
+      let already = false;
+      try { already = sessionStorage.getItem('agq-visit-logged') === '1'; } catch (e) {}
+      let vname = 'Anonymous';
+      try { vname = localStorage.getItem('agq-community-name') || 'Anonymous'; } catch (e) {}
+      if (!already) {
+        try {
+          await sb.from('visitors').insert({ name: vname });
+          sessionStorage.setItem('agq-visit-logged', '1');
+        } catch (e) {}
+      }
+      // Load recent visitors + total count
+      const { data } = await sb.from('visitors').select('*').order('created_at', { ascending: false }).limit(20);
+      renderVisitors(data);
+      const { count } = await sb.from('visitors').select('*', { count: 'exact', head: true });
+      if (visitorCount && typeof count === 'number') visitorCount.textContent = '· ' + count.toLocaleString() + ' total';
+    })();
+
+    // Realtime visitor updates
+    sb.channel('public:visitors')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'visitors' }, () => {
+        sb.from('visitors').select('*').order('created_at', { ascending: false }).limit(20).then(({ data }) => renderVisitors(data));
+      })
+      .subscribe();
+  }
+
   function initContactForm() {
     const form = $('#contactForm');
     if (!form) return;
@@ -3376,6 +3699,7 @@
     initA11y();
     initRoleMatch();
     initSkillsView();
+    initCommunity();
     initSectionShare();
     initIdleGreeter();
     initPitch();
