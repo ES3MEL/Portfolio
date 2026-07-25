@@ -3146,3 +3146,39 @@ img, svg, video, canvas, iframe, table, pre{ max-width:100%; }
 .community-pinned-icon{ font-size:1rem; flex-shrink:0; margin-top:1px; }
 .community-pinned-title{ font-weight:700; font-size:.86rem; color:var(--text); margin-bottom:2px; }
 .community-pinned-text{ font-size:.8rem; color:var(--text-dim); line-height:1.5; }
+
+/* =========================================================
+   COMMUNITY — prominent "blocked message" alert
+========================================================= */
+.community-blocked-alert{
+  display:flex; align-items:center; gap:10px; margin-bottom:8px; padding:12px 14px;
+  background:color-mix(in srgb, #ff4d4d 14%, var(--bg-panel));
+  border:1px solid color-mix(in srgb, #ff4d4d 55%, transparent);
+  border-left:4px solid #ff4d4d; border-radius:12px;
+  box-shadow:0 6px 20px -8px rgba(255,77,77,.5);
+}
+.cba-icon{ font-size:1.15rem; flex-shrink:0; }
+.cba-text{ font-size:.86rem; font-weight:600; color:var(--text); line-height:1.4; }
+:root[data-theme="light"] .community-blocked-alert{ background:#fff0f0; }
+.community-blocked-alert.is-shake{ animation:cbaShake .45s var(--ease); }
+@keyframes cbaShake{
+  0%,100%{ transform:translateX(0); }
+  20%{ transform:translateX(-7px); }
+  40%{ transform:translateX(7px); }
+  60%{ transform:translateX(-4px); }
+  80%{ transform:translateX(4px); }
+}
+/* Message input flashes red when blocked */
+.community-message.is-error{ border-color:#ff4d4d !important; box-shadow:0 0 0 3px color-mix(in srgb, #ff4d4d 22%, transparent) !important; }
+@media (prefers-reduced-motion: reduce){ .community-blocked-alert.is-shake{ animation:none; } }
+
+/* =========================================================
+   SCROLL PROGRESS BAR
+========================================================= */
+.scroll-progress{
+  position:fixed; top:0; left:0; height:3px; width:0%; z-index:250;
+  background:var(--gradient-main); border-radius:0 2px 2px 0;
+  box-shadow:0 0 10px color-mix(in srgb, var(--grad-2) 60%, transparent);
+  transition:width .1s linear; pointer-events:none;
+}
+@media (prefers-reduced-motion: reduce){ .scroll-progress{ transition:none; } }

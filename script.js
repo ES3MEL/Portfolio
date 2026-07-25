@@ -558,6 +558,24 @@
 
   /* ---------- Skills grid/list view toggle ---------- */
   /* ---------- Rotating hero eyebrow ---------- */
+  /* ---------- Scroll progress bar ---------- */
+  function initScrollProgress() {
+    const bar = $('#scrollProgress');
+    if (!bar) return;
+    let ticking = false;
+    function update() {
+      const doc = document.documentElement;
+      const scrollable = doc.scrollHeight - doc.clientHeight;
+      const pct = scrollable > 0 ? (doc.scrollTop / scrollable) * 100 : 0;
+      bar.style.width = Math.min(100, Math.max(0, pct)) + '%';
+      ticking = false;
+    }
+    window.addEventListener('scroll', () => {
+      if (!ticking) { requestAnimationFrame(update); ticking = true; }
+    }, { passive: true });
+    update();
+  }
+
   function initEyebrowRotate() {
     const wrap = $('#eyebrowRotate');
     if (!wrap) return;
@@ -2671,6 +2689,32 @@
       if (replyBanner) replyBanner.hidden = true;
     }
 
+    // Prominent inline alert for blocked (inappropriate/spam) messages
+    let blockedAlertEl = null, blockedAlertTimer = null;
+    function showBlockedAlert(msg) {
+      if (!form) return;
+      if (!blockedAlertEl) {
+        blockedAlertEl = document.createElement('div');
+        blockedAlertEl.className = 'community-blocked-alert';
+        blockedAlertEl.setAttribute('role', 'alert');
+        blockedAlertEl.innerHTML = '<span class="cba-icon" aria-hidden="true">🚫</span><span class="cba-text"></span>';
+        form.insertBefore(blockedAlertEl, form.firstChild);
+      }
+      blockedAlertEl.querySelector('.cba-text').textContent = msg;
+      blockedAlertEl.hidden = false;
+      // retrigger shake animation
+      blockedAlertEl.classList.remove('is-shake');
+      void blockedAlertEl.offsetWidth;
+      blockedAlertEl.classList.add('is-shake');
+      // flash the message input red
+      if (msgInput) { msgInput.classList.add('is-error'); }
+      clearTimeout(blockedAlertTimer);
+      blockedAlertTimer = setTimeout(() => {
+        if (blockedAlertEl) blockedAlertEl.hidden = true;
+        if (msgInput) msgInput.classList.remove('is-error');
+      }, 5000);
+    }
+
     function fmtTime(ts) {
       try { return new Date(ts).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); }
       catch (e) { return ''; }
@@ -3028,19 +3072,19 @@
       const now = Date.now();
       if (now - lastPostAt < COOLDOWN_MS) {
         const wait = Math.ceil((COOLDOWN_MS - (now - lastPostAt)) / 1000);
-        return `Please wait ${wait}s before posting again.`;
+        return { type: 'info', msg: `Please wait ${wait}s before posting again.` };
       }
-      if (postsThisSession >= MAX_PER_SESSION) return 'You\'ve posted a lot this session — take a short break 🙂';
-      if (message.length < 2) return 'Message is too short.';
-      if (message === lastPostText) return 'That looks like a duplicate.';
+      if (postsThisSession >= MAX_PER_SESSION) return { type: 'info', msg: 'You\'ve posted a lot this session — take a short break 🙂' };
+      if (message.length < 2) return { type: 'info', msg: 'Message is too short.' };
+      if (message === lastPostText) return { type: 'info', msg: 'That looks like a duplicate.' };
       // Inappropriate language — check BOTH the name and the message
-      if (hasProfanity(message) || hasProfanity(name)) return 'Please keep it respectful — that message contains language that isn\'t allowed here. 💜';
+      if (hasProfanity(message) || hasProfanity(name)) return { type: 'blocked', msg: 'Please keep it respectful — that language isn\'t allowed here.' };
       const low = message.toLowerCase();
-      if (SPAM.some(w => low.includes(w))) return 'That message looks like spam and wasn\'t posted.';
+      if (SPAM.some(w => low.includes(w))) return { type: 'blocked', msg: 'That message looks like spam and wasn\'t posted.' };
       const links = (message.match(/https?:\/\//g) || []).length;
-      if (links > 2) return 'Too many links.';
+      if (links > 2) return { type: 'info', msg: 'Too many links.' };
       // crude "shouting/spam" check: excessive repeated characters
-      if (/(.)\1{9,}/.test(message)) return 'Please avoid spammy repeated characters.';
+      if (/(.)\1{9,}/.test(message)) return { type: 'info', msg: 'Please avoid spammy repeated characters.' };
       return null;
     }
 
@@ -3052,7 +3096,11 @@
       if (!message) return;
 
       const reason = spamReason(name, message);
-      if (reason) { if (statusEl) statusEl.textContent = reason; return; }
+      if (reason) {
+        if (reason.type === 'blocked') { showBlockedAlert(reason.msg); }
+        else if (statusEl) { statusEl.textContent = reason.msg; }
+        return;
+      }
 
       // If replying, prepend a compact reply marker the renderer understands
       if (replyingTo) {
@@ -3147,11 +3195,20 @@
       // If we somehow don't have a visit row yet, create one with the name
       if (!myVisitId) {
         try {
-          const { data } = await sb.from('visitors').insert({ name: n }).select();
+          const { data, error } = await sb.from('visitors').insert({ name: n }).select();
+          if (error) console.error('[community] visitor insert failed:', error);
           if (data && data[0]) { myVisitId = data[0].id; try { sessionStorage.setItem('agq-visit-id', String(myVisitId)); } catch (e) {} }
-        } catch (e) {}
+        } catch (e) { console.error('[community] visitor insert threw:', e); }
       } else {
-        try { await sb.from('visitors').update({ name: n }).eq('id', myVisitId); } catch (e) {}
+        try {
+          const { data, error } = await sb.from('visitors').update({ name: n }).eq('id', myVisitId).select();
+          if (error) console.error('[community] visitor name update failed (check UPDATE policy):', error);
+          // If the update matched no rows (row gone or RLS blocked), create a fresh named row
+          if (!error && (!data || !data.length)) {
+            const ins = await sb.from('visitors').insert({ name: n }).select();
+            if (ins.data && ins.data[0]) { myVisitId = ins.data[0].id; try { sessionStorage.setItem('agq-visit-id', String(myVisitId)); } catch (e) {} }
+          }
+        } catch (e) { console.error('[community] visitor update threw:', e); }
       }
       refreshVisitors();
     }
@@ -4084,6 +4141,7 @@
     initRoleMatch();
     initSkillsView();
     initEyebrowRotate();
+    initScrollProgress();
     initCommunity();
     initSectionShare();
     initIdleGreeter();
