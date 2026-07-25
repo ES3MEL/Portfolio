@@ -1082,12 +1082,20 @@
             <input type="text" id="communityName" class="community-name" placeholder="Your name" maxlength="40" autocomplete="name" aria-label="Your name">
             <div class="community-send-row">
               <input type="text" id="communityMessage" class="community-message" placeholder="Write a message…" maxlength="500" autocomplete="off" aria-label="Your message">
+              <button type="button" class="community-gif-toggle" id="communityGifToggle" aria-label="Add a GIF" aria-expanded="false" title="Add a GIF">GIF</button>
               <button type="button" class="community-emoji-toggle" id="communityEmojiToggle" aria-label="Add emoji" aria-expanded="false" title="Add emoji">
                 <svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/><circle cx="9" cy="10" r="1.2" fill="currentColor"/><circle cx="15" cy="10" r="1.2" fill="currentColor"/><path d="M8.5 14.5c.9 1.1 2.1 1.7 3.5 1.7s2.6-.6 3.5-1.7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
               </button>
               <button type="submit" class="community-send" id="communitySend" aria-label="Send message">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none"><path d="M4 12l16-8-6 16-3-6-7-2z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
               </button>
+            </div>
+            <div class="community-gif-panel" id="communityGifPanel" hidden role="dialog" aria-label="GIF picker">
+              <div class="community-gif-search">
+                <input type="text" id="communityGifInput" class="community-gif-input" placeholder="Search GIFs…" autocomplete="off" aria-label="Search GIFs">
+              </div>
+              <div class="community-gif-results" id="communityGifResults"></div>
+              <p class="community-gif-note mono">Powered by Tenor · content-rated (safe)</p>
             </div>
             <div class="community-emoji-panel" id="communityEmojiPanel" hidden role="dialog" aria-label="Emoji picker"></div>
             <p class="community-note mono" id="communityStatus"></p>

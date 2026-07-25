@@ -2945,6 +2945,29 @@
         bubble.append(quote);
       }
 
+      // GIF marker:  🖼️{{gif:https://media.tenor.com/....gif}}
+      const gm = String(bodyText).match(/^🖼️\{\{gif:(https?:\/\/[^\s}]+)\}\}$/);
+      if (gm) {
+        const url = gm[1];
+        // Only allow known safe, content-rated GIF hosts
+        const safeHost = /^https:\/\/(media[0-9]*\.tenor\.com|c\.tenor\.com|media[0-9]*\.giphy\.com|i\.giphy\.com)\//.test(url);
+        if (safeHost) {
+          const fig = document.createElement('div'); fig.className = 'community-msg-gif';
+          const img = document.createElement('img');
+          img.src = url; img.alt = 'GIF'; img.loading = 'lazy'; img.decoding = 'async';
+          fig.appendChild(img);
+          bubble.append(fig);
+          wrap.append(av, bubble);
+          feed.appendChild(wrap);
+          lastSender = who; msgCount++;
+          if (msgCountEl) msgCountEl.textContent = msgCount.toLocaleString();
+          if (statsBar) statsBar.hidden = false;
+          if (wasNear || mine || (opts && opts.initial)) { feed.scrollTop = feed.scrollHeight; if (jumpBtn) jumpBtn.hidden = true; }
+          else if (jumpBtn) jumpBtn.hidden = false;
+          return;
+        }
+      }
+
       const text = document.createElement('p'); text.className = 'community-msg-text';
       // Auto-linkify URLs (safe: build via DOM, escape everything else)
       const parts = String(bodyText).split(/(https?:\/\/[^\s]+)/g);
@@ -3182,6 +3205,87 @@
       if (emojiPanel && !emojiPanel.hidden && !emojiPanel.contains(e.target) && e.target !== emojiToggle && !emojiToggle?.contains(e.target)) closeEmoji();
     });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && emojiPanel && !emojiPanel.hidden) closeEmoji(); });
+
+    // ---- GIF picker (Tenor, content-filtered) ----
+    // Get a free Tenor API key at https://developers.google.com/tenor/guides/quickstart
+    // and paste it below. Until then, the GIF button shows a short setup note.
+    const TENOR_KEY = '';
+    const gifToggle = $('#communityGifToggle');
+    const gifPanel = $('#communityGifPanel');
+    const gifInput = $('#communityGifInput');
+    const gifResults = $('#communityGifResults');
+    let gifTimer = null;
+    function openGif() {
+      if (!gifPanel) return;
+      if (emojiPanel && !emojiPanel.hidden) closeEmoji();
+      gifPanel.hidden = false;
+      gifToggle?.setAttribute('aria-expanded', 'true');
+      gifToggle?.classList.add('is-active');
+      if (!TENOR_KEY) {
+        if (gifResults) gifResults.innerHTML = '<p class="community-gif-setup">GIFs aren\'t set up yet. Add a free Tenor API key in <code>script.js</code> to enable this.</p>';
+        return;
+      }
+      if (gifInput) { gifInput.focus(); if (!gifInput.value) loadGifs('', true); }
+    }
+    function closeGif() {
+      if (!gifPanel) return;
+      gifPanel.hidden = true;
+      gifToggle?.setAttribute('aria-expanded', 'false');
+      gifToggle?.classList.remove('is-active');
+    }
+    async function loadGifs(query, featured) {
+      if (!TENOR_KEY || !gifResults) return;
+      gifResults.innerHTML = '<p class="community-gif-loading">Loading…</p>';
+      const base = featured
+        ? `https://tenor.googleapis.com/v2/featured?key=${TENOR_KEY}&limit=18&contentfilter=high&media_filter=tinygif,gif`
+        : `https://tenor.googleapis.com/v2/search?key=${TENOR_KEY}&q=${encodeURIComponent(query)}&limit=18&contentfilter=high&media_filter=tinygif,gif`;
+      try {
+        const res = await fetch(base);
+        const data = await res.json();
+        gifResults.innerHTML = '';
+        (data.results || []).forEach(g => {
+          const media = g.media_formats || {};
+          const preview = (media.tinygif && media.tinygif.url) || (media.gif && media.gif.url);
+          const full = (media.gif && media.gif.url) || preview;
+          if (!preview) return;
+          const b = document.createElement('button');
+          b.type = 'button'; b.className = 'community-gif-item';
+          const im = document.createElement('img'); im.src = preview; im.alt = g.content_description || 'GIF'; im.loading = 'lazy';
+          b.appendChild(im);
+          b.addEventListener('click', () => { sendGif(full); closeGif(); });
+          gifResults.appendChild(b);
+        });
+        if (!gifResults.children.length) gifResults.innerHTML = '<p class="community-gif-loading">No GIFs found.</p>';
+      } catch (e) {
+        gifResults.innerHTML = '<p class="community-gif-loading">Couldn\'t load GIFs.</p>';
+      }
+    }
+    async function sendGif(url) {
+      if (!url) return;
+      const name = (nameInput?.value || '').trim().slice(0, 40) || 'Anonymous';
+      // basic rate-limit reuse
+      const now = Date.now();
+      if (now - lastPostAt < COOLDOWN_MS) { if (statusEl) statusEl.textContent = 'Please wait a few seconds before posting again.'; return; }
+      const message = `🖼️{{gif:${url}}}`;
+      try {
+        const { data, error } = await sb.from('messages').insert({ name, message }).select();
+        if (error) { if (statusEl) statusEl.textContent = 'GIF failed: ' + (error.message || 'error'); return; }
+        if (data && data[0] && data[0].id != null) rememberMine(data[0].id);
+        lastPostAt = Date.now();
+      } catch (e) {}
+    }
+    gifToggle?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (gifPanel && gifPanel.hidden) openGif(); else closeGif();
+    });
+    gifInput?.addEventListener('input', () => {
+      clearTimeout(gifTimer);
+      gifTimer = setTimeout(() => loadGifs(gifInput.value.trim(), !gifInput.value.trim()), 400);
+    });
+    document.addEventListener('click', (e) => {
+      if (gifPanel && !gifPanel.hidden && !gifPanel.contains(e.target) && e.target !== gifToggle && !gifToggle?.contains(e.target)) closeGif();
+    });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && gifPanel && !gifPanel.hidden) closeGif(); });
 
     // ---- Basic anti-spam safeguards (front-end) ----
     let lastPostAt = 0;
