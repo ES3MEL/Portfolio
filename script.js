@@ -2644,6 +2644,33 @@
     // Restore a saved display name
     try { const n = localStorage.getItem('agq-community-name'); if (n && nameInput) nameInput.value = n; } catch (e) {}
 
+    // ---- Reply-to state + preview banner above the composer ----
+    let replyingTo = null;
+    let replyBanner = null;
+    function ensureReplyBanner() {
+      if (replyBanner) return replyBanner;
+      replyBanner = document.createElement('div');
+      replyBanner.className = 'community-reply-banner';
+      replyBanner.hidden = true;
+      replyBanner.innerHTML = '<div class="community-reply-info"><span class="community-reply-to"></span><span class="community-reply-snip"></span></div><button type="button" class="community-reply-x" aria-label="Cancel reply">✕</button>';
+      // insert at top of the form
+      if (form) form.insertBefore(replyBanner, form.firstChild);
+      replyBanner.querySelector('.community-reply-x').addEventListener('click', cancelReply);
+      return replyBanner;
+    }
+    function startReply(name, snippet) {
+      replyingTo = { name: name || 'Anonymous', snippet: (snippet || '').trim() };
+      const b = ensureReplyBanner();
+      b.querySelector('.community-reply-to').textContent = 'Replying to ' + replyingTo.name;
+      b.querySelector('.community-reply-snip').textContent = replyingTo.snippet.slice(0, 90);
+      b.hidden = false;
+      if (msgInput) msgInput.focus();
+    }
+    function cancelReply() {
+      replyingTo = null;
+      if (replyBanner) replyBanner.hidden = true;
+    }
+
     function fmtTime(ts) {
       try { return new Date(ts).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); }
       catch (e) { return ''; }
@@ -2671,6 +2698,22 @@
       try { const a = mineIds(); if (!a.includes(id)) { a.push(id); localStorage.setItem('agq-community-mine', JSON.stringify(a.slice(-200))); } } catch (e) {}
     }
     function isMineId(id) { return mineIds().includes(id); }
+
+    // ---- Owner / moderator mode ----
+    // Allyssa can unlock owner mode to delete ANY message. Unlock by visiting
+    // the site with ?owner=AGQ2026 once, or by running __agqOwner('AGQ2026') in the console.
+    const OWNER_CODE = 'AGQ2026';
+    function isOwner() { try { return localStorage.getItem('agq-community-owner') === OWNER_CODE; } catch (e) { return false; } }
+    (function checkOwnerUnlock() {
+      try {
+        const p = new URLSearchParams(location.search).get('owner');
+        if (p && p === OWNER_CODE) { localStorage.setItem('agq-community-owner', OWNER_CODE); }
+      } catch (e) {}
+    })();
+    window.__agqOwner = function (code) {
+      if (code === OWNER_CODE) { try { localStorage.setItem('agq-community-owner', OWNER_CODE); } catch (e) {} if (window.__agqToast) window.__agqToast('Owner mode on — reopen the forum'); return 'owner mode ON'; }
+      try { localStorage.removeItem('agq-community-owner'); } catch (e) {} return 'owner mode OFF';
+    };
 
     // ---- Reactions (shared via Supabase, realtime) ----
     // A stable per-browser id so each visitor reacts once per emoji.
@@ -2738,6 +2781,18 @@
         const r = p.old; if (r) applyReaction(r.message_id, r.emoji, r.client_id, false);
       })
       .subscribe();
+
+    // ---- Live "online now" presence ----
+    const onlineEl = $('#communityOnline');
+    const presence = sb.channel('community-presence', { config: { presence: { key: CID } } });
+    presence.on('presence', { event: 'sync' }, () => {
+      const state = presence.presenceState();
+      const n = Object.keys(state).length;
+      if (onlineEl) { onlineEl.hidden = false; onlineEl.textContent = '● ' + n + (n === 1 ? ' online' : ' online'); }
+    }).subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') { try { await presence.track({ at: Date.now() }); } catch (e) {} }
+    });
+
     async function deleteMessage(id, el) {
       const { error } = await sb.from('messages').delete().eq('id', id);
       if (error) {
@@ -2764,7 +2819,7 @@
       if (!feed) return;
       if (emptyMsg) emptyMsg.hidden = true;
       const who = row.name && row.name.trim() ? row.name.trim() : 'Anonymous';
-      const mine = myName() && who.toLowerCase() === myName().toLowerCase();
+      const mine = (myName() && who.toLowerCase() === myName().toLowerCase()) || (row.id != null && isMineId(row.id));
       const grouped = lastSender === who; // consecutive message from same person
       const wasNear = nearBottom();
 
@@ -2783,9 +2838,23 @@
         head.append(nameEl, time);
         bubble.append(head);
       }
+
+      // Parse an optional reply marker:  ⤷{{reply:Name::snippet}}\nactual message
+      let bodyText = String(row.message);
+      const rm = bodyText.match(/^⤷\{\{reply:([^:]*)::([\s\S]*?)\}\}\n?([\s\S]*)$/);
+      if (rm) {
+        const rName = rm[1] || 'someone';
+        const rSnippet = rm[2] || '';
+        bodyText = rm[3] || '';
+        const quote = document.createElement('div');
+        quote.className = 'community-msg-quote';
+        quote.innerHTML = `<span class="community-quote-name">${escapeHtml(rName)}</span><span class="community-quote-text">${escapeHtml(rSnippet)}</span>`;
+        bubble.append(quote);
+      }
+
       const text = document.createElement('p'); text.className = 'community-msg-text';
       // Auto-linkify URLs (safe: build via DOM, escape everything else)
-      const parts = String(row.message).split(/(https?:\/\/[^\s]+)/g);
+      const parts = String(bodyText).split(/(https?:\/\/[^\s]+)/g);
       parts.forEach(part => {
         if (/^https?:\/\//.test(part)) {
           const a = document.createElement('a');
@@ -2814,16 +2883,31 @@
       });
       bubble.append(reactRow);
 
-      // Delete button for this browser's own messages (by stored id OR name match)
-      if (mine || (row.id != null && isMineId(row.id))) {
+      // Action buttons row (Reply + Delete)
+      const actions = document.createElement('div');
+      actions.className = 'community-msg-actions';
+      const replyBtn = document.createElement('button');
+      replyBtn.type = 'button'; replyBtn.className = 'community-msg-reply'; replyBtn.textContent = 'Reply';
+      replyBtn.setAttribute('aria-label', 'Reply to this message');
+      replyBtn.addEventListener('click', () => startReply(who, bodyText));
+      actions.append(replyBtn);
+
+      // Delete button: own messages (by stored id OR name match), or ANY message in owner mode
+      const canDeleteOwn = mine || (row.id != null && isMineId(row.id));
+      const owner = isOwner();
+      if (canDeleteOwn || owner) {
         const del = document.createElement('button');
-        del.type = 'button'; del.className = 'community-msg-del'; del.textContent = 'Delete';
-        del.setAttribute('aria-label', 'Delete your message');
+        del.type = 'button';
+        del.className = 'community-msg-del' + (!canDeleteOwn && owner ? ' is-mod' : '');
+        del.textContent = (!canDeleteOwn && owner) ? 'Delete (mod)' : 'Delete';
+        del.setAttribute('aria-label', 'Delete this message');
         del.addEventListener('click', () => {
-          if (confirm('Delete this message?')) deleteMessage(row.id, wrap);
+          const msg = (!canDeleteOwn && owner) ? 'Delete this visitor\'s message?' : 'Delete this message?';
+          if (confirm(msg)) deleteMessage(row.id, wrap);
         });
-        bubble.append(del);
+        actions.append(del);
       }
+      bubble.append(actions);
       wrap.append(av, bubble);
       feed.appendChild(wrap);
       lastSender = who;
@@ -2902,7 +2986,43 @@
     let postsThisSession = 0;
     const COOLDOWN_MS = 8000;       // min gap between messages
     const MAX_PER_SESSION = 25;     // soft cap per browser session
-    const BANNED = ['viagra', 'casino', 'porn', 'crypto pump', 'free money', 'click here', 'buy now', 'loan offer'];
+    const SPAM = ['viagra', 'casino', 'crypto pump', 'free money', 'click here', 'buy now', 'loan offer'];
+    // Normalize a single token: lowercase, map leetspeak, collapse long repeats.
+    function normToken(s) {
+      let t = (s || '').toLowerCase();
+      const map = { '@':'a','4':'a','8':'b','3':'e','1':'i','!':'i','0':'o','$':'s','5':'s','7':'t','+':'t','9':'g' };
+      t = t.replace(/[@480!13$57+9]/g, c => map[c] || c);
+      t = t.replace(/[^a-z]/g, '');
+      t = t.replace(/(.)\1{2,}/g, '$1$1');
+      return t;
+    }
+    // Words we match as WHOLE words only (they appear inside innocent words otherwise).
+    const PROF_EXACT = new Set([
+      'fuck','shit','bitch','ass','asshole','bastard','dick','pussy','cunt','cock','slut','whore',
+      'nigger','nigga','faggot','fag','retard','retarded','motherfucker','jerkoff','wank','twat',
+      'bollocks','rape','rapist','molest','pedophile','pedo','porn','jizz','boobs','tits',
+      'putangina','tangina','puta','gago','tanga','ulol','bobo','pakyu','tarantado','punyeta',
+      'kupal','pakshet','burat','tite','iyot','kantot','pakingshet','bwiset','bwisit'
+    ]);
+    // Phrases matched anywhere (multi-word, safe to substring-match).
+    const PROF_PHRASES = ['putang ina','tang ina','pota ina','child porn'];
+    // Core words also checked against spaced/punctuated evasion like "f u c k".
+    const PROF_CORE = ['fuck','shit','bitch','cunt','nigger','nigga','faggot','putangina','rape'];
+    function hasProfanity(text) {
+      const raw = (text || '').toLowerCase();
+      if (PROF_PHRASES.some(p => raw.includes(p))) return true;
+      // Whole-word check (defeats leetspeak, avoids innocent substrings)
+      const tokens = raw.split(/[^a-z0-9@!$+]+/).filter(Boolean);
+      if (tokens.some(tok => PROF_EXACT.has(normToken(tok)))) return true;
+      // Spaced-out evasion like "f u c k": only collapse RUNS of single letters
+      // separated by spaces/dots, so normal prose ("and grape") is never merged.
+      const deSpaced = raw.replace(/\b([a-z0-9@!$+])(?:[\s._\-*]+([a-z0-9@!$+])){2,}\b/g, (m) => m.replace(/[\s._\-*]+/g, ''));
+      if (deSpaced !== raw) {
+        const collapsed = normToken(deSpaced);
+        if (PROF_CORE.some(w => collapsed.includes(w))) return true;
+      }
+      return false;
+    }
 
     function spamReason(name, message) {
       const now = Date.now();
@@ -2913,8 +3033,10 @@
       if (postsThisSession >= MAX_PER_SESSION) return 'You\'ve posted a lot this session — take a short break 🙂';
       if (message.length < 2) return 'Message is too short.';
       if (message === lastPostText) return 'That looks like a duplicate.';
+      // Inappropriate language — check BOTH the name and the message
+      if (hasProfanity(message) || hasProfanity(name)) return 'Please keep it respectful — that message contains language that isn\'t allowed here. 💜';
       const low = message.toLowerCase();
-      if (BANNED.some(w => low.includes(w))) return 'That message looks like spam and wasn\'t posted.';
+      if (SPAM.some(w => low.includes(w))) return 'That message looks like spam and wasn\'t posted.';
       const links = (message.match(/https?:\/\//g) || []).length;
       if (links > 2) return 'Too many links.';
       // crude "shouting/spam" check: excessive repeated characters
@@ -2926,11 +3048,17 @@
     form?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const name = (nameInput?.value || '').trim().slice(0, 40);
-      const message = (msgInput?.value || '').trim().slice(0, 500);
+      let message = (msgInput?.value || '').trim().slice(0, 500);
       if (!message) return;
 
       const reason = spamReason(name, message);
       if (reason) { if (statusEl) statusEl.textContent = reason; return; }
+
+      // If replying, prepend a compact reply marker the renderer understands
+      if (replyingTo) {
+        const snip = replyingTo.snippet.replace(/[\r\n]+/g, ' ').slice(0, 90);
+        message = `⤷{{reply:${replyingTo.name.slice(0,40)}::${snip}}}\n` + message;
+      }
 
       try { if (name) localStorage.setItem('agq-community-name', name); } catch (err) {}
       if (statusEl) statusEl.textContent = 'Sending…';
@@ -2945,6 +3073,7 @@
       if (name) updateVisitorName(name);
       lastPostAt = Date.now(); lastPostText = message; postsThisSession++;
       if (msgInput) msgInput.value = '';
+      cancelReply();
       updateCount();
       if (statusEl) statusEl.textContent = '';
     });
@@ -3008,10 +3137,23 @@
     })();
 
     // When the user types/sets their name, update their visitor row so it isn't "Anonymous"
+    async function refreshVisitors() {
+      const { data } = await sb.from('visitors').select('*').order('created_at', { ascending: false }).limit(20);
+      renderVisitors(data);
+    }
     async function updateVisitorName(newName) {
       const n = (newName || '').trim();
-      if (!n || !myVisitId) return;
-      try { await sb.from('visitors').update({ name: n }).eq('id', myVisitId); } catch (e) {}
+      if (!n) return;
+      // If we somehow don't have a visit row yet, create one with the name
+      if (!myVisitId) {
+        try {
+          const { data } = await sb.from('visitors').insert({ name: n }).select();
+          if (data && data[0]) { myVisitId = data[0].id; try { sessionStorage.setItem('agq-visit-id', String(myVisitId)); } catch (e) {} }
+        } catch (e) {}
+      } else {
+        try { await sb.from('visitors').update({ name: n }).eq('id', myVisitId); } catch (e) {}
+      }
+      refreshVisitors();
     }
     let nameSaveTimer = null;
     nameInput?.addEventListener('input', () => {
@@ -3019,14 +3161,13 @@
       nameSaveTimer = setTimeout(() => {
         const n = (nameInput.value || '').trim();
         if (n) { try { localStorage.setItem('agq-community-name', n); } catch (e) {} updateVisitorName(n); }
-      }, 700);
+      }, 600);
     });
 
-    // Realtime visitor updates
+    // Realtime visitor updates (INSERT and UPDATE both refresh the list)
     sb.channel('public:visitors')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'visitors' }, () => {
-        sb.from('visitors').select('*').order('created_at', { ascending: false }).limit(20).then(({ data }) => renderVisitors(data));
-      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'visitors' }, () => { refreshVisitors(); })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'visitors' }, () => { refreshVisitors(); })
       .subscribe();
   }
 
