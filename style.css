@@ -3286,3 +3286,44 @@ img, svg, video, canvas, iframe, table, pre{ max-width:100%; }
 .now-list li{ display:flex; align-items:center; gap:10px; font-size:.9rem; color:var(--text); line-height:1.4; }
 .now-ico{ flex-shrink:0; font-size:1rem; }
 @media (prefers-reduced-motion: reduce){ .now-pulse::after{ animation:none; } }
+
+/* =========================================================
+   COMMUNITY — emoji picker
+========================================================= */
+.community-emoji-toggle{
+  flex-shrink:0; width:46px; height:46px; padding:0; border-radius:13px; display:grid; place-items:center; cursor:pointer;
+  color:var(--text-faint); background:var(--bg); border:1px solid var(--border);
+  transition:color .18s var(--ease), border-color .18s var(--ease), background .18s var(--ease);
+}
+.community-emoji-toggle:hover, .community-emoji-toggle.is-active{ color:var(--grad-3); border-color:var(--grad-3); background:color-mix(in srgb, var(--grad-3) 8%, var(--bg)); }
+.community-emoji-toggle svg{ pointer-events:none; }
+
+.community-form{ position:relative; }
+.community-emoji-panel{
+  position:absolute; right:16px; bottom:74px; z-index:30; width:min(320px, calc(100% - 32px));
+  max-height:260px; overflow-y:auto; padding:14px; border-radius:16px;
+  background:color-mix(in srgb, var(--bg-panel) 96%, transparent);
+  -webkit-backdrop-filter:blur(16px) saturate(1.4); backdrop-filter:blur(16px) saturate(1.4);
+  border:1px solid var(--border-strong); box-shadow:0 20px 50px -18px rgba(0,0,0,.55);
+  animation:cepIn .22s var(--ease);
+}
+@keyframes cepIn{ from{ opacity:0; transform:translateY(8px) scale(.97); } to{ opacity:1; transform:translateY(0) scale(1); } }
+.cep-group-label{ font-size:.64rem; letter-spacing:.08em; text-transform:uppercase; color:var(--text-faint); margin:8px 2px 6px; }
+.cep-group-label:first-child{ margin-top:0; }
+.cep-grid{ display:grid; grid-template-columns:repeat(8, 1fr); gap:2px; }
+.cep-emoji{
+  aspect-ratio:1; border:none; background:transparent; border-radius:9px; cursor:pointer;
+  font-size:1.2rem; line-height:1; display:grid; place-items:center;
+  transition:background .12s, transform .12s;
+}
+.cep-emoji:hover{ background:var(--bg-panel-2); transform:scale(1.18); }
+.cep-emoji:active{ transform:scale(.95); }
+.community-emoji-panel::-webkit-scrollbar{ width:8px; }
+.community-emoji-panel::-webkit-scrollbar-thumb{ background:var(--border-strong); border-radius:8px; }
+
+@media (max-width:520px){
+  .community-emoji-panel{ right:12px; left:12px; width:auto; bottom:76px; }
+  .cep-grid{ grid-template-columns:repeat(7, 1fr); }
+  .cep-emoji{ font-size:1.35rem; }
+}
+@media (prefers-reduced-motion: reduce){ .community-emoji-panel{ animation:none; } }

@@ -845,8 +845,8 @@
       test.onerror = () => { frame.classList.add(missingClass); apply(); };
       test.src = url;
     }
-    healImage(sleepImg, 'assets/profile-sleeping.png', 'sleep-img-missing');
-    healImage(sleepyImg, 'assets/profile-sleepy.png', 'sleepy-img-missing');
+    healImage(sleepImg, 'assets/profile-sleeping.jpg', 'sleep-img-missing');
+    healImage(sleepyImg, 'assets/profile-sleepy.jpg', 'sleepy-img-missing');
 
     // Night = 7:00 PM (19) through 5:59 AM  |  Sleepy = 12 PM through 2:59 PM
     function isNightNow() { const h = new Date().getHours(); return h >= 19 || h < 6; }
@@ -3056,6 +3056,69 @@
       charCount.classList.toggle('is-near', n > 440);
     }
     msgInput?.addEventListener('input', updateCount);
+
+    // ---- Emoji picker for the composer ----
+    const emojiToggle = $('#communityEmojiToggle');
+    const emojiPanel = $('#communityEmojiPanel');
+    const EMOJI_GROUPS = [
+      { label: 'Smileys', items: ['😀','😃','😄','😁','😊','🙂','😉','😍','🥰','😘','😎','🤩','🤗','🤔','😌','😴','😅','😂','🤣','😇','🙃','😋','😜','🤪','😏','🥳','😭','😳','🥺','😤','😱'] },
+      { label: 'Gestures', items: ['👍','👎','👏','🙌','🙏','🤝','👋','✌️','🤞','🤟','👌','🤙','💪','🫶','👀','🧠','💯'] },
+      { label: 'Hearts', items: ['❤️','🧡','💛','💚','💙','💜','🖤','🤍','💖','💗','💓','💞','💕','💔','❣️'] },
+      { label: 'Fun', items: ['🎉','🎊','✨','🔥','⭐','🌟','💫','⚡','🌈','🎯','🏆','🥇','💡','🚀','🎨','💻','📚','☕','🍕','🎂','🐶','🐱','🌸','🌼'] },
+    ];
+    let emojiBuilt = false;
+    function buildEmojiPanel() {
+      if (emojiBuilt || !emojiPanel) return;
+      emojiBuilt = true;
+      EMOJI_GROUPS.forEach(group => {
+        const h = document.createElement('p'); h.className = 'cep-group-label mono'; h.textContent = group.label;
+        emojiPanel.appendChild(h);
+        const grid = document.createElement('div'); grid.className = 'cep-grid';
+        group.items.forEach(em => {
+          const b = document.createElement('button');
+          b.type = 'button'; b.className = 'cep-emoji'; b.textContent = em;
+          b.setAttribute('aria-label', 'Insert ' + em);
+          b.addEventListener('click', () => insertEmoji(em));
+          grid.appendChild(b);
+        });
+        emojiPanel.appendChild(grid);
+      });
+    }
+    function insertEmoji(em) {
+      if (!msgInput) return;
+      const start = msgInput.selectionStart != null ? msgInput.selectionStart : msgInput.value.length;
+      const end = msgInput.selectionEnd != null ? msgInput.selectionEnd : msgInput.value.length;
+      const v = msgInput.value;
+      const next = (v.slice(0, start) + em + v.slice(end)).slice(0, 500);
+      msgInput.value = next;
+      // put cursor right after the inserted emoji
+      const pos = Math.min(start + em.length, next.length);
+      msgInput.focus();
+      try { msgInput.setSelectionRange(pos, pos); } catch (e) {}
+      updateCount();
+    }
+    function openEmoji() {
+      if (!emojiPanel) return;
+      buildEmojiPanel();
+      emojiPanel.hidden = false;
+      emojiToggle?.setAttribute('aria-expanded', 'true');
+      emojiToggle?.classList.add('is-active');
+    }
+    function closeEmoji() {
+      if (!emojiPanel) return;
+      emojiPanel.hidden = true;
+      emojiToggle?.setAttribute('aria-expanded', 'false');
+      emojiToggle?.classList.remove('is-active');
+    }
+    emojiToggle?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (emojiPanel && emojiPanel.hidden) openEmoji(); else closeEmoji();
+    });
+    // close on outside click or Escape
+    document.addEventListener('click', (e) => {
+      if (emojiPanel && !emojiPanel.hidden && !emojiPanel.contains(e.target) && e.target !== emojiToggle && !emojiToggle?.contains(e.target)) closeEmoji();
+    });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && emojiPanel && !emojiPanel.hidden) closeEmoji(); });
 
     // ---- Basic anti-spam safeguards (front-end) ----
     let lastPostAt = 0;
