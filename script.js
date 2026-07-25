@@ -2976,7 +2976,7 @@
       });
       bubble.append(reactRow);
 
-      // Action buttons row (Reply + Delete)
+      // Action buttons row (Reply + Copy + Delete)
       const actions = document.createElement('div');
       actions.className = 'community-msg-actions';
       const replyBtn = document.createElement('button');
@@ -2984,6 +2984,21 @@
       replyBtn.setAttribute('aria-label', 'Reply to this message');
       replyBtn.addEventListener('click', () => startReply(who, bodyText));
       actions.append(replyBtn);
+
+      // Copy message text
+      const copyBtn = document.createElement('button');
+      copyBtn.type = 'button'; copyBtn.className = 'community-msg-copy'; copyBtn.textContent = 'Copy';
+      copyBtn.setAttribute('aria-label', 'Copy this message');
+      copyBtn.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(bodyText);
+          if (window.__agqToast) window.__agqToast('📋 Message copied');
+          else { copyBtn.textContent = 'Copied!'; setTimeout(() => { copyBtn.textContent = 'Copy'; }, 1400); }
+        } catch (e) {
+          copyBtn.textContent = 'Copied!'; setTimeout(() => { copyBtn.textContent = 'Copy'; }, 1400);
+        }
+      });
+      actions.append(copyBtn);
 
       // Delete button: own messages (by stored id OR name match), or ANY message in owner mode
       const canDeleteOwn = mine || (row.id != null && isMineId(row.id));
@@ -3007,6 +3022,12 @@
       msgCount++;
       if (msgCountEl) msgCountEl.textContent = msgCount.toLocaleString();
       if (statsBar) statsBar.hidden = false;
+      // If a search filter is active, apply it to this new message
+      if (searchInput && searchInput.value.trim() && searchBar && !searchBar.hidden) {
+        const q = searchInput.value.trim().toLowerCase();
+        const match = String(row.message).toLowerCase().includes(q) || who.toLowerCase().includes(q);
+        if (!match) wrap.style.display = 'none';
+      }
 
       // Auto-scroll only if the user is already near the bottom (or it's their own message)
       if (wasNear || mine || (opts && opts.initial)) { feed.scrollTop = feed.scrollHeight; if (jumpBtn) jumpBtn.hidden = true; }
@@ -3027,6 +3048,48 @@
       jumpBtn.hidden = true;
     });
     feed?.addEventListener('scroll', () => { if (nearBottom() && jumpBtn) jumpBtn.hidden = true; });
+
+    // ---- Message search / filter ----
+    const searchToggle = $('#communitySearchToggle');
+    const searchBar = $('#communitySearchBar');
+    const searchInput = $('#communitySearchInput');
+    const searchCount = $('#communitySearchCount');
+    const searchClear = $('#communitySearchClear');
+    function runSearch(q) {
+      if (!feed) return;
+      const query = (q || '').trim().toLowerCase();
+      const msgs = feed.querySelectorAll('.community-msg');
+      if (!query) {
+        msgs.forEach(m => { m.style.display = ''; m.classList.remove('is-search-hit'); });
+        if (searchCount) searchCount.textContent = '';
+        if (searchClear) searchClear.hidden = true;
+        return;
+      }
+      if (searchClear) searchClear.hidden = false;
+      let hits = 0;
+      msgs.forEach(m => {
+        const txt = (m.querySelector('.community-msg-text')?.textContent || '').toLowerCase();
+        const who = (m.querySelector('.community-msg-who')?.textContent || '').toLowerCase();
+        const match = txt.includes(query) || who.includes(query);
+        m.style.display = match ? '' : 'none';
+        m.classList.toggle('is-search-hit', match);
+        if (match) hits++;
+      });
+      if (searchCount) searchCount.textContent = hits ? `${hits} match${hits === 1 ? '' : 'es'}` : 'No matches';
+    }
+    searchToggle?.addEventListener('click', () => {
+      if (!searchBar) return;
+      const opening = searchBar.hidden;
+      searchBar.hidden = !opening;
+      searchToggle.classList.toggle('is-active', opening);
+      if (opening) { setTimeout(() => searchInput?.focus(), 50); }
+      else { if (searchInput) searchInput.value = ''; runSearch(''); }
+    });
+    searchInput?.addEventListener('input', () => runSearch(searchInput.value));
+    searchClear?.addEventListener('click', () => { if (searchInput) { searchInput.value = ''; runSearch(''); searchInput.focus(); } });
+    searchInput?.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') { searchInput.value = ''; runSearch(''); if (searchBar) searchBar.hidden = true; searchToggle?.classList.remove('is-active'); }
+    });
 
     // Realtime: new messages appear instantly for everyone
     const liveEl = $('#communityLive');

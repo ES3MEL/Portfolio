@@ -1048,7 +1048,16 @@
             <span class="community-chat-dot" aria-hidden="true"></span>
             <span class="community-chat-title">Live community chat</span>
             <span class="community-online mono" id="communityOnline" hidden></span>
+            <button class="community-search-toggle" id="communitySearchToggle" aria-label="Search messages" title="Search messages">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/><path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </button>
             <span class="community-chat-live mono" id="communityLive">connecting…</span>
+          </div>
+          <div class="community-searchbar" id="communitySearchBar" hidden>
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/><path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            <input type="text" id="communitySearchInput" class="community-search-input" placeholder="Search messages…" aria-label="Search messages" autocomplete="off">
+            <span class="community-search-count mono" id="communitySearchCount"></span>
+            <button class="community-search-clear" id="communitySearchClear" aria-label="Clear search" hidden>✕</button>
           </div>
           <div class="community-stats" id="communityStats" hidden>
             <span class="community-stat"><b id="communityMsgCount">0</b> messages</span>
