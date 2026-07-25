@@ -559,6 +559,19 @@
               <b>English · Filipino</b>
             </div>
           </div>
+
+          <div class="now-card" data-reveal>
+            <div class="now-head">
+              <span class="now-pulse" aria-hidden="true"></span>
+              <span class="mono now-label">Currently</span>
+              <span class="now-time mono" id="nowTime"></span>
+            </div>
+            <ul class="now-list">
+              <li><span class="now-ico">🎯</span> Open to junior UI/UX, QA &amp; business-analyst roles</li>
+              <li><span class="now-ico">📚</span> Deepening skills in product analysis &amp; testing</li>
+              <li><span class="now-ico">🛠️</span> Building &amp; refining projects like this portfolio</li>
+            </ul>
+          </div>
         </div>
 
         <div class="about-visual" data-reveal aria-hidden="true">
@@ -1051,11 +1064,12 @@
             <p class="community-empty" id="communityEmpty" hidden>No messages yet — be the first to say hello 👋</p>
           </div>
           <button class="community-jump" id="communityJump" hidden aria-label="Jump to newest messages">↓ New messages</button>
+          <div class="community-typing" id="communityTyping" hidden><span class="ct-dots"><i></i><i></i><i></i></span><span class="ct-text"></span></div>
           <form class="community-form" id="communityForm">
             <input type="text" id="communityName" class="community-name" placeholder="Your name" maxlength="40" autocomplete="name" aria-label="Your name">
             <div class="community-send-row">
               <input type="text" id="communityMessage" class="community-message" placeholder="Write a message…" maxlength="500" autocomplete="off" aria-label="Your message">
-              <button type="submit" class="btn btn-primary community-send" id="communitySend" aria-label="Send message">
+              <button type="submit" class="community-send" id="communitySend" aria-label="Send message">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none"><path d="M4 12l16-8-6 16-3-6-7-2z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
               </button>
             </div>

@@ -810,7 +810,7 @@ html{ scrollbar-width:thin; scrollbar-color:var(--grad-2) var(--bg); }
 }
 .project-search input::placeholder{ color:var(--text-faint); }
 
-.project-grid{ display:grid; gap:22px; grid-template-columns:repeat(3,1fr); }
+.project-grid{ display:grid; gap:22px; grid-template-columns:repeat(3,1fr); align-items:stretch; }
 @media (max-width:920px){ .project-grid{ grid-template-columns:repeat(2,1fr); } }
 @media (max-width:600px){ .project-grid{ grid-template-columns:1fr; } }
 /* Section preview: 2 cards on mobile, 3 on desktop — keep them evenly sized */
@@ -1236,12 +1236,40 @@ html{ scrollbar-width:thin; scrollbar-color:var(--grad-2) var(--bg); }
    EASTER EGG TOAST
 ========================================================= */
 .egg-toast{
-  position:fixed; left:50%; bottom:30px; transform:translateX(-50%) translateY(20px);
-  z-index:600; background:var(--bg-panel); border:1px solid var(--grad-3); color:var(--text);
-  padding:12px 20px; border-radius:100px; font-size:0.88rem; box-shadow:var(--shadow-lg);
-  opacity:0; pointer-events:none; transition:opacity .3s var(--ease), transform .3s var(--ease);
+  position:fixed; left:50%; bottom:calc(28px + env(safe-area-inset-bottom)); transform:translateX(-50%) translateY(24px) scale(.96);
+  z-index:600; display:flex; align-items:center; gap:11px;
+  max-width:min(92vw, 420px); padding:13px 20px 13px 16px; border-radius:16px;
+  color:var(--text); font-size:0.9rem; line-height:1.4; font-weight:500;
+  background:color-mix(in srgb, var(--bg-panel) 92%, transparent);
+  -webkit-backdrop-filter:blur(16px) saturate(1.5); backdrop-filter:blur(16px) saturate(1.5);
+  border:1px solid var(--border-strong);
+  box-shadow:0 18px 50px -18px rgba(0,0,0,.55), 0 0 0 1px color-mix(in srgb, var(--grad-2) 14%, transparent);
+  opacity:0; pointer-events:none; transition:opacity .32s var(--ease), transform .38s var(--bounce, cubic-bezier(.22,1.2,.36,1));
 }
-.egg-toast.is-show{ opacity:1; transform:translateX(-50%) translateY(0); }
+/* Accent bar on the left edge */
+.egg-toast::before{
+  content:""; position:absolute; left:0; top:10px; bottom:10px; width:4px; border-radius:0 4px 4px 0;
+  background:var(--gradient-main);
+}
+.egg-toast-icon{
+  flex-shrink:0; width:30px; height:30px; display:grid; place-items:center; font-size:1.05rem;
+  border-radius:10px; background:color-mix(in srgb, var(--grad-2) 16%, transparent); margin-left:6px;
+}
+.egg-toast-msg{ min-width:0; overflow-wrap:anywhere; }
+.egg-toast.is-show{ opacity:1; transform:translateX(-50%) translateY(0) scale(1); pointer-events:auto; }
+
+@media (max-width:520px){
+  .egg-toast{
+    left:12px; right:12px; transform:translateY(24px) scale(.97); max-width:none;
+    bottom:calc(84px + env(safe-area-inset-bottom)); padding:12px 16px 12px 14px; font-size:0.86rem;
+  }
+  .egg-toast.is-show{ transform:translateY(0) scale(1); }
+}
+@media (prefers-reduced-motion: reduce){
+  .egg-toast{ transition:opacity .2s ease; transform:translateX(-50%); }
+  .egg-toast.is-show{ transform:translateX(-50%); }
+  @media (max-width:520px){ .egg-toast, .egg-toast.is-show{ transform:none; } }
+}
 
 /* =========================================================
    CHAT WIDGET
@@ -2580,9 +2608,19 @@ p, h1, h2, h3, h4, li, span, a{ overflow-wrap:break-word; }
   /* Projects toolbar: keep search + filters on one row when space allows */
   .projects-toolbar{ flex-direction:row; align-items:center; flex-wrap:wrap; }
   .project-search{ flex:1 1 200px; }
-  /* Project cards a touch more compact */
-  .pcard-thumb{ aspect-ratio:16/9; }
+  /* Project cards: force CONSISTENT sizing on mobile (featured + regular alike) */
+  .pcard-thumb{ aspect-ratio:16/9 !important; min-height:0 !important; }
+  .pcard--featured .pcard-thumb{ aspect-ratio:16/9 !important; min-height:0 !important; }
   .pcard-body{ padding:16px 18px; }
+  /* Keep body text from making cards uneven heights */
+  .pcard-body h3{ font-size:1.02rem; }
+  .pcard-body p{ font-size:.88rem; }
+}
+/* Single-column project layouts: identical card proportions on every phone */
+@media (max-width:560px){
+  #projectGrid, .allproj-scroll .project-grid:not(.is-list){ grid-template-columns:1fr !important; }
+  #projectGrid .pcard, .allproj-scroll .pcard{ width:100%; }
+  .pcard-thumb, .pcard--featured .pcard-thumb{ aspect-ratio:16/9 !important; min-height:0 !important; }
 }
 /* Very narrow landscape (small phones) — stack contact so nothing is cramped */
 @media (orientation:landscape) and (max-height:440px){
@@ -2965,13 +3003,15 @@ img, svg, video, canvas, iframe, table, pre{ max-width:100%; }
 
 .community-form{ border-top:1px solid var(--border); padding:16px; display:flex; flex-direction:column; gap:10px; background:var(--bg-panel-2); }
 .community-name{ align-self:flex-start; max-width:220px; padding:9px 13px; border-radius:11px; border:1px solid var(--border); background:var(--bg); color:var(--text); font-size:16px; transition:border-color .2s, box-shadow .2s; }
-.community-send-row{ display:flex; gap:10px; }
+.community-send-row{ display:flex; gap:10px; align-items:stretch; }
 .community-message{ flex:1; min-width:0; padding:13px 16px; border-radius:13px; border:1px solid var(--border); background:var(--bg); color:var(--text); font-size:16px; transition:border-color .2s, box-shadow .2s; }
 .community-name:focus, .community-message:focus{ outline:none; border-color:var(--grad-3); box-shadow:0 0 0 3px color-mix(in srgb, var(--grad-3) 15%, transparent); }
-.community-send{ flex-shrink:0; width:46px; height:46px; padding:0; border-radius:13px; display:grid; place-items:center;
-  background:var(--gradient-main); color:var(--on-gradient); box-shadow:0 6px 18px -6px color-mix(in srgb, var(--grad-1) 60%, transparent); transition:transform .18s var(--ease), box-shadow .18s var(--ease); }
-.community-send:hover{ transform:translateY(-2px); box-shadow:0 10px 24px -8px color-mix(in srgb, var(--grad-1) 70%, transparent); }
-.community-send:active{ transform:scale(.92); }
+.community-send{ flex-shrink:0; width:46px; height:46px; padding:0; border:none; border-radius:13px; display:grid; place-items:center; cursor:pointer;
+  background:var(--gradient-main); color:var(--on-gradient); box-shadow:0 6px 18px -6px color-mix(in srgb, var(--grad-1) 60%, transparent);
+  transition:box-shadow .18s var(--ease), filter .18s var(--ease); }
+.community-send:hover{ filter:brightness(1.08); box-shadow:0 10px 24px -8px color-mix(in srgb, var(--grad-1) 70%, transparent); }
+.community-send:active{ filter:brightness(.95); }
+.community-send svg{ pointer-events:none; }
 .community-note{ font-size:.7rem; color:var(--text-faint); min-height:1em; }
 
 .community-visitors{ background:var(--bg-panel); border:1px solid var(--border); border-radius:22px; padding:20px 22px; box-shadow:0 20px 50px -24px rgba(0,0,0,.4), var(--shadow-md); position:sticky; top:90px; }
@@ -3187,3 +3227,62 @@ img, svg, video, canvas, iframe, table, pre{ max-width:100%; }
 
 /* Adapt near-black tool logos (e.g. Vercel) for dark theme so they stay visible */
 :root[data-theme="dark"] .tool-pill[data-adapt="1"] img{ filter:invert(1) brightness(1.6); }
+
+/* =========================================================
+   COMMUNITY — typing indicator + extra polish
+========================================================= */
+.community-typing{
+  display:flex; align-items:center; gap:9px; padding:6px 18px 10px; font-size:.76rem; color:var(--text-faint);
+  animation:msgIn .25s var(--ease);
+}
+.ct-dots{ display:inline-flex; gap:3px; }
+.ct-dots i{ width:6px; height:6px; border-radius:50%; background:var(--grad-3); animation:ctBounce 1.2s infinite ease-in-out; }
+.ct-dots i:nth-child(2){ animation-delay:.15s; }
+.ct-dots i:nth-child(3){ animation-delay:.3s; }
+@keyframes ctBounce{ 0%,60%,100%{ transform:translateY(0); opacity:.5; } 30%{ transform:translateY(-5px); opacity:1; } }
+.ct-text{ font-style:italic; }
+@media (prefers-reduced-motion: reduce){ .ct-dots i{ animation:none; } }
+
+/* Extra bubble depth on hover for a livelier feel */
+.community-msg-text{ transition:transform .15s var(--ease), box-shadow .15s var(--ease); }
+.community-msg:hover .community-msg-text{ box-shadow:0 4px 14px -4px rgba(0,0,0,.3); }
+
+/* Subtle section framing for the forum */
+#community .community-layout{ position:relative; }
+
+/* =========================================================
+   PROJECT CARDS — cross-device consistency (iOS/Android safe)
+========================================================= */
+/* aspect-ratio fallback for older iOS Safari (<15): reserve height via padding */
+@supports not (aspect-ratio: 1 / 1){
+  .pcard-thumb{ height:0; padding-bottom:56.25%; position:relative; }
+  .pcard-mock{ position:absolute; inset:18px 18px 0; height:auto; }
+}
+/* Make every card body the same minimum height so titles/desc align across a row */
+.pcard-body{ min-height:0; }
+@media (min-width:561px){
+  .project-grid .pcard, #projectGrid .pcard{ height:100%; }
+}
+/* Prevent long project titles from wrapping to wildly different heights (grid view only) */
+.project-grid:not(.is-list) .pcard-body h3{ display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.project-grid:not(.is-list) .pcard-body p{ display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+
+/* =========================================================
+   "CURRENTLY / NOW" STATUS CARD (About section)
+========================================================= */
+.now-card{
+  margin-top:20px; padding:18px 20px; border-radius:16px;
+  background:linear-gradient(135deg, color-mix(in srgb, var(--grad-1) 10%, var(--bg-panel)), color-mix(in srgb, var(--grad-3) 7%, var(--bg-panel)));
+  border:1px solid color-mix(in srgb, var(--grad-2) 24%, var(--border));
+  box-shadow:0 12px 34px -20px color-mix(in srgb, var(--grad-1) 60%, transparent);
+}
+.now-head{ display:flex; align-items:center; gap:9px; margin-bottom:12px; }
+.now-pulse{ width:9px; height:9px; border-radius:50%; background:var(--grad-3); position:relative; box-shadow:0 0 8px var(--grad-3); }
+.now-pulse::after{ content:""; position:absolute; inset:-4px; border-radius:50%; border:2px solid var(--grad-3); opacity:.5; animation:nowPulse 2s ease-out infinite; }
+@keyframes nowPulse{ 0%{ transform:scale(.7); opacity:.6; } 100%{ transform:scale(1.8); opacity:0; } }
+.now-label{ font-size:.72rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--grad-3); }
+.now-time{ margin-left:auto; font-size:.7rem; color:var(--text-faint); }
+.now-list{ list-style:none; display:flex; flex-direction:column; gap:9px; }
+.now-list li{ display:flex; align-items:center; gap:10px; font-size:.9rem; color:var(--text); line-height:1.4; }
+.now-ico{ flex-shrink:0; font-size:1rem; }
+@media (prefers-reduced-motion: reduce){ .now-pulse::after{ animation:none; } }

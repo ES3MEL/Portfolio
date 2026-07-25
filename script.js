@@ -559,6 +559,22 @@
   /* ---------- Skills grid/list view toggle ---------- */
   /* ---------- Rotating hero eyebrow ---------- */
   /* ---------- Scroll progress bar ---------- */
+  /* ---------- "Currently" card: live PH time ---------- */
+  function initNowCard() {
+    const el = $('#nowTime');
+    if (!el) return;
+    function tick() {
+      try {
+        const t = new Date().toLocaleTimeString('en-PH', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit' });
+        el.textContent = '· ' + t + ' PH';
+      } catch (e) {
+        el.textContent = '';
+      }
+    }
+    tick();
+    setInterval(tick, 30000);
+  }
+
   function initScrollProgress() {
     const bar = $('#scrollProgress');
     if (!bar) return;
@@ -2294,15 +2310,11 @@
 
   /* ---------- Easter egg: Konami code ---------- */
   function initEasterEgg() {
-    const toast = $('#eggToast');
     const seq = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
     let pos = 0;
 
     function showToast(msg) {
-      if (!toast) return;
-      toast.textContent = msg;
-      toast.classList.add('is-show');
-      setTimeout(() => toast.classList.remove('is-show'), 3200);
+      if (window.__agqToast) window.__agqToast(msg, { duration: 3200 });
     }
 
     document.addEventListener('keydown', (e) => {
@@ -2840,6 +2852,40 @@
       if (status === 'SUBSCRIBED') { try { await presence.track({ at: Date.now() }); } catch (e) {} }
     });
 
+    // ---- "Someone is typing…" indicator (broadcast, ephemeral) ----
+    const typingEl = $('#communityTyping');
+    const typingChan = sb.channel('community-typing');
+    const typers = new Map(); // cid -> {name, timer}
+    function renderTyping() {
+      if (!typingEl) return;
+      const names = [...typers.values()].map(t => t.name).filter(Boolean);
+      if (!names.length) { typingEl.hidden = true; return; }
+      let label;
+      if (names.length === 1) label = `${names[0]} is typing`;
+      else if (names.length === 2) label = `${names[0]} and ${names[1]} are typing`;
+      else label = `${names.length} people are typing`;
+      typingEl.querySelector('.ct-text').textContent = label;
+      typingEl.hidden = false;
+    }
+    typingChan.on('broadcast', { event: 'typing' }, (payload) => {
+      const p = payload.payload || {};
+      if (!p.cid || p.cid === CID) return;
+      const prev = typers.get(p.cid);
+      if (prev) clearTimeout(prev.timer);
+      const timer = setTimeout(() => { typers.delete(p.cid); renderTyping(); }, 3500);
+      typers.set(p.cid, { name: (p.name || 'Someone').slice(0, 24), timer });
+      renderTyping();
+    }).subscribe();
+    // Emit typing (throttled) as the user types a message
+    let typingSentAt = 0;
+    msgInput?.addEventListener('input', () => {
+      const now = Date.now();
+      if (now - typingSentAt < 1200) return;
+      typingSentAt = now;
+      const nm = (nameInput?.value || '').trim() || 'Someone';
+      try { typingChan.send({ type: 'broadcast', event: 'typing', payload: { cid: CID, name: nm } }); } catch (e) {}
+    });
+
     async function deleteMessage(id, el) {
       const { error } = await sb.from('messages').delete().eq('id', id);
       if (error) {
@@ -3315,12 +3361,34 @@
   function initToast() {
     const toast = $('#eggToast');
     let timer = null;
-    window.__agqToast = function (msg) {
-      if (!toast) return;
-      toast.textContent = msg;
+    if (toast) {
+      // Build the inner structure once (icon + message)
+      toast.innerHTML = '<span class="egg-toast-icon" aria-hidden="true"></span><span class="egg-toast-msg"></span>';
+    }
+    const iconEl = toast ? toast.querySelector('.egg-toast-icon') : null;
+    const msgEl = toast ? toast.querySelector('.egg-toast-msg') : null;
+    // Emoji-prefix detection so a leading emoji becomes the icon
+    const emojiRe = /^(\p{Extended_Pictographic}(?:\uFE0F)?)\s*/u;
+    window.__agqToast = function (msg, opts) {
+      if (!toast || !msgEl) return;
+      opts = opts || {};
+      let text = String(msg == null ? '' : msg);
+      let icon = opts.icon || '';
+      if (!icon) {
+        const m = text.match(emojiRe);
+        if (m) { icon = m[1]; text = text.slice(m[0].length); }
+      }
+      if (icon) { iconEl.textContent = icon; iconEl.style.display = ''; }
+      else if (iconEl) { iconEl.style.display = 'none'; }
+      msgEl.textContent = text;
+      toast.setAttribute('role', 'status');
+      toast.setAttribute('aria-live', 'polite');
+      // retrigger entrance animation
+      toast.classList.remove('is-show');
+      void toast.offsetWidth;
       toast.classList.add('is-show');
       clearTimeout(timer);
-      timer = setTimeout(() => toast.classList.remove('is-show'), 2400);
+      timer = setTimeout(() => toast.classList.remove('is-show'), opts.duration || 2800);
     };
   }
 
@@ -4129,6 +4197,7 @@
     initSkillsView();
     initEyebrowRotate();
     initScrollProgress();
+    initNowCard();
     initCommunity();
     initSectionShare();
     initIdleGreeter();
