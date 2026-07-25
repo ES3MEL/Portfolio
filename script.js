@@ -1515,13 +1515,16 @@
       { name: 'VS Code', slug: 'visualstudiocode', color: '007ACC' },
       { name: 'ClickUp', slug: 'clickup', color: '7B68EE' },
       { name: 'Microsoft Office', slug: 'microsoft', color: 'D83B01' },
-      { name: 'Google Workspace', slug: 'google', color: '4285F4' }
+      { name: 'Google Workspace', slug: 'google', color: '4285F4' },
+      { name: 'Supabase', slug: 'supabase', color: '3FCF8E' },
+      { name: 'Vercel', slug: 'vercel', color: '000000' }
     ];
 
     function pill(t) {
       const src = `https://cdn.simpleicons.org/${t.slug}`;
       const mono = escapeHtml(t.name.charAt(0));
-      return `<div class="tool-pill" title="${escapeHtml(t.name)}">
+      const adapt = t.color === '000000' ? ' data-adapt="1"' : '';
+      return `<div class="tool-pill" title="${escapeHtml(t.name)}"${adapt}>
         <span class="tool-ico" style="--tc:#${t.color}">
           <img src="${src}" alt="${escapeHtml(t.name)} logo" loading="lazy"
                onerror="this.style.display='none';this.nextElementSibling.style.display='grid';">
@@ -2978,22 +2981,6 @@
       jumpBtn.hidden = true;
     });
     feed?.addEventListener('scroll', () => { if (nearBottom() && jumpBtn) jumpBtn.hidden = true; });
-
-    // Emoji quick-insert tray
-    const emojiBtn = $('#communityEmojiBtn');
-    const emojiTray = $('#communityEmojiTray');
-    const EMOJIS = ['😊','😂','❤️','👍','🎉','🔥','👏','🙌','✨','😍','🤝','💯','🙏','😎','👀','💡'];
-    if (emojiBtn && emojiTray) {
-      EMOJIS.forEach(em => {
-        const b = document.createElement('button');
-        b.type = 'button'; b.className = 'community-emoji'; b.textContent = em;
-        b.addEventListener('click', () => {
-          if (msgInput) { msgInput.value += em; msgInput.focus(); msgInput.dispatchEvent(new Event('input')); }
-        });
-        emojiTray.appendChild(b);
-      });
-      emojiBtn.addEventListener('click', () => { emojiTray.hidden = !emojiTray.hidden; });
-    }
 
     // Realtime: new messages appear instantly for everyone
     const liveEl = $('#communityLive');
