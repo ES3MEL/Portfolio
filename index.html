@@ -434,12 +434,6 @@
           </div>
         </div>
 
-        <div class="status-ticker mono" data-reveal>
-          <span class="status-dot" aria-hidden="true"></span>
-          <span>Open to:</span>
-          <span class="status-ticker-text" id="statusTicker"></span>
-        </div>
-
         <button class="pitch-btn" id="pitchBtn" data-reveal>
           <svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true"><path d="M12 3v3m0 12v3M5.6 5.6l2.1 2.1m8.6 8.6l2.1 2.1M3 12h3m12 0h3M5.6 18.4l2.1-2.1m8.6-8.6l2.1-2.1" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
           <span>▶ 30-second pitch</span>
@@ -1048,6 +1042,9 @@
             <span class="community-chat-dot" aria-hidden="true"></span>
             <span class="community-chat-title">Live community chat</span>
             <span class="community-online mono" id="communityOnline" hidden></span>
+            <button class="community-search-toggle" id="communitySavedToggle" aria-label="Show saved messages" title="Show saved messages" aria-pressed="false">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true"><path d="M6 4h12v16l-6-4-6 4V4z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+            </button>
             <button class="community-search-toggle" id="communitySearchToggle" aria-label="Search messages" title="Search messages">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/><path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
             </button>
@@ -1095,7 +1092,7 @@
                 <input type="text" id="communityGifInput" class="community-gif-input" placeholder="Search GIFs…" autocomplete="off" aria-label="Search GIFs">
               </div>
               <div class="community-gif-results" id="communityGifResults"></div>
-              <p class="community-gif-note mono">Powered by Tenor · content-rated (safe)</p>
+              <p class="community-gif-note mono">Curated GIFs · all safe</p>
             </div>
             <div class="community-emoji-panel" id="communityEmojiPanel" hidden role="dialog" aria-label="Emoji picker"></div>
             <p class="community-note mono" id="communityStatus"></p>

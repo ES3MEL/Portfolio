@@ -2988,7 +2988,7 @@ img, svg, video, canvas, iframe, table, pre{ max-width:100%; }
 .community-layout{ display:grid; grid-template-columns:1.6fr 0.9fr; gap:28px; align-items:start; }
 @media (max-width:860px){ .community-layout{ grid-template-columns:1fr; gap:20px; } }
 
-.community-chat{ display:flex; flex-direction:column; background:var(--bg-panel); border:1px solid var(--border); border-radius:22px; overflow:hidden; box-shadow:0 20px 50px -24px rgba(0,0,0,.4), var(--shadow-md); }
+.community-chat{ position:relative; display:flex; flex-direction:column; background:var(--bg-panel); border:1px solid var(--border); border-radius:22px; overflow:hidden; box-shadow:0 20px 50px -24px rgba(0,0,0,.4), var(--shadow-md); }
 /* Chat header bar */
 .community-chat-head{ display:flex; align-items:center; gap:10px; padding:15px 18px; border-bottom:1px solid var(--border); position:relative;
   background:linear-gradient(120deg, color-mix(in srgb, var(--grad-1) 16%, var(--bg-panel)), color-mix(in srgb, var(--grad-3) 8%, var(--bg-panel))); }
@@ -3076,10 +3076,13 @@ img, svg, video, canvas, iframe, table, pre{ max-width:100%; }
 .community-msg.is-grouped{ margin-top:-8px; }
 
 /* Jump-to-newest button */
-.community-jump{ align-self:center; margin:-4px auto 8px; padding:6px 16px; border-radius:100px; font-size:.74rem; font-weight:600;
-  color:var(--on-gradient); background:var(--gradient-main); border:none; cursor:pointer; box-shadow:var(--shadow-md);
+.community-jump{ position:absolute; left:50%; transform:translateX(-50%); bottom:96px; padding:7px 18px; border-radius:100px; font-size:.74rem; font-weight:600; z-index:12;
+  color:var(--on-gradient); background:var(--gradient-main); border:none; cursor:pointer; box-shadow:0 8px 24px -8px color-mix(in srgb, var(--grad-1) 70%, transparent);
   animation:msgIn .3s var(--ease); }
-.community-jump:hover{ filter:brightness(1.08); }
+.community-jump:hover{ filter:brightness(1.08); transform:translateX(-50%) translateY(-1px); }
+.community-jump.has-new{ animation:jumpPulse 1.6s ease-in-out infinite; }
+@keyframes jumpPulse{ 0%,100%{ box-shadow:0 8px 24px -8px color-mix(in srgb, var(--grad-1) 60%, transparent); } 50%{ box-shadow:0 10px 28px -6px color-mix(in srgb, var(--grad-1) 95%, transparent); } }
+@media (prefers-reduced-motion: reduce){ .community-jump.has-new{ animation:none; } }
 
 /* Emoji composer */
 
@@ -3137,15 +3140,20 @@ img, svg, video, canvas, iframe, table, pre{ max-width:100%; }
 
 /* Quoted reply shown inside a message bubble */
 .community-msg-quote{
-  display:flex; flex-direction:column; gap:1px; margin-bottom:5px; padding:5px 10px;
-  border-left:3px solid var(--grad-3); background:color-mix(in srgb, var(--grad-3) 8%, transparent);
-  border-radius:5px; font-size:.78rem;
+  display:flex; flex-direction:column; gap:1px; margin-bottom:5px; padding:5px 10px; width:100%; text-align:left;
+  border:none; border-left:3px solid var(--grad-3); background:color-mix(in srgb, var(--grad-3) 8%, transparent);
+  border-radius:5px; font-size:.78rem; cursor:pointer; transition:background .15s var(--ease-out);
 }
+.community-msg-quote:hover{ background:color-mix(in srgb, var(--grad-3) 16%, transparent); }
 .community-msg.is-mine .community-msg-quote{ border-left-color:rgba(255,255,255,.6); background:rgba(255,255,255,.12); }
+.community-msg.is-mine .community-msg-quote:hover{ background:rgba(255,255,255,.2); }
 .community-quote-name{ font-weight:600; color:var(--grad-3); }
 .community-msg.is-mine .community-quote-name{ color:#fff; }
 .community-quote-text{ color:var(--text-dim); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .community-msg.is-mine .community-quote-text{ color:rgba(255,255,255,.85); }
+/* Highlight when a reply's quote jumps you to the original */
+.community-msg.is-jump-highlight{ animation:jumpHi 1.6s var(--ease-out); border-radius:12px; }
+@keyframes jumpHi{ 0%,70%{ background:color-mix(in srgb, var(--grad-3) 16%, transparent); } 100%{ background:transparent; } }
 
 /* Reply preview banner above the composer */
 .community-reply-banner{
@@ -3416,3 +3424,47 @@ img, svg, video, canvas, iframe, table, pre{ max-width:100%; }
   .community-gif-results{ grid-template-columns:repeat(3,1fr); }
   .community-msg-gif{ max-width:180px; }
 }
+
+/* =========================================================
+   COMMUNITY — saved / bookmarked messages
+========================================================= */
+.community-msg-save{
+  font-size:.66rem; color:var(--text-faint); background:none; border:none; cursor:pointer; padding:2px 0;
+  text-decoration:underline; opacity:0; transition:opacity .2s, color .2s;
+}
+.community-msg:hover .community-msg-save, .community-msg.is-mine .community-msg-save{ opacity:.7; }
+.community-msg-save:hover{ color:var(--grad-2); opacity:1; }
+.community-msg-save.is-saved{ color:var(--grad-2); opacity:.95; text-decoration:none; font-weight:600; }
+@media (hover:none){ .community-msg-save{ opacity:.75; } }
+/* Subtle marker on a saved message */
+.community-msg.is-saved-msg .community-msg-text{ box-shadow:inset 3px 0 0 var(--grad-2); }
+/* Saved header toggle active state (reuses search-toggle styles) */
+#communitySavedToggle.is-active{ color:var(--grad-2); background:color-mix(in srgb, var(--grad-2) 12%, transparent); border-color:color-mix(in srgb, var(--grad-2) 40%, transparent); }
+
+/* =========================================================
+   COMMUNITY — edit message
+========================================================= */
+.community-msg-edit{
+  font-size:.66rem; color:var(--text-faint); background:none; border:none; cursor:pointer; padding:2px 0;
+  text-decoration:underline; opacity:0; transition:opacity .2s, color .2s;
+}
+.community-msg:hover .community-msg-edit, .community-msg.is-mine .community-msg-edit{ opacity:.7; }
+.community-msg-edit:hover{ color:var(--grad-3); opacity:1; }
+@media (hover:none){ .community-msg-edit{ opacity:.75; } }
+.community-msg-edited{ font-size:.6rem; color:var(--text-faint); font-style:italic; margin-left:2px; }
+
+.community-edit{ display:flex; flex-direction:column; gap:8px; margin-top:2px; }
+.community-edit-input{
+  width:100%; min-height:60px; resize:vertical; padding:10px 13px; border-radius:12px;
+  border:1px solid var(--grad-3); background:var(--bg); color:var(--text); font-size:15px; font-family:inherit; line-height:1.5; outline:none;
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--grad-3) 14%, transparent);
+}
+.community-edit-bar{ display:flex; gap:8px; }
+.community-edit-save, .community-edit-cancel{
+  padding:6px 15px; border-radius:9px; font-size:.76rem; font-weight:600; cursor:pointer; border:1px solid var(--border); transition:filter .15s, background .15s;
+}
+.community-edit-save{ background:var(--gradient-main); color:var(--on-gradient); border-color:transparent; }
+.community-edit-save:hover{ filter:brightness(1.08); }
+.community-edit-save:disabled{ opacity:.6; cursor:default; }
+.community-edit-cancel{ background:var(--bg-panel-2); color:var(--text-dim); }
+.community-edit-cancel:hover{ background:var(--bg); color:var(--text); }

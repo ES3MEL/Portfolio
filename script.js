@@ -2747,6 +2747,9 @@
 
     // Track the current user's display name to align their own messages
     function myName() {
+      // Prefer the live name field, fall back to the saved name
+      const live = (nameInput && nameInput.value ? nameInput.value : '').trim();
+      if (live) return live;
       try { return (localStorage.getItem('agq-community-name') || '').trim(); } catch (e) { return ''; }
     }
     // Track IDs of messages this browser created, so they can be deleted
@@ -2757,6 +2760,110 @@
       try { const a = mineIds(); if (!a.includes(id)) { a.push(id); localStorage.setItem('agq-community-mine', JSON.stringify(a.slice(-200))); } } catch (e) {}
     }
     function isMineId(id) { return mineIds().includes(id); }
+
+    // ---- Edit your own message ----
+    let editingId = null;
+    function startEdit(row, wrap, textEl, currentText) {
+      if (!textEl || row.id == null) return;
+      // Preserve a reply marker prefix (if any) so editing doesn't drop reply context
+      const raw = String(row.message || '');
+      const replyMatch = raw.match(/^(⤷\{\{reply:[^:]*::[\s\S]*?\}\}\n?)/);
+      const replyPrefix = replyMatch ? replyMatch[1] : '';
+      editingId = row.id;
+      // Build an inline editor
+      const editor = document.createElement('div');
+      editor.className = 'community-edit';
+      const ta = document.createElement('textarea');
+      ta.className = 'community-edit-input'; ta.value = currentText; ta.maxLength = 500;
+      ta.setAttribute('aria-label', 'Edit your message');
+      const bar = document.createElement('div'); bar.className = 'community-edit-bar';
+      const save = document.createElement('button'); save.type = 'button'; save.className = 'community-edit-save'; save.textContent = 'Save';
+      const cancel = document.createElement('button'); cancel.type = 'button'; cancel.className = 'community-edit-cancel'; cancel.textContent = 'Cancel';
+      bar.append(save, cancel);
+      editor.append(ta, bar);
+      textEl.style.display = 'none';
+      textEl.parentNode.insertBefore(editor, textEl.nextSibling);
+      ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length);
+      function close() { editor.remove(); textEl.style.display = ''; editingId = null; }
+      cancel.addEventListener('click', close);
+      ta.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') close();
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); doSave(); }
+      });
+      async function doSave() {
+        const next = ta.value.trim();
+        if (!next) { close(); return; }
+        if (next === currentText) { close(); return; }
+        // Reuse the profanity/spam check
+        if (typeof hasProfanity === 'function' && (hasProfanity(next))) {
+          showBlockedAlert('Please keep it respectful — that language isn\'t allowed here.');
+          return;
+        }
+        const newMessage = replyPrefix + next;
+        save.textContent = 'Saving…'; save.disabled = true;
+        try {
+          const { error } = await sb.from('messages').update({ message: newMessage }).eq('id', row.id);
+          if (error) { save.textContent = 'Save'; save.disabled = false; alert('Edit failed: ' + (error.message || 'error') + '\n\nYou may need to add an UPDATE policy in Supabase.'); return; }
+          // Update local view immediately
+          row.message = newMessage;
+          textEl.textContent = next;
+          // add an "edited" marker if not present
+          const head = wrap.querySelector('.community-msg-head');
+          if (head && !head.querySelector('.community-msg-edited')) {
+            const em = document.createElement('span'); em.className = 'community-msg-edited'; em.textContent = '(edited)';
+            head.appendChild(em);
+          }
+          close();
+        } catch (e) { save.textContent = 'Save'; save.disabled = false; alert('Edit failed.'); }
+      }
+      save.addEventListener('click', doSave);
+    }
+
+    // ---- Saved / bookmarked messages (per browser) ----
+    function savedIds() {
+      try { return JSON.parse(localStorage.getItem('agq-community-saved') || '[]'); } catch (e) { return []; }
+    }
+    function isSaved(id) { return savedIds().includes(id); }
+    function toggleSaved(id) {
+      try {
+        let a = savedIds();
+        if (a.includes(id)) a = a.filter(x => x !== id);
+        else a.push(id);
+        localStorage.setItem('agq-community-saved', JSON.stringify(a.slice(-300)));
+      } catch (e) {}
+    }
+    let savedOnly = false;
+    function applySavedFilter() {
+      if (!feed) return;
+      feed.querySelectorAll('.community-msg').forEach(m => {
+        const id = m.getAttribute('data-mid');
+        m.style.display = (!savedOnly || (id && isSaved(Number(id)))) ? '' : 'none';
+      });
+    }
+
+    // Jump to the original message a reply is quoting (matched by author + text)
+    function jumpToOriginal(name, snippet, fromEl) {
+      if (!feed) return;
+      const wantName = (name || '').trim().toLowerCase();
+      const wantText = (snippet || '').trim().toLowerCase();
+      const msgs = [...feed.querySelectorAll('.community-msg')];
+      // search upward from the reply for the closest matching original
+      let target = null;
+      const fromIdx = fromEl ? msgs.indexOf(fromEl) : msgs.length;
+      for (let i = (fromIdx === -1 ? msgs.length : fromIdx) - 1; i >= 0; i--) {
+        const m = msgs[i];
+        const who = (m.querySelector('.community-msg-who')?.textContent || '').trim().toLowerCase();
+        const txt = (m.querySelector('.community-msg-text')?.textContent || '').trim().toLowerCase();
+        const nameOk = !wantName || who === wantName || (who === 'you');
+        if (nameOk && wantText && txt.includes(wantText.slice(0, 40))) { target = m; break; }
+      }
+      if (!target) return;
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      target.classList.remove('is-jump-highlight');
+      void target.offsetWidth;
+      target.classList.add('is-jump-highlight');
+      setTimeout(() => target.classList.remove('is-jump-highlight'), 1600);
+    }
 
     // ---- Owner / moderator mode ----
     // Allyssa can unlock owner mode to delete ANY message. Unlock by visiting
@@ -2939,9 +3046,12 @@
         const rName = rm[1] || 'someone';
         const rSnippet = rm[2] || '';
         bodyText = rm[3] || '';
-        const quote = document.createElement('div');
+        const quote = document.createElement('button');
+        quote.type = 'button';
         quote.className = 'community-msg-quote';
+        quote.setAttribute('aria-label', 'Jump to the message being replied to');
         quote.innerHTML = `<span class="community-quote-name">${escapeHtml(rName)}</span><span class="community-quote-text">${escapeHtml(rSnippet)}</span>`;
+        quote.addEventListener('click', () => jumpToOriginal(rName, rSnippet, wrap));
         bubble.append(quote);
       }
 
@@ -2955,6 +3065,7 @@
           const fig = document.createElement('div'); fig.className = 'community-msg-gif';
           const img = document.createElement('img');
           img.src = url; img.alt = 'GIF'; img.loading = 'lazy'; img.decoding = 'async';
+          img.addEventListener('error', () => { fig.innerHTML = '<span class="community-gif-broken">🖼️ GIF unavailable</span>'; });
           fig.appendChild(img);
           bubble.append(fig);
           wrap.append(av, bubble);
@@ -2963,7 +3074,7 @@
           if (msgCountEl) msgCountEl.textContent = msgCount.toLocaleString();
           if (statsBar) statsBar.hidden = false;
           if (wasNear || mine || (opts && opts.initial)) { feed.scrollTop = feed.scrollHeight; if (jumpBtn) jumpBtn.hidden = true; }
-          else if (jumpBtn) jumpBtn.hidden = false;
+          else if (jumpBtn) { jumpBtn.hidden = false; jumpBtn.classList.add("has-new"); jumpBtn.textContent = "↓ New messages"; }
           return;
         }
       }
@@ -3023,6 +3134,32 @@
       });
       actions.append(copyBtn);
 
+      // Save / bookmark this message (stored per-browser)
+      if (row.id != null) {
+        const saveBtn = document.createElement('button');
+        saveBtn.type = 'button'; saveBtn.className = 'community-msg-save';
+        const setSaveLabel = () => {
+          const saved = isSaved(row.id);
+          saveBtn.textContent = saved ? '★ Saved' : '☆ Save';
+          saveBtn.classList.toggle('is-saved', saved);
+          wrap.classList.toggle('is-saved-msg', saved);
+        };
+        setSaveLabel();
+        saveBtn.setAttribute('aria-label', 'Save this message');
+        saveBtn.addEventListener('click', () => { toggleSaved(row.id); setSaveLabel(); if (savedOnly) applySavedFilter(); });
+        actions.append(saveBtn);
+      }
+
+      // Edit button: own text messages only (not GIFs)
+      const canEditOwn = (mine || (row.id != null && isMineId(row.id))) && row.id != null && !gm;
+      if (canEditOwn) {
+        const editBtn = document.createElement('button');
+        editBtn.type = 'button'; editBtn.className = 'community-msg-edit'; editBtn.textContent = 'Edit';
+        editBtn.setAttribute('aria-label', 'Edit this message');
+        editBtn.addEventListener('click', () => startEdit(row, wrap, text, bodyText));
+        actions.append(editBtn);
+      }
+
       // Delete button: own messages (by stored id OR name match), or ANY message in owner mode
       const canDeleteOwn = mine || (row.id != null && isMineId(row.id));
       const owner = isOwner();
@@ -3054,7 +3191,7 @@
 
       // Auto-scroll only if the user is already near the bottom (or it's their own message)
       if (wasNear || mine || (opts && opts.initial)) { feed.scrollTop = feed.scrollHeight; if (jumpBtn) jumpBtn.hidden = true; }
-      else if (jumpBtn) jumpBtn.hidden = false;
+      else if (jumpBtn) { jumpBtn.hidden = false; jumpBtn.classList.add("has-new"); jumpBtn.textContent = "↓ New messages"; }
     }
 
     // Load recent messages
@@ -3067,10 +3204,22 @@
 
     // Jump-to-newest button
     jumpBtn?.addEventListener('click', () => {
-      if (feed) feed.scrollTop = feed.scrollHeight;
-      jumpBtn.hidden = true;
+      if (feed) feed.scrollTo({ top: feed.scrollHeight, behavior: 'smooth' });
+      if (jumpBtn) { jumpBtn.hidden = true; jumpBtn.classList.remove('has-new'); jumpBtn.textContent = '↓ Latest'; }
     });
-    feed?.addEventListener('scroll', () => { if (nearBottom() && jumpBtn) jumpBtn.hidden = true; });
+    // Show the button whenever the user has scrolled up to read older messages
+    feed?.addEventListener('scroll', () => {
+      if (!jumpBtn) return;
+      if (nearBottom()) {
+        jumpBtn.hidden = true;
+        jumpBtn.classList.remove('has-new');
+        jumpBtn.textContent = '↓ Latest';
+      } else if (!jumpBtn.classList.contains('has-new')) {
+        // scrolled up, no new message pending → offer a jump-to-latest
+        jumpBtn.hidden = false;
+        jumpBtn.textContent = '↓ Latest';
+      }
+    });
 
     // ---- Message search / filter ----
     const searchToggle = $('#communitySearchToggle');
@@ -3100,6 +3249,21 @@
       });
       if (searchCount) searchCount.textContent = hits ? `${hits} match${hits === 1 ? '' : 'es'}` : 'No matches';
     }
+
+    // Saved-messages filter toggle
+    const savedToggle = $('#communitySavedToggle');
+    savedToggle?.addEventListener('click', () => {
+      savedOnly = !savedOnly;
+      savedToggle.classList.toggle('is-active', savedOnly);
+      savedToggle.setAttribute('aria-pressed', savedOnly ? 'true' : 'false');
+      savedToggle.title = savedOnly ? 'Show all messages' : 'Show saved messages';
+      applySavedFilter();
+      if (window.__agqToast) {
+        const n = savedIds().length;
+        window.__agqToast(savedOnly ? (n ? `★ Showing ${n} saved` : '☆ No saved messages yet') : 'Showing all messages');
+      }
+    });
+
     searchToggle?.addEventListener('click', () => {
       if (!searchBar) return;
       const opening = searchBar.hidden;
@@ -3125,6 +3289,25 @@
         if (id == null || !feed) return;
         const node = feed.querySelector(`[data-mid="${id}"]`);
         if (node && node.parentNode) { node.parentNode.removeChild(node); msgCount = Math.max(0, msgCount - 1); if (msgCountEl) msgCountEl.textContent = msgCount.toLocaleString(); }
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, (payload) => {
+        const r = payload.new;
+        if (!r || r.id == null || !feed) return;
+        if (editingId === r.id) return; // don't clobber our own open editor
+        const node = feed.querySelector(`[data-mid="${r.id}"]`);
+        if (!node) return;
+        const textEl = node.querySelector('.community-msg-text');
+        if (!textEl) return;
+        // strip reply marker for display
+        let disp = String(r.message || '');
+        const rm = disp.match(/^⤷\{\{reply:[^:]*::[\s\S]*?\}\}\n?([\s\S]*)$/);
+        if (rm) disp = rm[1] || '';
+        textEl.textContent = disp;
+        const head = node.querySelector('.community-msg-head');
+        if (head && !head.querySelector('.community-msg-edited')) {
+          const em = document.createElement('span'); em.className = 'community-msg-edited'; em.textContent = '(edited)';
+          head.appendChild(em);
+        }
       })
       .subscribe((status) => {
         if (liveEl) {
@@ -3206,26 +3389,98 @@
     });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && emojiPanel && !emojiPanel.hidden) closeEmoji(); });
 
-    // ---- GIF picker (Tenor, content-filtered) ----
-    // Get a free Tenor API key at https://developers.google.com/tenor/guides/quickstart
-    // and paste it below. Until then, the GIF button shows a short setup note.
-    const TENOR_KEY = '';
+    // ---- GIF picker (curated, no API key needed) ----
+    // A hand-picked set of safe, fun GIFs served from Giphy's public media CDN.
+    // Each is chosen manually, so nothing inappropriate can appear.
+    const GIF_SET = [
+      // greetings
+      { t: 'hi hello wave', u: 'https://media.giphy.com/media/xUPGGDNsLvqsBOhuU0/giphy.gif' },
+      { t: 'hello wave hi', u: 'https://media.giphy.com/media/ASd0Ukj0y3qMM/giphy.gif' },
+      { t: 'wave bye goodbye', u: 'https://media.giphy.com/media/l4FGuhL4U2WyjdkaY/giphy.gif' },
+      { t: 'hi there hello cute', u: 'https://media.giphy.com/media/Rq3Ohw5Aj9OKbxbz3l/giphy.gif' },
+      // approval / thumbs
+      { t: 'thumbs up yes good', u: 'https://media.giphy.com/media/111ebonMs90YLu/giphy.gif' },
+      { t: 'thumbs up nice', u: 'https://media.giphy.com/media/l3q2K5jinAlChoCLS/giphy.gif' },
+      { t: 'ok okay perfect', u: 'https://media.giphy.com/media/l3q2zVr6cN9lXwGCA/giphy.gif' },
+      { t: 'nice great awesome', u: 'https://media.giphy.com/media/3oz8xLd9DJq2l2VFtu/giphy.gif' },
+      { t: 'yes agree nod', u: 'https://media.giphy.com/media/GkyfDbYSNDNM4/giphy.gif' },
+      // applause
+      { t: 'clap applause bravo', u: 'https://media.giphy.com/media/7rj2ZgttvgomY/giphy.gif' },
+      { t: 'clap yes applause', u: 'https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif' },
+      { t: 'clapping well done', u: 'https://media.giphy.com/media/3oz8xAFtqoOUUrsh7W/giphy.gif' },
+      // celebrate
+      { t: 'celebrate party excited yay', u: 'https://media.giphy.com/media/g9582DNuQppxC/giphy.gif' },
+      { t: 'celebrate confetti party', u: 'https://media.giphy.com/media/26u4cqiYI30juCOGY/giphy.gif' },
+      { t: 'party celebrate woohoo', u: 'https://media.giphy.com/media/26u4lOMA8JKSnL9Uk/giphy.gif' },
+      { t: 'congrats congratulations', u: 'https://media.giphy.com/media/3ov9jNziFTMfzSumAw/giphy.gif' },
+      // happy / excited
+      { t: 'excited happy yes', u: 'https://media.giphy.com/media/nXxOjZrbnbRxS/giphy.gif' },
+      { t: 'happy dance excited', u: 'https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif' },
+      { t: 'happy dance joy', u: 'https://media.giphy.com/media/l0HlHFRbmaZtBRhXG/giphy.gif' },
+      { t: 'excited yay hooray', u: 'https://media.giphy.com/media/l41lFw057lAJQMwg0/giphy.gif' },
+      // love / hearts
+      { t: 'love heart', u: 'https://media.giphy.com/media/3o6Zt481isNVuQI1l6/giphy.gif' },
+      { t: 'heart love like', u: 'https://media.giphy.com/media/26FLdmIp6wJr91JAI/giphy.gif' },
+      { t: 'hearts love cute', u: 'https://media.giphy.com/media/l4pTjfyqO0m5needi/giphy.gif' },
+      { t: 'love you heart', u: 'https://media.giphy.com/media/26tPplGWjN0xLybiU/giphy.gif' },
+      // laugh
+      { t: 'laugh lol funny haha', u: 'https://media.giphy.com/media/10JhviFuU2gWD6/giphy.gif' },
+      { t: 'laugh funny lol', u: 'https://media.giphy.com/media/AgorHK5aP6vNS/giphy.gif' },
+      { t: 'lol laughing rofl', u: 'https://media.giphy.com/media/T3Vx6sVAXzuG4/giphy.gif' },
+      // reactions
+      { t: 'wow amazing surprised', u: 'https://media.giphy.com/media/5VKbvrjxpVJCM/giphy.gif' },
+      { t: 'wow shocked omg', u: 'https://media.giphy.com/media/3o7abKhOpu0NwenH3O/giphy.gif' },
+      { t: 'thinking hmm', u: 'https://media.giphy.com/media/a5viI92PAF89q/giphy.gif' },
+      { t: 'cool sunglasses awesome', u: 'https://media.giphy.com/media/l0HlvtIPzPdt2usKs/giphy.gif' },
+      { t: 'mind blown wow', u: 'https://media.giphy.com/media/26ufdipQqU2lhNA4g/giphy.gif' },
+      { t: 'facepalm oops', u: 'https://media.giphy.com/media/6yRVg0HWzgS88/giphy.gif' },
+      { t: 'crying sad tears', u: 'https://media.giphy.com/media/d2lcHJTG5Tscg/giphy.gif' },
+      { t: 'shrug idk whatever', u: 'https://media.giphy.com/media/8dYmJ6Buo3lYY/giphy.gif' },
+      // gratitude / support
+      { t: 'thank you thanks', u: 'https://media.giphy.com/media/3o6ozuHcxTtVWJJn32/giphy.gif' },
+      { t: 'thank you grateful', u: 'https://media.giphy.com/media/t3Mzdx0SA3Eww/giphy.gif' },
+      { t: 'good luck fingers crossed', u: 'https://media.giphy.com/media/l4pTfx2qLszoacZRS/giphy.gif' },
+      { t: 'you got this support', u: 'https://media.giphy.com/media/xTiTnLmaxrlBHxsMMg/giphy.gif' },
+      { t: 'high five yes teamwork', u: 'https://media.giphy.com/media/3oEjHV0z8S7WM4MwnK/giphy.gif' },
+      { t: 'fist bump nice', u: 'https://media.giphy.com/media/l2Sqhk0imV1Fv7itO/giphy.gif' },
+      // work / study
+      { t: 'coding work laptop typing', u: 'https://media.giphy.com/media/13GIgrGdslD9oQ/giphy.gif' },
+      { t: 'coffee work morning', u: 'https://media.giphy.com/media/l0MYGb1LuZ3n7dRnO/giphy.gif' },
+      { t: 'busy working hard', u: 'https://media.giphy.com/media/QNFhOolVeCzPQ2Mx85/giphy.gif' },
+      { t: 'lets go ready hype', u: 'https://media.giphy.com/media/3o7TKUM3IgJBX2as9O/giphy.gif' },
+      // fun
+      { t: 'dance dancing fun', u: 'https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif' },
+      { t: 'wink cute', u: 'https://media.giphy.com/media/l0Iy8dPFC0sBMv7bG/giphy.gif' },
+      { t: 'sleepy tired', u: 'https://media.giphy.com/media/aPjhVIRYcYwbe/giphy.gif' },
+    ];
     const gifToggle = $('#communityGifToggle');
     const gifPanel = $('#communityGifPanel');
     const gifInput = $('#communityGifInput');
     const gifResults = $('#communityGifResults');
-    let gifTimer = null;
+    function renderGifs(query) {
+      if (!gifResults) return;
+      const q = (query || '').trim().toLowerCase();
+      const list = q ? GIF_SET.filter(g => g.t.includes(q)) : GIF_SET;
+      gifResults.innerHTML = '';
+      if (!list.length) { gifResults.innerHTML = '<p class="community-gif-loading">No GIFs match — try “happy”, “clap”, “love”…</p>'; return; }
+      list.forEach(g => {
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'community-gif-item';
+        const im = document.createElement('img'); im.src = g.u; im.alt = g.t; im.loading = 'lazy';
+        im.addEventListener('error', () => { b.remove(); }); // drop any GIF that fails to load
+        b.appendChild(im);
+        b.addEventListener('click', () => { sendGif(g.u); closeGif(); });
+        gifResults.appendChild(b);
+      });
+    }
     function openGif() {
       if (!gifPanel) return;
       if (emojiPanel && !emojiPanel.hidden) closeEmoji();
       gifPanel.hidden = false;
       gifToggle?.setAttribute('aria-expanded', 'true');
       gifToggle?.classList.add('is-active');
-      if (!TENOR_KEY) {
-        if (gifResults) gifResults.innerHTML = '<p class="community-gif-setup">GIFs aren\'t set up yet. Add a free Tenor API key in <code>script.js</code> to enable this.</p>';
-        return;
-      }
-      if (gifInput) { gifInput.focus(); if (!gifInput.value) loadGifs('', true); }
+      renderGifs('');
+      if (gifInput) gifInput.focus();
     }
     function closeGif() {
       if (!gifPanel) return;
@@ -3233,37 +3488,9 @@
       gifToggle?.setAttribute('aria-expanded', 'false');
       gifToggle?.classList.remove('is-active');
     }
-    async function loadGifs(query, featured) {
-      if (!TENOR_KEY || !gifResults) return;
-      gifResults.innerHTML = '<p class="community-gif-loading">Loading…</p>';
-      const base = featured
-        ? `https://tenor.googleapis.com/v2/featured?key=${TENOR_KEY}&limit=18&contentfilter=high&media_filter=tinygif,gif`
-        : `https://tenor.googleapis.com/v2/search?key=${TENOR_KEY}&q=${encodeURIComponent(query)}&limit=18&contentfilter=high&media_filter=tinygif,gif`;
-      try {
-        const res = await fetch(base);
-        const data = await res.json();
-        gifResults.innerHTML = '';
-        (data.results || []).forEach(g => {
-          const media = g.media_formats || {};
-          const preview = (media.tinygif && media.tinygif.url) || (media.gif && media.gif.url);
-          const full = (media.gif && media.gif.url) || preview;
-          if (!preview) return;
-          const b = document.createElement('button');
-          b.type = 'button'; b.className = 'community-gif-item';
-          const im = document.createElement('img'); im.src = preview; im.alt = g.content_description || 'GIF'; im.loading = 'lazy';
-          b.appendChild(im);
-          b.addEventListener('click', () => { sendGif(full); closeGif(); });
-          gifResults.appendChild(b);
-        });
-        if (!gifResults.children.length) gifResults.innerHTML = '<p class="community-gif-loading">No GIFs found.</p>';
-      } catch (e) {
-        gifResults.innerHTML = '<p class="community-gif-loading">Couldn\'t load GIFs.</p>';
-      }
-    }
     async function sendGif(url) {
       if (!url) return;
       const name = (nameInput?.value || '').trim().slice(0, 40) || 'Anonymous';
-      // basic rate-limit reuse
       const now = Date.now();
       if (now - lastPostAt < COOLDOWN_MS) { if (statusEl) statusEl.textContent = 'Please wait a few seconds before posting again.'; return; }
       const message = `🖼️{{gif:${url}}}`;
@@ -3278,10 +3505,7 @@
       e.stopPropagation();
       if (gifPanel && gifPanel.hidden) openGif(); else closeGif();
     });
-    gifInput?.addEventListener('input', () => {
-      clearTimeout(gifTimer);
-      gifTimer = setTimeout(() => loadGifs(gifInput.value.trim(), !gifInput.value.trim()), 400);
-    });
+    gifInput?.addEventListener('input', () => renderGifs(gifInput.value));
     document.addEventListener('click', (e) => {
       if (gifPanel && !gifPanel.hidden && !gifPanel.contains(e.target) && e.target !== gifToggle && !gifToggle?.contains(e.target)) closeGif();
     });
