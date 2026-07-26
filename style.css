@@ -2449,6 +2449,9 @@ body.tour-active::after{ content:""; position:fixed; inset:0; z-index:400; backg
 .tour-text{ font-size:.92rem; color:var(--text); margin:6px 0 12px; line-height:1.5; }
 .tour-skip{ font-size:.74rem; font-family:var(--font-mono); color:var(--text-dim); background:var(--bg-panel-2); border:1px solid var(--border); border-radius:100px; padding:6px 16px; cursor:pointer; }
 .tour-skip:hover{ color:var(--grad-3); border-color:var(--grad-3); }
+.tour-controls{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+.tour-voice{ font-size:.74rem; font-family:var(--font-mono); color:var(--text-dim); background:var(--bg-panel-2); border:1px solid var(--border); border-radius:100px; padding:6px 16px; cursor:pointer; transition:color .15s, border-color .15s; }
+.tour-voice:hover{ color:var(--grad-3); border-color:var(--grad-3); }
 #tourBtn.is-active{ color:var(--on-gradient); background:var(--gradient-main); border-color:transparent; }
 @media (prefers-reduced-motion: reduce){ .tour-focus{ transition:none; } }
 
@@ -3397,7 +3400,7 @@ img, svg, video, canvas, iframe, table, pre{ max-width:100%; }
 .community-gif-toggle:hover, .community-gif-toggle.is-active{ color:var(--grad-3); border-color:var(--grad-3); background:color-mix(in srgb, var(--grad-3) 8%, var(--bg)); }
 
 .community-gif-panel{
-  position:absolute; right:16px; bottom:74px; z-index:31; width:min(340px, calc(100% - 32px));
+  position:absolute; right:16px; bottom:74px; z-index:31; width:min(360px, calc(100% - 32px));
   padding:12px; border-radius:16px; background:color-mix(in srgb, var(--bg-panel) 96%, transparent);
   -webkit-backdrop-filter:blur(16px) saturate(1.4); backdrop-filter:blur(16px) saturate(1.4);
   border:1px solid var(--border-strong); box-shadow:0 20px 50px -18px rgba(0,0,0,.55);
@@ -3406,8 +3409,8 @@ img, svg, video, canvas, iframe, table, pre{ max-width:100%; }
 .community-gif-search{ margin-bottom:10px; }
 .community-gif-input{ width:100%; padding:9px 13px; border-radius:10px; border:1px solid var(--border); background:var(--bg); color:var(--text); font-size:15px; outline:none; }
 .community-gif-input:focus{ border-color:var(--grad-3); }
-.community-gif-results{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; max-height:260px; overflow-y:auto; }
-.community-gif-item{ padding:0; border:none; background:var(--bg-panel-2); border-radius:9px; overflow:hidden; cursor:pointer; aspect-ratio:1; transition:transform .12s; }
+.community-gif-results{ display:grid; grid-template-columns:repeat(2,1fr); gap:8px; max-height:300px; overflow-y:auto; }
+.community-gif-item{ padding:0; border:none; background:var(--bg-panel-2); border-radius:10px; overflow:hidden; cursor:pointer; aspect-ratio:4/3; transition:transform .12s; }
 .community-gif-item:hover{ transform:scale(1.04); }
 .community-gif-item img{ width:100%; height:100%; object-fit:cover; display:block; }
 .community-gif-loading, .community-gif-setup{ grid-column:1 / -1; text-align:center; font-size:.8rem; color:var(--text-faint); padding:16px 8px; line-height:1.5; }
@@ -3420,9 +3423,14 @@ img, svg, video, canvas, iframe, table, pre{ max-width:100%; }
 .community-msg.is-mine .community-msg-gif{ margin-left:auto; }
 
 @media (max-width:520px){
-  .community-gif-panel{ right:12px; left:12px; width:auto; }
-  .community-gif-results{ grid-template-columns:repeat(3,1fr); }
-  .community-msg-gif{ max-width:180px; }
+  .community-gif-panel{ right:10px; left:10px; width:auto; bottom:78px; padding:14px; }
+  .community-gif-results{ grid-template-columns:repeat(2,1fr); gap:10px; max-height:46vh; }
+  .community-gif-item{ aspect-ratio:4/3; border-radius:12px; }
+  .community-gif-input{ font-size:16px; padding:11px 14px; }
+  .community-msg-gif{ max-width:200px; }
+}
+@media (max-width:360px){
+  .community-gif-results{ grid-template-columns:1fr; }
 }
 
 /* =========================================================
@@ -3468,3 +3476,27 @@ img, svg, video, canvas, iframe, table, pre{ max-width:100%; }
 .community-edit-save:disabled{ opacity:.6; cursor:default; }
 .community-edit-cancel{ background:var(--bg-panel-2); color:var(--text-dim); }
 .community-edit-cancel:hover{ background:var(--bg); color:var(--text); }
+
+/* Emoji button inside the message editor */
+.community-edit-emoji{ padding:6px 12px; border-radius:9px; font-size:.9rem; cursor:pointer; background:var(--bg-panel-2); border:1px solid var(--border); transition:background .15s, border-color .15s; }
+.community-edit-emoji:hover{ border-color:var(--grad-3); background:var(--bg); }
+
+/* =========================================================
+   FIX: buttons appearing "stuck big" after a tap on touch devices.
+   On touch, :hover sticks until you tap elsewhere, so hover-scale
+   transforms would leave a button enlarged. Neutralize them.
+========================================================= */
+@media (hover: none){
+  .chat-toggle:hover, .chat-send:hover, .back-to-top:hover, .ach-fab:hover,
+  .chat-mic:hover, .cep-emoji:hover, .community-gif-item:hover, .pitch-btn:hover,
+  .social-btn:hover svg, .btn:hover, .btn-primary:hover, .role-chip:hover,
+  .snap-fab:hover, .nav-cta:hover, .community-send:hover, .community-jump:hover{
+    transform:none !important;
+  }
+  /* keep the deliberate press feedback (shrink) on active */
+  .chat-send:active, .cep-emoji:active{ transform:scale(.92) !important; }
+}
+/* Stop label-changing buttons from resizing (Copy→Copied!, Save→Saving…) */
+.community-msg-copy, .community-msg-save, .community-msg-edit,
+.community-edit-save, .community-edit-cancel{ min-width:0; }
+.community-msg-copy{ display:inline-block; min-width:34px; text-align:left; }

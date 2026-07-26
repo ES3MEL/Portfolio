@@ -456,28 +456,62 @@
       { sel: '#contact', text: 'Like what you see? Reach out here. 👋' }
     ];
     let running = false;
+    let voiceOn = true;
 
     const cap = document.createElement('div');
     cap.className = 'tour-caption'; cap.hidden = true;
-    cap.innerHTML = '<span class="tour-step mono"></span><p class="tour-text"></p><button class="tour-skip">Skip tour</button>';
+    cap.innerHTML = '<span class="tour-step mono"></span><p class="tour-text"></p><div class="tour-controls"><button class="tour-voice" aria-label="Toggle narration">🔊 Voice on</button><button class="tour-skip">Skip tour</button></div>';
     document.body.appendChild(cap);
     const capStep = cap.querySelector('.tour-step');
     const capText = cap.querySelector('.tour-text');
+    const voiceBtn = cap.querySelector('.tour-voice');
+
+    function pickFemaleVoice() {
+      const vs = (window.speechSynthesis && speechSynthesis.getVoices()) || [];
+      return vs.find(v => /female|samantha|victoria|karen|zira|susan|hazel|eva|google uk english female|google us english/i.test(v.name)) || vs.find(v => /^en/i.test(v.lang)) || null;
+    }
+    // Speak a line; resolve when done (or immediately if voice is off/unavailable)
+    function speak(textToSay) {
+      return new Promise((resolve) => {
+        if (!voiceOn || !('speechSynthesis' in window)) { resolve(); return; }
+        try {
+          speechSynthesis.cancel();
+          const u = new SpeechSynthesisUtterance(textToSay.replace(/[👋🎉📚🛠️🎯]/g, ''));
+          const fv = pickFemaleVoice();
+          if (fv) u.voice = fv;
+          u.rate = 1; u.pitch = 1.1; u.volume = 1;
+          let done = false;
+          const finish = () => { if (!done) { done = true; resolve(); } };
+          u.onend = finish; u.onerror = finish;
+          // safety timeout so the tour never stalls if speech hangs
+          setTimeout(finish, Math.max(3500, textToSay.length * 90));
+          speechSynthesis.speak(u);
+        } catch (e) { resolve(); }
+      });
+    }
 
     function highlight(el, on) { if (el) el.classList.toggle('tour-focus', on); }
     function end() {
       running = false; cap.hidden = true;
+      if ('speechSynthesis' in window) { try { speechSynthesis.cancel(); } catch (e) {} }
       document.querySelectorAll('.tour-focus').forEach(e => e.classList.remove('tour-focus'));
       document.body.classList.remove('tour-active');
       btn.classList.remove('is-active');
     }
     cap.querySelector('.tour-skip').addEventListener('click', end);
+    voiceBtn.addEventListener('click', () => {
+      voiceOn = !voiceOn;
+      voiceBtn.textContent = voiceOn ? '🔊 Voice on' : '🔇 Voice off';
+      if (!voiceOn && 'speechSynthesis' in window) { try { speechSynthesis.cancel(); } catch (e) {} }
+    });
 
     async function run() {
       if (running) { end(); return; }
       running = true; btn.classList.add('is-active');
       document.body.classList.add('tour-active');
       cap.hidden = false;
+      // warm up voices (some browsers load them lazily)
+      if ('speechSynthesis' in window) { try { speechSynthesis.getVoices(); } catch (e) {} }
       for (let i = 0; i < stops.length; i++) {
         if (!running) return;
         const el = $(stops[i].sel);
@@ -488,7 +522,14 @@
         capStep.textContent = `Step ${i + 1} / ${stops.length}`;
         capText.textContent = stops[i].text;
         if (window.__agqSound) window.__agqSound.play('nav');
-        await new Promise(r => setTimeout(r, 2600));
+        // Narrate the step; advance when narration finishes (fallback to a timed pause if voice off)
+        if (voiceOn && ('speechSynthesis' in window)) {
+          await speak(stops[i].text);
+          if (!running) return;
+          await new Promise(r => setTimeout(r, 500));
+        } else {
+          await new Promise(r => setTimeout(r, 2600));
+        }
       }
       end();
     }
@@ -2752,14 +2793,21 @@
       if (live) return live;
       try { return (localStorage.getItem('agq-community-name') || '').trim(); } catch (e) { return ''; }
     }
-    // Track IDs of messages this browser created, so they can be deleted
+    // Track IDs of messages this browser created, so they can be deleted/aligned right.
+    // Uses an in-memory Set (always works, even when iOS blocks localStorage) plus
+    // localStorage for persistence across reloads.
+    const mineMem = new Set();
     function mineIds() {
-      try { return JSON.parse(localStorage.getItem('agq-community-mine') || '[]'); } catch (e) { return []; }
+      let stored = [];
+      try { stored = JSON.parse(localStorage.getItem('agq-community-mine') || '[]'); } catch (e) {}
+      return [...new Set([...mineMem, ...stored])];
     }
     function rememberMine(id) {
-      try { const a = mineIds(); if (!a.includes(id)) { a.push(id); localStorage.setItem('agq-community-mine', JSON.stringify(a.slice(-200))); } } catch (e) {}
+      if (id == null) return;
+      mineMem.add(id);
+      try { const a = mineIds(); if (!a.includes(id)) { a.push(id); } localStorage.setItem('agq-community-mine', JSON.stringify(a.slice(-200))); } catch (e) {}
     }
-    function isMineId(id) { return mineIds().includes(id); }
+    function isMineId(id) { return mineMem.has(id) || mineIds().includes(id); }
 
     // ---- Edit your own message ----
     let editingId = null;
@@ -2779,7 +2827,15 @@
       const bar = document.createElement('div'); bar.className = 'community-edit-bar';
       const save = document.createElement('button'); save.type = 'button'; save.className = 'community-edit-save'; save.textContent = 'Save';
       const cancel = document.createElement('button'); cancel.type = 'button'; cancel.className = 'community-edit-cancel'; cancel.textContent = 'Cancel';
-      bar.append(save, cancel);
+      // Emoji button inside the editor (inserts into the textarea)
+      const emo = document.createElement('button'); emo.type = 'button'; emo.className = 'community-edit-emoji'; emo.textContent = '😊';
+      emo.setAttribute('aria-label', 'Add emoji to your edit');
+      emo.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        activeEmojiTarget = ta;
+        if (typeof openEmojiFor === 'function') openEmojiFor(ta);
+      });
+      bar.append(emo, save, cancel);
       editor.append(ta, bar);
       textEl.style.display = 'none';
       textEl.parentNode.insertBefore(editor, textEl.nextSibling);
@@ -3329,6 +3385,15 @@
     // ---- Emoji picker for the composer ----
     const emojiToggle = $('#communityEmojiToggle');
     const emojiPanel = $('#communityEmojiPanel');
+    // Track which field emojis should insert into (main input, or an open edit box)
+    let activeEmojiTarget = msgInput || null;
+    msgInput?.addEventListener('focus', () => { activeEmojiTarget = msgInput; });
+    // Delegated: when any edit textarea is focused, target it
+    document.addEventListener('focusin', (e) => {
+      if (e.target && e.target.classList && e.target.classList.contains('community-edit-input')) {
+        activeEmojiTarget = e.target;
+      }
+    });
     const EMOJI_GROUPS = [
       { label: 'Smileys', items: ['😀','😃','😄','😁','😊','🙂','😉','😍','🥰','😘','😎','🤩','🤗','🤔','😌','😴','😅','😂','🤣','😇','🙃','😋','😜','🤪','😏','🥳','😭','😳','🥺','😤','😱'] },
       { label: 'Gestures', items: ['👍','👎','👏','🙌','🙏','🤝','👋','✌️','🤞','🤟','👌','🤙','💪','🫶','👀','🧠','💯'] },
@@ -3354,17 +3419,21 @@
       });
     }
     function insertEmoji(em) {
-      if (!msgInput) return;
-      const start = msgInput.selectionStart != null ? msgInput.selectionStart : msgInput.value.length;
-      const end = msgInput.selectionEnd != null ? msgInput.selectionEnd : msgInput.value.length;
-      const v = msgInput.value;
-      const next = (v.slice(0, start) + em + v.slice(end)).slice(0, 500);
-      msgInput.value = next;
-      // put cursor right after the inserted emoji
+      // Insert into whichever field is active: an open edit textarea, else the main input
+      const target = (activeEmojiTarget && document.body.contains(activeEmojiTarget)) ? activeEmojiTarget : msgInput;
+      if (!target) return;
+      const start = target.selectionStart != null ? target.selectionStart : target.value.length;
+      const end = target.selectionEnd != null ? target.selectionEnd : target.value.length;
+      const v = target.value;
+      const max = target.maxLength && target.maxLength > 0 ? target.maxLength : 500;
+      const next = (v.slice(0, start) + em + v.slice(end)).slice(0, max);
+      target.value = next;
       const pos = Math.min(start + em.length, next.length);
-      msgInput.focus();
-      try { msgInput.setSelectionRange(pos, pos); } catch (e) {}
-      updateCount();
+      target.focus();
+      try { target.setSelectionRange(pos, pos); } catch (e) {}
+      // fire input so counters/handlers update
+      target.dispatchEvent(new Event('input', { bubbles: true }));
+      if (target === msgInput) updateCount();
     }
     function openEmoji() {
       if (!emojiPanel) return;
@@ -3372,6 +3441,13 @@
       emojiPanel.hidden = false;
       emojiToggle?.setAttribute('aria-expanded', 'true');
       emojiToggle?.classList.add('is-active');
+    }
+    // Open the emoji panel targeting a specific field (used by the edit editor)
+    function openEmojiFor(field) {
+      if (!emojiPanel) return;
+      activeEmojiTarget = field || msgInput;
+      buildEmojiPanel();
+      emojiPanel.hidden = false;
     }
     function closeEmoji() {
       if (!emojiPanel) return;
@@ -3532,13 +3608,19 @@
       'fuck','shit','bitch','ass','asshole','bastard','dick','pussy','cunt','cock','slut','whore',
       'nigger','nigga','faggot','fag','retard','retarded','motherfucker','jerkoff','wank','twat',
       'bollocks','rape','rapist','molest','pedophile','pedo','porn','jizz','boobs','tits',
+      // Tagalog / Filipino
       'putangina','tangina','puta','gago','tanga','ulol','bobo','pakyu','tarantado','punyeta',
-      'kupal','pakshet','burat','tite','iyot','kantot','pakingshet','bwiset','bwisit'
+      'kupal','pakshet','burat','tite','iyot','kantot','pakingshet','bwiset','bwisit',
+      // Kapampangan (Pampanga) profanity / vulgar terms
+      'pestang','pesteng','buring','burit','buriti','luksu','luksung','kaluluku',
+      'gaga','gagu','ogli','taratsu','kingnang','pota','potah','tibulan','pukingnan','babuyan',
+      'bugok','buguk','nimal','nimals','tado','tadu','taddo',
+      'letse','letche','pisti','pukyu','pukingina','pukinginang','tangnang','tangnank'
     ]);
     // Phrases matched anywhere (multi-word, safe to substring-match).
-    const PROF_PHRASES = ['putang ina','tang ina','pota ina','child porn'];
+    const PROF_PHRASES = ['putang ina','tang ina','pota ina','child porn','pesteng anak','king nang mibaya'];
     // Core words also checked against spaced/punctuated evasion like "f u c k".
-    const PROF_CORE = ['fuck','shit','bitch','cunt','nigger','nigga','faggot','putangina','rape'];
+    const PROF_CORE = ['fuck','shit','bitch','cunt','nigger','nigga','faggot','putangina','rape','gago','pota','bugok','buguk','nimal','pukingina','tangnang'];
     function hasProfanity(text) {
       const raw = (text || '').toLowerCase();
       if (PROF_PHRASES.some(p => raw.includes(p))) return true;
