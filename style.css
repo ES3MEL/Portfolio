@@ -593,7 +593,14 @@ html{ scrollbar-width:thin; scrollbar-color:var(--grad-2) var(--bg); }
 .hero-desc{ max-width:540px; color:var(--text-dim); font-size:1.05rem; margin-bottom:38px; }
 .hero-desc strong{ color:var(--text); font-weight:600; }
 
-.hero-actions{ display:flex; gap:14px; flex-wrap:wrap; margin-bottom:56px; }
+.hero-actions{ display:flex; gap:12px; flex-wrap:nowrap; align-items:center; margin-bottom:56px; }
+.hero-actions .btn{ white-space:nowrap; flex:0 0 auto; }
+@media (max-width:560px){
+  /* Primary CTA full-width on top, two secondary buttons side-by-side below */
+  .hero-actions{ flex-wrap:wrap; gap:10px; }
+  .hero-actions .btn-primary{ flex:1 1 100%; justify-content:center; }
+  .hero-actions .btn-ghost{ flex:1 1 0; justify-content:center; }
+}
 .btn{
   position:relative; display:inline-flex; align-items:center; gap:9px; font-weight:600; font-size:0.95rem;
   padding:14px 24px; border-radius:100px; transition:transform .2s var(--ease), box-shadow .2s var(--ease), border-color .2s var(--ease), color .2s var(--ease);
@@ -604,14 +611,22 @@ html{ scrollbar-width:thin; scrollbar-color:var(--grad-2) var(--bg); }
 .btn-ghost:hover{ border-color:var(--grad-3); color:var(--grad-3); }
 
 .hero-stats{ display:grid; grid-template-columns:repeat(3, auto); gap:44px; justify-content:start; margin-bottom:28px; }
-@media (max-width:600px){ .hero-stats{ grid-template-columns:repeat(3, 1fr); gap:16px; } }
-@media (max-width:380px){ .hero-stats{ grid-template-columns:repeat(2, 1fr); gap:18px 20px; } }
+@media (max-width:600px){ .hero-stats{ grid-template-columns:repeat(3, 1fr); gap:12px; } }
+@media (max-width:380px){ .hero-stats{ gap:8px; } }
 .hero-stat{ display:flex; flex-direction:column; gap:4px; }
 .hero-stat b{
   font-family:var(--font-display); font-size:2.1rem; font-weight:700;
   background:var(--gradient-text); -webkit-background-clip:text; background-clip:text; color:transparent;
 }
 .hero-stat span{ font-size:0.85rem; color:var(--text-faint); max-width:140px; }
+@media (max-width:600px){
+  .hero-stat b{ font-size:1.5rem; }
+  .hero-stat span{ font-size:0.72rem; max-width:none; line-height:1.3; }
+}
+@media (max-width:380px){
+  .hero-stat b{ font-size:1.25rem; }
+  .hero-stat span{ font-size:0.64rem; }
+}
 
 .status-ticker{
   display:inline-flex; align-items:center; gap:10px; font-size:0.82rem; color:var(--text-dim);
@@ -3499,3 +3514,12 @@ img, svg, video, canvas, iframe, table, pre{ max-width:100%; }
 .community-msg-copy, .community-msg-save, .community-msg-edit,
 .community-edit-save, .community-edit-cancel{ min-width:0; }
 .community-msg-copy{ display:inline-block; min-width:34px; text-align:left; }
+
+/* =========================================================
+   ABOUT — a mount point for the hero photo on mobile
+========================================================= */
+#aboutPhotoMount{ display:none; }
+@media (max-width:720px){
+  #aboutPhotoMount{ display:block; margin:6px 0 24px; }
+  #aboutPhotoMount .hero-photo-col{ margin:0 auto; max-width:240px; }
+}

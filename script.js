@@ -601,6 +601,30 @@
   /* ---------- Rotating hero eyebrow ---------- */
   /* ---------- Scroll progress bar ---------- */
   /* ---------- "Currently" card: live PH time ---------- */
+  /* ---------- Move hero photo into About on mobile, back to hero on desktop ---------- */
+  function initHeroPhotoRelocate() {
+    const photo = document.getElementById('heroPhotoCol');
+    const mount = document.getElementById('aboutPhotoMount');
+    if (!photo || !mount) return;
+    const heroParent = photo.parentNode;               // original hero container
+    const heroNextSibling = photo.nextSibling;         // original position anchor
+    const mq = window.matchMedia('(max-width: 720px)');
+    function place(isMobile) {
+      if (isMobile) {
+        if (photo.parentNode !== mount) mount.appendChild(photo);
+      } else {
+        if (photo.parentNode !== heroParent) {
+          if (heroNextSibling && heroNextSibling.parentNode === heroParent) heroParent.insertBefore(photo, heroNextSibling);
+          else heroParent.appendChild(photo);
+        }
+      }
+    }
+    place(mq.matches);
+    // update on viewport changes (resize / rotate)
+    if (mq.addEventListener) mq.addEventListener('change', (e) => place(e.matches));
+    else if (mq.addListener) mq.addListener((e) => place(e.matches));
+  }
+
   function initNowCard() {
     const el = $('#nowTime');
     if (!el) return;
@@ -4734,6 +4758,7 @@
     initEyebrowRotate();
     initScrollProgress();
     initNowCard();
+    initHeroPhotoRelocate();
     initCommunity();
     initSectionShare();
     initIdleGreeter();
