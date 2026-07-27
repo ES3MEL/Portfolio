@@ -1785,7 +1785,6 @@ html{ scrollbar-width:thin; scrollbar-color:var(--grad-2) var(--bg); }
 .dash-metric-num i{ font-style:normal; }
 .dash-card--stack{ grid-column:span 2; }
 .dash-stack{ display:flex; flex-wrap:wrap; gap:7px; }
-.dash-card--focus{ grid-column:span 2; }
 .dash-focus{ font-size:.96rem; color:var(--text); line-height:1.5; }
 .dash-card--fact{ grid-column:span 2; }
 .dash-fact{ font-size:.94rem; color:var(--text-dim); line-height:1.5; transition:opacity .26s ease; min-height:2.6em; }
