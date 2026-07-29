@@ -3135,18 +3135,13 @@
         bubble.append(quote);
       }
 
-      // GIF marker:  🖼️{{gif:https://media.tenor.com/....gif}}
-      const gm = String(bodyText).match(/^🖼️\{\{gif:(https?:\/\/[^\s}]+)\}\}$/);
-      if (gm) {
-        const url = gm[1];
-        // Only allow known safe, content-rated GIF hosts
-        const safeHost = /^https:\/\/(media[0-9]*\.tenor\.com|c\.tenor\.com|media[0-9]*\.giphy\.com|i\.giphy\.com)\//.test(url);
-        if (safeHost) {
-          const fig = document.createElement('div'); fig.className = 'community-msg-gif';
-          const img = document.createElement('img');
-          img.src = url; img.alt = 'GIF'; img.loading = 'lazy'; img.decoding = 'async';
-          img.addEventListener('error', () => { fig.innerHTML = '<span class="community-gif-broken">🖼️ GIF unavailable</span>'; });
-          fig.appendChild(img);
+      // Sticker marker:  🎯{{sticker:ID}}  (built-in animated stickers, never broken)
+      const sm = String(bodyText).match(/^🎯\{\{sticker:([a-z0-9_]+)\}\}$/i);
+      if (sm) {
+        const stk = (window.__agqStickerById || {})[sm[1]];
+        if (stk) {
+          const fig = document.createElement('div'); fig.className = 'community-msg-sticker';
+          fig.innerHTML = `<span class="stk ${stk.a}">${stk.e}</span>`;
           bubble.append(fig);
           wrap.append(av, bubble);
           feed.appendChild(wrap);
@@ -3492,67 +3487,35 @@
     // ---- GIF picker (curated, no API key needed) ----
     // A hand-picked set of safe, fun GIFs served from Giphy's public media CDN.
     // Each is chosen manually, so nothing inappropriate can appear.
-    const GIF_SET = [
-      // greetings
-      { t: 'hi hello wave', u: 'https://media.giphy.com/media/xUPGGDNsLvqsBOhuU0/giphy.gif' },
-      { t: 'hello wave hi', u: 'https://media.giphy.com/media/ASd0Ukj0y3qMM/giphy.gif' },
-      { t: 'wave bye goodbye', u: 'https://media.giphy.com/media/l4FGuhL4U2WyjdkaY/giphy.gif' },
-      { t: 'hi there hello cute', u: 'https://media.giphy.com/media/Rq3Ohw5Aj9OKbxbz3l/giphy.gif' },
-      // approval / thumbs
-      { t: 'thumbs up yes good', u: 'https://media.giphy.com/media/111ebonMs90YLu/giphy.gif' },
-      { t: 'thumbs up nice', u: 'https://media.giphy.com/media/l3q2K5jinAlChoCLS/giphy.gif' },
-      { t: 'ok okay perfect', u: 'https://media.giphy.com/media/l3q2zVr6cN9lXwGCA/giphy.gif' },
-      { t: 'nice great awesome', u: 'https://media.giphy.com/media/3oz8xLd9DJq2l2VFtu/giphy.gif' },
-      { t: 'yes agree nod', u: 'https://media.giphy.com/media/GkyfDbYSNDNM4/giphy.gif' },
-      // applause
-      { t: 'clap applause bravo', u: 'https://media.giphy.com/media/7rj2ZgttvgomY/giphy.gif' },
-      { t: 'clap yes applause', u: 'https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif' },
-      { t: 'clapping well done', u: 'https://media.giphy.com/media/3oz8xAFtqoOUUrsh7W/giphy.gif' },
-      // celebrate
-      { t: 'celebrate party excited yay', u: 'https://media.giphy.com/media/g9582DNuQppxC/giphy.gif' },
-      { t: 'celebrate confetti party', u: 'https://media.giphy.com/media/26u4cqiYI30juCOGY/giphy.gif' },
-      { t: 'party celebrate woohoo', u: 'https://media.giphy.com/media/26u4lOMA8JKSnL9Uk/giphy.gif' },
-      { t: 'congrats congratulations', u: 'https://media.giphy.com/media/3ov9jNziFTMfzSumAw/giphy.gif' },
-      // happy / excited
-      { t: 'excited happy yes', u: 'https://media.giphy.com/media/nXxOjZrbnbRxS/giphy.gif' },
-      { t: 'happy dance excited', u: 'https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif' },
-      { t: 'happy dance joy', u: 'https://media.giphy.com/media/l0HlHFRbmaZtBRhXG/giphy.gif' },
-      { t: 'excited yay hooray', u: 'https://media.giphy.com/media/l41lFw057lAJQMwg0/giphy.gif' },
-      // love / hearts
-      { t: 'love heart', u: 'https://media.giphy.com/media/3o6Zt481isNVuQI1l6/giphy.gif' },
-      { t: 'heart love like', u: 'https://media.giphy.com/media/26FLdmIp6wJr91JAI/giphy.gif' },
-      { t: 'hearts love cute', u: 'https://media.giphy.com/media/l4pTjfyqO0m5needi/giphy.gif' },
-      { t: 'love you heart', u: 'https://media.giphy.com/media/26tPplGWjN0xLybiU/giphy.gif' },
-      // laugh
-      { t: 'laugh lol funny haha', u: 'https://media.giphy.com/media/10JhviFuU2gWD6/giphy.gif' },
-      { t: 'laugh funny lol', u: 'https://media.giphy.com/media/AgorHK5aP6vNS/giphy.gif' },
-      { t: 'lol laughing rofl', u: 'https://media.giphy.com/media/T3Vx6sVAXzuG4/giphy.gif' },
-      // reactions
-      { t: 'wow amazing surprised', u: 'https://media.giphy.com/media/5VKbvrjxpVJCM/giphy.gif' },
-      { t: 'wow shocked omg', u: 'https://media.giphy.com/media/3o7abKhOpu0NwenH3O/giphy.gif' },
-      { t: 'thinking hmm', u: 'https://media.giphy.com/media/a5viI92PAF89q/giphy.gif' },
-      { t: 'cool sunglasses awesome', u: 'https://media.giphy.com/media/l0HlvtIPzPdt2usKs/giphy.gif' },
-      { t: 'mind blown wow', u: 'https://media.giphy.com/media/26ufdipQqU2lhNA4g/giphy.gif' },
-      { t: 'facepalm oops', u: 'https://media.giphy.com/media/6yRVg0HWzgS88/giphy.gif' },
-      { t: 'crying sad tears', u: 'https://media.giphy.com/media/d2lcHJTG5Tscg/giphy.gif' },
-      { t: 'shrug idk whatever', u: 'https://media.giphy.com/media/8dYmJ6Buo3lYY/giphy.gif' },
-      // gratitude / support
-      { t: 'thank you thanks', u: 'https://media.giphy.com/media/3o6ozuHcxTtVWJJn32/giphy.gif' },
-      { t: 'thank you grateful', u: 'https://media.giphy.com/media/t3Mzdx0SA3Eww/giphy.gif' },
-      { t: 'good luck fingers crossed', u: 'https://media.giphy.com/media/l4pTfx2qLszoacZRS/giphy.gif' },
-      { t: 'you got this support', u: 'https://media.giphy.com/media/xTiTnLmaxrlBHxsMMg/giphy.gif' },
-      { t: 'high five yes teamwork', u: 'https://media.giphy.com/media/3oEjHV0z8S7WM4MwnK/giphy.gif' },
-      { t: 'fist bump nice', u: 'https://media.giphy.com/media/l2Sqhk0imV1Fv7itO/giphy.gif' },
-      // work / study
-      { t: 'coding work laptop typing', u: 'https://media.giphy.com/media/13GIgrGdslD9oQ/giphy.gif' },
-      { t: 'coffee work morning', u: 'https://media.giphy.com/media/l0MYGb1LuZ3n7dRnO/giphy.gif' },
-      { t: 'busy working hard', u: 'https://media.giphy.com/media/QNFhOolVeCzPQ2Mx85/giphy.gif' },
-      { t: 'lets go ready hype', u: 'https://media.giphy.com/media/3o7TKUM3IgJBX2as9O/giphy.gif' },
-      // fun
-      { t: 'dance dancing fun', u: 'https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif' },
-      { t: 'wink cute', u: 'https://media.giphy.com/media/l0Iy8dPFC0sBMv7bG/giphy.gif' },
-      { t: 'sleepy tired', u: 'https://media.giphy.com/media/aPjhVIRYcYwbe/giphy.gif' },
+    // Built-in animated stickers — generated in code, so they NEVER break (no external URLs).
+    // Each renders as a large emoji with a CSS animation. id is stored in the message.
+    const STICKER_SET = [
+      { id: 'wave',   e: '👋', a: 'stk-wave',   k: 'hi hello wave greetings bye' },
+      { id: 'thumb',  e: '👍', a: 'stk-pop',    k: 'thumbs up yes good ok nice approve' },
+      { id: 'clap',   e: '👏', a: 'stk-clap',   k: 'clap applause bravo well done' },
+      { id: 'party',  e: '🎉', a: 'stk-spin',   k: 'party celebrate congrats yay woohoo' },
+      { id: 'confetti', e: '🎊', a: 'stk-pop',  k: 'confetti celebrate party congrats' },
+      { id: 'heart',  e: '❤️', a: 'stk-beat',   k: 'love heart like' },
+      { id: 'sparkle',e: '✨', a: 'stk-twinkle',k: 'sparkle shine amazing magic' },
+      { id: 'fire',   e: '🔥', a: 'stk-flicker',k: 'fire lit hot awesome' },
+      { id: 'laugh',  e: '😂', a: 'stk-shake',  k: 'laugh lol funny haha' },
+      { id: 'wow',    e: '😮', a: 'stk-pop',    k: 'wow surprised shocked omg' },
+      { id: 'cool',   e: '😎', a: 'stk-pop',    k: 'cool awesome sunglasses' },
+      { id: 'love',   e: '🥰', a: 'stk-beat',   k: 'love adore cute happy' },
+      { id: 'cry',    e: '😭', a: 'stk-shake',  k: 'cry sad tears' },
+      { id: 'think',  e: '🤔', a: 'stk-tilt',   k: 'think hmm thinking' },
+      { id: 'pray',   e: '🙏', a: 'stk-pop',    k: 'pray thanks please good luck' },
+      { id: 'muscle', e: '💪', a: 'stk-pop',    k: 'strong power you got this support' },
+      { id: 'rocket', e: '🚀', a: 'stk-launch', k: 'rocket launch lets go hype fast' },
+      { id: 'star',   e: '⭐', a: 'stk-twinkle',k: 'star favorite great top' },
+      { id: 'hundred',e: '💯', a: 'stk-pop',    k: 'hundred perfect real facts' },
+      { id: 'coffee', e: '☕', a: 'stk-tilt',   k: 'coffee work morning busy' },
+      { id: 'laptop', e: '💻', a: 'stk-tilt',   k: 'coding work laptop dev' },
+      { id: 'trophy', e: '🏆', a: 'stk-twinkle',k: 'trophy win winner best' },
+      { id: 'wink',   e: '😉', a: 'stk-pop',    k: 'wink cute playful' },
+      { id: 'sleepy', e: '😴', a: 'stk-tilt',   k: 'sleepy tired sleep' }
     ];
+    const stickerById = Object.fromEntries(STICKER_SET.map(s => [s.id, s]));
     const gifToggle = $('#communityGifToggle');
     const gifPanel = $('#communityGifPanel');
     const gifInput = $('#communityGifInput');
@@ -3560,16 +3523,15 @@
     function renderGifs(query) {
       if (!gifResults) return;
       const q = (query || '').trim().toLowerCase();
-      const list = q ? GIF_SET.filter(g => g.t.includes(q)) : GIF_SET;
+      const list = q ? STICKER_SET.filter(s => s.k.includes(q) || s.id.includes(q)) : STICKER_SET;
       gifResults.innerHTML = '';
-      if (!list.length) { gifResults.innerHTML = '<p class="community-gif-loading">No GIFs match — try “happy”, “clap”, “love”…</p>'; return; }
-      list.forEach(g => {
+      if (!list.length) { gifResults.innerHTML = '<p class="community-gif-loading">No stickers match — try “happy”, “clap”, “love”…</p>'; return; }
+      list.forEach(s => {
         const b = document.createElement('button');
-        b.type = 'button'; b.className = 'community-gif-item';
-        const im = document.createElement('img'); im.src = g.u; im.alt = g.t; im.loading = 'lazy';
-        im.addEventListener('error', () => { b.remove(); }); // drop any GIF that fails to load
-        b.appendChild(im);
-        b.addEventListener('click', () => { sendGif(g.u); closeGif(); });
+        b.type = 'button'; b.className = 'community-sticker-item';
+        b.setAttribute('aria-label', s.id);
+        b.innerHTML = `<span class="stk ${s.a}">${s.e}</span>`;
+        b.addEventListener('click', () => { sendGif(s.id); closeGif(); });
         gifResults.appendChild(b);
       });
     }
@@ -3588,19 +3550,21 @@
       gifToggle?.setAttribute('aria-expanded', 'false');
       gifToggle?.classList.remove('is-active');
     }
-    async function sendGif(url) {
-      if (!url) return;
+    async function sendGif(id) {
+      if (!id || !stickerById[id]) return;
       const name = (nameInput?.value || '').trim().slice(0, 40) || 'Anonymous';
       const now = Date.now();
       if (now - lastPostAt < COOLDOWN_MS) { if (statusEl) statusEl.textContent = 'Please wait a few seconds before posting again.'; return; }
-      const message = `🖼️{{gif:${url}}}`;
+      const message = `🎯{{sticker:${id}}}`;
       try {
         const { data, error } = await sb.from('messages').insert({ name, message }).select();
-        if (error) { if (statusEl) statusEl.textContent = 'GIF failed: ' + (error.message || 'error'); return; }
+        if (error) { if (statusEl) statusEl.textContent = 'Sticker failed: ' + (error.message || 'error'); return; }
         if (data && data[0] && data[0].id != null) rememberMine(data[0].id);
         lastPostAt = Date.now();
       } catch (e) {}
     }
+    // expose sticker lookup for the message renderer
+    window.__agqStickerById = stickerById;
     gifToggle?.addEventListener('click', (e) => {
       e.stopPropagation();
       if (gifPanel && gifPanel.hidden) openGif(); else closeGif();

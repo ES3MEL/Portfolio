@@ -3424,42 +3424,68 @@ img, svg, video, canvas, iframe, table, pre{ max-width:100%; }
 .community-gif-input{ width:100%; padding:11px 15px; border-radius:12px; border:1px solid var(--border); background:var(--bg); color:var(--text); font-size:16px; outline:none; }
 .community-gif-input:focus{ border-color:var(--grad-3); box-shadow:0 0 0 3px color-mix(in srgb, var(--grad-3) 14%, transparent); }
 .community-gif-results{
-  display:grid; grid-template-columns:repeat(2,1fr); gap:10px;
-  max-height:min(340px, 50vh); overflow-y:auto; overflow-x:hidden; padding:2px; -webkit-overflow-scrolling:touch;
+  display:grid; grid-template-columns:repeat(4,1fr); gap:10px;
+  max-height:min(320px, 48vh); overflow-y:auto; overflow-x:hidden; padding:2px; -webkit-overflow-scrolling:touch;
 }
-.community-gif-item{ padding:0; border:none; background:var(--bg-panel-2); border-radius:12px; overflow:hidden; cursor:pointer; aspect-ratio:16/11; width:100%; transition:transform .12s, box-shadow .12s; }
-.community-gif-item:hover{ transform:scale(1.03); box-shadow:0 6px 16px -6px rgba(0,0,0,.4); }
-.community-gif-item img{ width:100%; height:100%; object-fit:cover; display:block; }
+.community-sticker-item{
+  padding:0; border:1px solid var(--border); background:var(--bg-panel-2); border-radius:14px; cursor:pointer;
+  aspect-ratio:1; display:grid; place-items:center; font-size:2rem; transition:transform .12s, border-color .12s, background .12s;
+}
+.community-sticker-item:hover{ transform:scale(1.08); border-color:var(--grad-3); background:var(--bg); }
+.community-sticker-item .stk{ display:inline-block; line-height:1; }
 .community-gif-results::-webkit-scrollbar{ width:8px; }
 .community-gif-results::-webkit-scrollbar-thumb{ background:var(--border-strong); border-radius:8px; }
 .community-gif-loading, .community-gif-setup{ grid-column:1 / -1; text-align:center; font-size:.82rem; color:var(--text-faint); padding:20px 8px; line-height:1.5; }
 .community-gif-setup code{ font-family:var(--font-mono); color:var(--grad-3); font-size:.85em; }
 .community-gif-note{ margin-top:10px; font-size:.62rem; color:var(--text-faint); text-align:center; flex-shrink:0; }
 
-/* GIF rendered inside a message bubble */
-.community-msg-gif{ margin-top:2px; border-radius:12px; overflow:hidden; max-width:min(240px, 70%); border:1px solid var(--border); background:var(--bg-panel-2); }
-.community-msg-gif img{ width:100%; height:auto; display:block; }
-.community-msg.is-mine .community-msg-gif{ margin-left:auto; }
+/* Sticker rendered inside a message bubble */
+.community-msg-sticker{ margin-top:2px; font-size:3.4rem; line-height:1; }
+.community-msg-sticker .stk{ display:inline-block; }
+.community-msg.is-mine .community-msg-sticker{ text-align:right; }
+
+/* ---- Sticker animations (pure CSS, never break) ---- */
+.stk{ transform-origin:center bottom; }
+@keyframes stkWave{ 0%,100%{ transform:rotate(0); } 25%{ transform:rotate(18deg); } 75%{ transform:rotate(-12deg); } }
+.stk-wave{ animation:stkWave 1.2s ease-in-out infinite; transform-origin:70% 70%; }
+@keyframes stkPop{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.22); } }
+.stk-pop{ animation:stkPop 1.1s ease-in-out infinite; }
+@keyframes stkClap{ 0%,100%{ transform:scale(1) rotate(-6deg); } 50%{ transform:scale(1.14) rotate(6deg); } }
+.stk-clap{ animation:stkClap .5s ease-in-out infinite; }
+@keyframes stkSpin{ 0%{ transform:rotate(-12deg) scale(1); } 50%{ transform:rotate(12deg) scale(1.12); } 100%{ transform:rotate(-12deg) scale(1); } }
+.stk-spin{ animation:stkSpin 1.4s ease-in-out infinite; }
+@keyframes stkBeat{ 0%,100%{ transform:scale(1); } 15%{ transform:scale(1.25); } 30%{ transform:scale(1); } 45%{ transform:scale(1.25); } }
+.stk-beat{ animation:stkBeat 1.3s ease-in-out infinite; }
+@keyframes stkTwinkle{ 0%,100%{ transform:scale(1); opacity:1; } 50%{ transform:scale(1.15) rotate(15deg); opacity:.75; } }
+.stk-twinkle{ animation:stkTwinkle 1.2s ease-in-out infinite; }
+@keyframes stkFlicker{ 0%,100%{ transform:scale(1) translateY(0); } 25%{ transform:scale(1.1) translateY(-2px); } 60%{ transform:scale(.96) translateY(1px); } }
+.stk-flicker{ animation:stkFlicker .7s ease-in-out infinite; }
+@keyframes stkShake{ 0%,100%{ transform:translateX(0) rotate(0); } 20%{ transform:translateX(-3px) rotate(-6deg); } 60%{ transform:translateX(3px) rotate(6deg); } }
+.stk-shake{ animation:stkShake .6s ease-in-out infinite; }
+@keyframes stkTilt{ 0%,100%{ transform:rotate(-8deg); } 50%{ transform:rotate(8deg); } }
+.stk-tilt{ animation:stkTilt 1.6s ease-in-out infinite; }
+@keyframes stkLaunch{ 0%{ transform:translateY(4px) rotate(-8deg); } 50%{ transform:translateY(-6px) rotate(-2deg); } 100%{ transform:translateY(4px) rotate(-8deg); } }
+.stk-launch{ animation:stkLaunch 1s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce){ .stk{ animation:none !important; } }
 
 /* Tablet / mid screens */
 @media (max-width:720px){
   .community-gif-panel{ width:min(440px, calc(100vw - 24px)); }
 }
-/* Phones: make the panel a roomy sheet, larger GIFs */
+/* Phones: roomy sticker sheet */
 @media (max-width:560px){
   .community-gif-panel{
     position:fixed; left:12px; right:12px; width:auto; bottom:calc(84px + env(safe-area-inset-bottom));
     padding:16px; border-radius:20px; max-height:64vh;
   }
-  .community-gif-results{ grid-template-columns:repeat(2,1fr); gap:12px; max-height:44vh; }
-  .community-gif-item{ aspect-ratio:16/11; border-radius:14px; }
+  .community-gif-results{ grid-template-columns:repeat(4,1fr); gap:10px; max-height:46vh; }
+  .community-sticker-item{ font-size:1.9rem; }
   .community-gif-input{ font-size:16px; padding:12px 15px; }
-  .community-msg-gif{ max-width:78%; }
+  .community-msg-sticker{ font-size:3rem; }
 }
-/* Very small phones: single column so each GIF is nice and large */
+/* Very small phones: 3 columns so each sticker stays large */
 @media (max-width:380px){
-  .community-gif-results{ grid-template-columns:1fr; gap:12px; }
-  .community-gif-item{ aspect-ratio:16/9; }
+  .community-gif-results{ grid-template-columns:repeat(3,1fr); gap:10px; }
 }
 
 /* =========================================================
@@ -3517,7 +3543,7 @@ img, svg, video, canvas, iframe, table, pre{ max-width:100%; }
 ========================================================= */
 @media (hover: none){
   .chat-toggle:hover, .chat-send:hover, .back-to-top:hover, .ach-fab:hover,
-  .chat-mic:hover, .cep-emoji:hover, .community-gif-item:hover, .pitch-btn:hover,
+  .chat-mic:hover, .cep-emoji:hover, .community-sticker-item:hover, .pitch-btn:hover,
   .social-btn:hover svg, .btn:hover, .btn-primary:hover, .role-chip:hover,
   .snap-fab:hover, .nav-cta:hover, .community-send:hover, .community-jump:hover{
     transform:none !important;
