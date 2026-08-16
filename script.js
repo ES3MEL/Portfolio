@@ -394,10 +394,10 @@
     }
 
     function personalMessage() {
-      if (myVisits <= 1) return { msg: 'Welcome — glad you\'re here! 🎉', sub: 'Your first visit from this device.' };
-      if (myVisits <= 3) return { msg: `Welcome back — visit #${myVisits}. 👋`, sub: "Glad you're exploring more." };
-      if (myVisits <= 9) return { msg: `${ordinal(myVisits)} time here! 💛`, sub: 'You clearly like it here — thank you.' };
-      return { msg: `${ordinal(myVisits)} visit — you're a regular! ⭐`, sub: 'Should we just call this home?' };
+      if (myVisits <= 1) return { msg: 'Welcome — glad you\'re here.', sub: '' };
+      if (myVisits <= 3) return { msg: `Welcome back — visit ${myVisits}.`, sub: '' };
+      if (myVisits <= 9) return { msg: `Your ${ordinal(myVisits)} visit — thank you.`, sub: '' };
+      return { msg: `${ordinal(myVisits)} visit — a regular.`, sub: '' };
     }
 
     // Show the honest per-browser message immediately
@@ -413,8 +413,8 @@
 
     function showGlobal(total) {
       if (typeof total === 'number' && total > 0) {
-        line.textContent = `You're visitor #${total.toLocaleString()}! 🎉`;
-        if (sub) sub.textContent = myVisits > 1 ? `Welcome back — your ${ordinal(myVisits)} visit. 💛` : 'Thanks for being one of them.';
+        line.textContent = `Visitor ${total.toLocaleString()}.`;
+        if (sub) sub.textContent = myVisits > 1 ? `Your ${ordinal(myVisits)} visit.` : '';
       }
     }
 
@@ -1648,9 +1648,7 @@
       { label: 'Experience', hint: 'Roles at Twala', group: 'Navigate', icon: I.arrow, target: '#experience' },
       { label: 'Projects', hint: 'Design & web work', group: 'Navigate', icon: I.arrow, target: '#projects' },
       { label: 'Skills', hint: 'Tools & toolkit', group: 'Navigate', icon: I.arrow, target: '#skills' },
-      { label: 'Tools', hint: 'Software carousel', group: 'Navigate', icon: I.arrow, target: '#tools' },
       { label: 'Highlights', hint: 'Skills & certifications', group: 'Navigate', icon: I.arrow, target: '#highlights' },
-      { label: 'Education & Honors', hint: 'Background & awards', group: 'Navigate', icon: I.arrow, target: '#honors' },
       { label: 'Forum', hint: 'Community live chat', group: 'Navigate', icon: I.arrow, target: '#community' },
       { label: 'Contact', hint: 'Email, socials & form', group: 'Navigate', icon: I.arrow, target: '#contact' },
 
