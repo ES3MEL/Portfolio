@@ -322,10 +322,11 @@ html{ scrollbar-width:thin; scrollbar-color:var(--grad-2) var(--bg); }
 :root[data-theme="light"] .theme-icon-sun{ display:block; }
 :root[data-theme="light"] .theme-icon-moon{ display:none; }
 
-.nav-toggle{ display:none; flex-direction:column; gap:6px; padding:8px; z-index:210; }
+.nav-toggle{ display:none; flex-direction:column; gap:5px; padding:8px; z-index:210; }
 .nav-toggle span{ width:22px; height:2px; background:var(--text); border-radius:2px; transition:transform .25s var(--ease), opacity .2s; }
-.nav-toggle[aria-expanded="true"] span:nth-child(1){ transform:translateY(4px) rotate(45deg); }
-.nav-toggle[aria-expanded="true"] span:nth-child(2){ transform:translateY(-4px) rotate(-45deg); }
+.nav-toggle[aria-expanded="true"] span:nth-child(1){ transform:translateY(7px) rotate(45deg); }
+.nav-toggle[aria-expanded="true"] span:nth-child(2){ opacity:0; }
+.nav-toggle[aria-expanded="true"] span:nth-child(3){ transform:translateY(-7px) rotate(-45deg); }
 
 /* =========================================================
    COMMAND PALETTE
@@ -341,17 +342,17 @@ html{ scrollbar-width:thin; scrollbar-color:var(--grad-2) var(--bg); }
 .cmdk-trigger-label{ white-space:nowrap; flex:1; text-align:left; }
 .cmdk-trigger .cmdk-kbd{ margin-left:auto; }
 
-/* Mobile centered-top search icon (hidden on desktop) */
+/* Mobile search icon — sits beside the hamburger (top-right), not centered */
 .cmdk-fab-mobile{
-  display:none; position:fixed; left:50%; top:calc(env(safe-area-inset-top) + 15px); transform:translateX(-50%); z-index:215;
-  width:44px; height:44px; align-items:center; justify-content:center; color:var(--text-dim);
+  display:none; position:fixed; right:calc(env(safe-area-inset-right) + 66px); top:calc(env(safe-area-inset-top) + 16px); z-index:215;
+  width:40px; height:40px; align-items:center; justify-content:center; color:var(--text-dim);
   background:color-mix(in srgb, var(--bg-panel) 92%, transparent); -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px);
-  border:1px solid var(--border-strong); border-radius:50%; box-shadow:var(--shadow-md); cursor:pointer;
+  border:1px solid var(--border-strong); border-radius:50%; box-shadow:var(--shadow-sm); cursor:pointer;
   transition:border-color .2s var(--ease), color .2s var(--ease), transform .2s var(--ease);
   -webkit-tap-highlight-color:transparent; touch-action:manipulation;
 }
 .cmdk-fab-mobile:hover{ border-color:var(--grad-3); color:var(--text); }
-.cmdk-fab-mobile:active{ transform:translateX(-50%) scale(0.92); }
+.cmdk-fab-mobile:active{ transform:scale(0.92); }
 .cmdk-fab-mobile svg{ pointer-events:none; }
 
 /* Below the hamburger breakpoint: hide the in-nav pill, show the centered-top icon */
@@ -2402,36 +2403,28 @@ html{ scrollbar-width:thin; scrollbar-color:var(--grad-2) var(--bg); }
    ROLE-MATCH HIGHLIGHTER
 ========================================================= */
 .role-match{
-  margin-top:26px; padding:18px 20px; border-radius:16px;
-  background:linear-gradient(135deg, color-mix(in srgb, var(--grad-1) 12%, var(--bg-panel)), color-mix(in srgb, var(--grad-3) 10%, var(--bg-panel)));
-  border:1px solid color-mix(in srgb, var(--grad-3) 32%, var(--border));
-  box-shadow:0 10px 30px -18px color-mix(in srgb, var(--grad-1) 55%, transparent);
-  position:relative; overflow:hidden;
+  margin-top:26px; padding:18px 20px; border-radius:14px;
+  background:var(--bg-panel); border:1px solid var(--border);
+  position:relative;
 }
-.role-match::before{
-  content:""; position:absolute; top:0; left:0; width:100%; height:3px;
-  background:var(--gradient-main);
-}
-.role-match-head{ display:flex; align-items:flex-start; gap:10px; margin-bottom:14px; }
+.role-match-head{ display:flex; align-items:center; gap:10px; margin-bottom:14px; }
 .role-match-icon{
-  width:34px; height:34px; flex-shrink:0; border-radius:10px; display:grid; place-items:center;
-  color:var(--on-gradient); background:var(--gradient-main); box-shadow:0 4px 12px -4px color-mix(in srgb, var(--grad-1) 60%, transparent);
-  animation:roleIconPulse 3s ease-in-out infinite;
+  width:30px; height:30px; flex-shrink:0; border-radius:9px; display:grid; place-items:center;
+  color:var(--grad-3); background:color-mix(in srgb, var(--grad-3) 10%, transparent);
 }
-@keyframes roleIconPulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
 @media (prefers-reduced-motion: reduce){ .role-match-icon{ animation:none; } }
-.role-match-label{ font-size:.92rem; color:var(--text); line-height:1.45; min-width:0; }
+.role-match-label{ font-size:.9rem; color:var(--text-dim); line-height:1.45; min-width:0; }
 .role-match-label b{ color:var(--grad-3); font-weight:600; }
-.role-match-btns{ display:flex; flex-wrap:wrap; gap:9px; }
+.role-match-btns{ display:flex; flex-wrap:wrap; gap:8px; }
 .role-chip{
-  padding:9px 16px; border-radius:100px; cursor:pointer; font-size:.85rem; font-weight:500; font-family:var(--font-mono);
-  color:var(--text); background:var(--bg-panel); border:1px solid var(--border-strong); transition:all .18s var(--ease);
+  padding:8px 15px; border-radius:100px; cursor:pointer; font-size:.82rem; font-weight:500; font-family:var(--font-mono);
+  color:var(--text-dim); background:var(--bg); border:1px solid var(--border); transition:color .18s var(--ease), border-color .18s var(--ease), background .18s var(--ease);
   -webkit-tap-highlight-color:transparent; touch-action:manipulation; white-space:nowrap;
 }
-.role-chip:hover{ color:var(--on-gradient); background:var(--gradient-main); border-color:transparent; transform:translateY(-2px); box-shadow:0 6px 16px -6px color-mix(in srgb, var(--grad-1) 60%, transparent); }
-.role-chip.is-active{ color:var(--on-gradient); background:var(--gradient-main); border-color:transparent; box-shadow:0 6px 16px -6px color-mix(in srgb, var(--grad-1) 60%, transparent); }
+.role-chip:hover{ color:var(--text); border-color:color-mix(in srgb, var(--grad-3) 45%, var(--border)); }
+.role-chip.is-active{ color:var(--on-gradient); background:var(--gradient-main); border-color:transparent; }
 .role-chip--clear{ color:var(--text-faint); background:transparent; border-style:dashed; }
-.role-chip--clear:hover{ background:var(--bg-panel-2); color:var(--text); box-shadow:none; }
+.role-chip--clear:hover{ background:var(--bg-panel-2); color:var(--text); }
 @media (max-width:560px){
   .role-match{ padding:16px; margin-top:22px; }
   .role-match-label{ font-size:.85rem; }

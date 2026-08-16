@@ -1325,6 +1325,33 @@
       ],
       gallery: ['Home', 'Gallery', 'Contact'],
       links: [{ label: 'View Prototype', type: 'figma', url: 'https://www.figma.com/proto/CLkhJVc1NRE0m1U9eR8hOe/Itelec-4---High-Fi--Website--Mobile-Vie?node-id=66-955&starting-point-node-id=1%3A2&t=xyMhJs4gjMjslsm1-1' }]
+    },
+    {
+      id: 'busybee',
+      title: 'BusyBee',
+      category: 'UI/UX Design',
+      role: 'UI/UX Designer',
+      year: '2025',
+      status: 'Prototype',
+      featured: false,
+      tagline: 'An interactive mobile app prototype with a clean, friendly interface and a guided click-through flow.',
+      desc: 'A high-fidelity, interactive mobile app prototype designed in Figma with a defined starting point and a fully navigable flow.',
+      accent: ['#FFB800', '#7C5CFC'],
+      tech: ['Figma', 'Prototyping', 'UI/UX', 'Mobile Design'],
+      overview: 'BusyBee is a high-fidelity mobile app prototype built in Figma. It focuses on a clean, approachable interface and an interactive click-through experience, complete with a defined entry point so reviewers can walk the flow end to end.',
+      features: [
+        'High-fidelity, mobile-first screens.',
+        'Interactive prototype with a defined starting point and navigable flow.',
+        'Clean, friendly visual style.',
+        'Reusable component structure.'
+      ],
+      process: [
+        { title: 'Concept', body: 'Framed the app direction and core screens.' },
+        { title: 'Design', body: 'Built high-fidelity mobile layouts in Figma.' },
+        { title: 'Prototype', body: 'Wired an interactive click-through flow with a set entry point.' }
+      ],
+      gallery: ['Home', 'Flow', 'Detail'],
+      links: [{ label: 'View Prototype', type: 'figma', url: 'https://www.figma.com/proto/LmSYpHNDLDR8LczsAFsDcO/BusyBee?node-id=265-1330&starting-point-node-id=38%3A499&t=FfWWtz8jxYDj9Dsj-1' }]
     }
   ];
 
@@ -3076,10 +3103,11 @@
       if (el && el.parentNode) el.parentNode.removeChild(el);
       msgCount = Math.max(0, msgCount - 1);
       if (msgCountEl) msgCountEl.textContent = msgCount.toLocaleString();
+      // Temp/optimistic rows have no real DB id yet — nothing to delete server-side.
+      if (id == null || String(id).startsWith('tmp-')) return;
       const { error } = await sb.from('messages').delete().eq('id', id);
       if (error) {
         console.error('[community] delete failed:', error);
-        // Re-add is complex; instead tell the user clearly it needs a DB policy.
         if (window.__agqToast) window.__agqToast('⚠ Delete needs a Supabase DELETE policy on "messages".');
         else if (statusEl) statusEl.textContent = 'Delete failed (add a DELETE policy in Supabase): ' + (error.message || 'unknown');
       }
@@ -3097,18 +3125,33 @@
 
     function addMessageEl(row, opts) {
       if (!feed) return;
-      // De-dupe: if this message id is already rendered (e.g. optimistic render
-      // already added it, or a duplicate realtime echo), skip.
+      // De-dupe by id: skip if this id is already rendered.
       if (row.id != null && feed.querySelector(`[data-mid="${row.id}"]`)) return;
+      // De-dupe optimistic temp rows: when the real echo arrives (real id + same
+      // name+message), replace the temp node instead of adding a duplicate.
+      if (row.id != null && !String(row.id).startsWith('tmp-')) {
+        const temps = feed.querySelectorAll('[data-mid^="tmp-"]');
+        for (const t of temps) {
+          if (t.getAttribute('data-optmsg') === String(row.message) && t.getAttribute('data-optname') === String(row.name || 'Anonymous')) {
+            // upgrade the temp node's id so future edits/deletes work
+            t.setAttribute('data-mid', row.id);
+            t.removeAttribute('data-optmsg'); t.removeAttribute('data-optname');
+            rememberMine(row.id);
+            return;
+          }
+        }
+      }
       if (emptyMsg) emptyMsg.hidden = true;
       const who = row.name && row.name.trim() ? row.name.trim() : 'Anonymous';
-      const mine = (myName() && who.toLowerCase() === myName().toLowerCase()) || (row.id != null && isMineId(row.id));
+      const mine = row._mineHint === true || row._optimistic === true || (myName() && who.toLowerCase() === myName().toLowerCase()) || (row.id != null && isMineId(row.id));
       const grouped = lastSender === who; // consecutive message from same person
       const wasNear = nearBottom();
 
       const wrap = document.createElement('div');
       wrap.className = 'community-msg' + (mine ? ' is-mine' : '') + (grouped ? ' is-grouped' : '');
       if (row.id != null) wrap.setAttribute('data-mid', row.id);
+      // Tag optimistic temp rows so the realtime echo can find & upgrade them
+      if (row._optimistic) { wrap.setAttribute('data-optmsg', String(row.message)); wrap.setAttribute('data-optname', String(who)); }
       const av = document.createElement('span');
       av.className = 'community-msg-av'; av.textContent = initials(who);
       av.style.background = colorFor(who);
@@ -3165,7 +3208,7 @@
             sDel.setAttribute('aria-label', 'Delete this sticker');
             sDel.addEventListener('click', () => {
               const m = (!sCanDelete && sOwner) ? 'Delete this visitor\'s sticker?' : 'Delete this sticker?';
-              if (confirm(m)) deleteMessage(row.id, wrap);
+              if (confirm(m)) deleteMessage(wrap.getAttribute('data-mid'), wrap);
             });
             sActions.append(sDel);
           }
@@ -3274,7 +3317,10 @@
         del.setAttribute('aria-label', 'Delete this message');
         del.addEventListener('click', () => {
           const msg = (!canDeleteOwn && owner) ? 'Delete this visitor\'s message?' : 'Delete this message?';
-          if (confirm(msg)) deleteMessage(row.id, wrap);
+          if (!confirm(msg)) return;
+          // Use the node's live data-mid (a temp row may have been upgraded to a real id)
+          const liveId = wrap.getAttribute('data-mid');
+          deleteMessage(liveId, wrap);
         });
         actions.append(del);
       }
@@ -3587,8 +3633,12 @@
       try {
         const { data, error } = await sb.from('messages').insert({ name, message }).select();
         if (error) { if (statusEl) statusEl.textContent = 'Sticker failed: ' + (error.message || 'error'); return; }
-        if (data && data[0] && data[0].id != null) rememberMine(data[0].id);
-        if (data && data[0]) { try { addMessageEl(data[0]); } catch (e) {} }
+        let rowForRender = (data && data[0]) ? data[0] : {
+          id: 'tmp-' + Date.now(), name, message, created_at: new Date().toISOString(), _optimistic: true
+        };
+        if (rowForRender.id != null && !String(rowForRender.id).startsWith('tmp-')) rememberMine(rowForRender.id);
+        else rowForRender._mineHint = true;
+        try { addMessageEl(rowForRender); } catch (e) {}
         lastPostAt = Date.now();
       } catch (e) {}
     }
@@ -3702,12 +3752,20 @@
         if (statusEl) statusEl.textContent = 'Message failed: ' + (error.message || 'unknown error');
         return;
       }
-      // Remember this message's id as "mine" so it can be deleted later
-      if (data && data[0] && data[0].id != null) rememberMine(data[0].id);
-      // Optimistically render it right away so the sender sees it immediately
-      // (doesn't wait for the realtime echo, which may be delayed or disabled).
-      // addMessageEl de-dupes by id, so the echo won't create a duplicate.
-      if (data && data[0]) { try { addMessageEl(data[0]); } catch (e) {} }
+      // Build the row for immediate display. If .select() returned the saved
+      // row, use it (has real id + created_at). Otherwise synthesize a temporary
+      // row so the sender ALWAYS sees their message, even if SELECT/realtime is
+      // restricted. The realtime echo (with the real id) de-dupes on text if no id.
+      let rowForRender = (data && data[0]) ? data[0] : {
+        id: 'tmp-' + Date.now(),
+        name: name || 'Anonymous',
+        message,
+        created_at: new Date().toISOString(),
+        _optimistic: true
+      };
+      if (rowForRender.id != null && !String(rowForRender.id).startsWith('tmp-')) rememberMine(rowForRender.id);
+      else { rowForRender._mineHint = true; }
+      try { addMessageEl(rowForRender); } catch (e) {}
       if (name) updateVisitorName(name);
       lastPostAt = Date.now(); lastPostText = message; postsThisSession++;
       if (msgInput) msgInput.value = '';
