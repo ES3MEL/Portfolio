@@ -31,74 +31,35 @@
   /* ---------- Preloader ---------- */
   function initPreloader() {
     const pre = $('#preloader');
-    const ppFill = $('#ppFill');
-    const pctEl = $('#preloaderPct');
+    const bar = $('#preloaderBarFill');
     if (!pre) return;
 
-    if (prefersReducedMotion) { pre.classList.add('is-done'); return; }
-
-    // Circular progress ring geometry
-    const R = 52, C = 2 * Math.PI * R;
-    if (ppFill) { ppFill.style.strokeDasharray = C.toFixed(1); ppFill.style.strokeDashoffset = C.toFixed(1); }
-
-    // Ambient particle field on canvas
-    const cvs = $('#preloaderCanvas');
-    let raf = null, particles = [];
-    if (cvs) {
-      const ctx = cvs.getContext('2d');
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      function size() { cvs.width = innerWidth * dpr; cvs.height = innerHeight * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); }
-      size();
-      const accent = () => getComputedStyle(document.documentElement).getPropertyValue('--grad-2').trim() || '#4FA0FF';
-      const N = innerWidth < 700 ? 26 : 46;
-      particles = Array.from({ length: N }, () => ({
-        x: Math.random() * innerWidth, y: Math.random() * innerHeight,
-        vx: (Math.random() - 0.5) * 0.5, vy: (Math.random() - 0.5) * 0.5,
-        r: Math.random() * 1.8 + 0.6
-      }));
-      const col = accent();
-      (function frame() {
-        ctx.clearRect(0, 0, innerWidth, innerHeight);
-        particles.forEach(p => {
-          p.x += p.vx; p.y += p.vy;
-          if (p.x < 0 || p.x > innerWidth) p.vx *= -1;
-          if (p.y < 0 || p.y > innerHeight) p.vy *= -1;
-          ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.28);
-          ctx.fillStyle = col; ctx.globalAlpha = .35; ctx.fill();
-        });
-        for (let i = 0; i < particles.length; i++) for (let j = i + 1; j < particles.length; j++) {
-          const a = particles[i], b = particles[j], d = Math.hypot(a.x - b.x, a.y - b.y);
-          if (d < 120) { ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.strokeStyle = col; ctx.globalAlpha = (1 - d / 120) * 0.15; ctx.lineWidth = 1; ctx.stroke(); }
-        }
-        raf = requestAnimationFrame(frame);
-      })();
+    if (prefersReducedMotion) {
+      // Show briefly then reveal, no animation loop
+      window.addEventListener('load', () => setTimeout(() => pre.classList.add('is-done'), 300));
+      setTimeout(() => pre.classList.add('is-done'), 1200);
+      return;
     }
 
     let pct = 0, target = 0, finished = false;
-    function paint() {
-      const shown = Math.round(pct);
-      if (pctEl) pctEl.innerHTML = shown + '<i>%</i>';
-      if (ppFill) ppFill.style.strokeDashoffset = (C * (1 - pct / 100)).toFixed(1);
-    }
-    // Fake progress that eases toward 90%, then completes on window load
+    function paint() { if (bar) bar.style.width = Math.min(pct, 100).toFixed(1) + '%'; }
+
+    // Smooth progress that eases toward 90%, then completes on window load
     const timer = setInterval(() => {
-      target = Math.min(target + Math.random() * 14, finished ? 100 : 90);
-      pct += (target - pct) * 0.25;
+      target = Math.min(target + Math.random() * 16, finished ? 100 : 90);
+      pct += (target - pct) * 0.22;
       paint();
-      if (finished && pct >= 99.4) { pct = 100; paint(); done(); clearInterval(timer); }
+      if (finished && pct >= 99) { pct = 100; paint(); done(); clearInterval(timer); }
     }, 90);
 
-    function done() {
-      pre.classList.add('is-done');
-      setTimeout(() => { if (raf) cancelAnimationFrame(raf); }, 700);
-    }
+    function done() { pre.classList.add('is-done'); }
 
     window.addEventListener('load', () => {
       finished = true; target = 100;
-      setTimeout(() => { if (!pre.classList.contains('is-done')) { pct = 100; paint(); done(); clearInterval(timer); } }, 900);
+      setTimeout(() => { if (!pre.classList.contains('is-done')) { pct = 100; paint(); done(); clearInterval(timer); } }, 700);
     });
     // Safety timeout so it never hangs
-    setTimeout(() => { finished = true; }, 4000);
+    setTimeout(() => { finished = true; }, 3500);
   }
 
   /* ---------- Theme toggle (light/dark, saved + system-aware) ---------- */
@@ -3922,17 +3883,51 @@
       });
     }
 
-    // Log this visit once per browser session; update the name if they set it later
+    // Log this visit ONCE per browser (not per session), so each visitor is
+    // counted a single time. The visit id is stored in localStorage so repeat
+    // sessions reuse the same row instead of creating duplicates.
     let myVisitId = null;
-    try { myVisitId = sessionStorage.getItem('agq-visit-id'); } catch (e) {}
+    try { myVisitId = localStorage.getItem('agq-visit-id') || sessionStorage.getItem('agq-visit-id'); } catch (e) {}
+
+    // Ask the visitor for their real name once (first visit). If they skip it,
+    // fall back to "Anonymous" — they can still type their name in the composer.
+    function askRealName() {
+      let n = '';
+      try { n = (localStorage.getItem('agq-community-name') || '').trim(); } catch (e) {}
+      if (n) return n; // already known
+      let asked = false;
+      try { asked = localStorage.getItem('agq-name-asked') === '1'; } catch (e) {}
+      if (!asked) {
+        try {
+          const entered = window.prompt('Welcome to Allyssa\'s portfolio! 👋\nWhat\'s your name? (This shows in the community forum.)', '');
+          try { localStorage.setItem('agq-name-asked', '1'); } catch (e) {}
+          const clean = (entered || '').trim().slice(0, 40);
+          if (clean && (typeof hasProfanity !== 'function' || !hasProfanity(clean))) {
+            n = clean;
+            try { localStorage.setItem('agq-community-name', n); } catch (e) {}
+          }
+        } catch (e) {}
+      }
+      // reflect whatever we have in the composer name field
+      if (n && nameInput && !nameInput.value.trim()) nameInput.value = n;
+      return n; // may be '' → will be stored as Anonymous until they set it
+    }
 
     (async function logVisit() {
-      let vname = '';
-      try { vname = (localStorage.getItem('agq-community-name') || '').trim(); } catch (e) {}
+      // Wait until the page has loaded (preloader gone) before prompting, so the
+      // name popup doesn't appear over the loading screen.
+      function ready(cb) {
+        if (document.readyState === 'complete') setTimeout(cb, 600);
+        else window.addEventListener('load', () => setTimeout(cb, 600), { once: true });
+      }
+      const vname = await new Promise((resolve) => { ready(() => resolve(askRealName())); });
       if (!myVisitId) {
         try {
           const { data } = await sb.from('visitors').insert({ name: vname || 'Anonymous' }).select();
-          if (data && data[0]) { myVisitId = data[0].id; try { sessionStorage.setItem('agq-visit-id', String(myVisitId)); } catch (e) {} }
+          if (data && data[0]) {
+            myVisitId = data[0].id;
+            try { localStorage.setItem('agq-visit-id', String(myVisitId)); sessionStorage.setItem('agq-visit-id', String(myVisitId)); } catch (e) {}
+          }
         } catch (e) {}
       }
       // Load recent visitors + total count
@@ -3957,7 +3952,7 @@
         try {
           const { data, error } = await sb.from('visitors').insert({ name: n }).select();
           if (error) console.error('[community] visitor insert failed:', error);
-          if (data && data[0]) { myVisitId = data[0].id; try { sessionStorage.setItem('agq-visit-id', String(myVisitId)); } catch (e) {} }
+          if (data && data[0]) { myVisitId = data[0].id; try { localStorage.setItem('agq-visit-id', String(myVisitId)); sessionStorage.setItem('agq-visit-id', String(myVisitId)); } catch (e) {} }
         } catch (e) { console.error('[community] visitor insert threw:', e); }
       } else {
         try {
@@ -3966,7 +3961,7 @@
           // If the update matched no rows (row gone or RLS blocked), create a fresh named row
           if (!error && (!data || !data.length)) {
             const ins = await sb.from('visitors').insert({ name: n }).select();
-            if (ins.data && ins.data[0]) { myVisitId = ins.data[0].id; try { sessionStorage.setItem('agq-visit-id', String(myVisitId)); } catch (e) {} }
+            if (ins.data && ins.data[0]) { myVisitId = ins.data[0].id; try { localStorage.setItem('agq-visit-id', String(myVisitId)); sessionStorage.setItem('agq-visit-id', String(myVisitId)); } catch (e) {} }
           }
         } catch (e) { console.error('[community] visitor update threw:', e); }
       }

@@ -143,53 +143,29 @@ html{ scrollbar-width:thin; scrollbar-color:var(--grad-2) var(--bg); }
 .preloader{
   position:fixed; inset:0; z-index:1000; display:flex; flex-direction:column;
   align-items:center; justify-content:center; gap:26px; background:var(--bg); overflow:hidden;
-  transition:opacity .7s var(--ease), visibility .7s var(--ease);
+  transition:opacity .6s var(--ease), visibility .6s var(--ease);
 }
 .preloader.is-done{ opacity:0; visibility:hidden; pointer-events:none; }
-.preloader.is-done .preloader-inner{ transform:scale(1.08); opacity:0; transition:transform .7s var(--ease), opacity .5s var(--ease); }
-.preloader-canvas{ position:absolute; inset:0; width:100%; height:100%; opacity:.7; }
-.preloader-inner{ position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; gap:22px; transition:transform .7s var(--ease), opacity .7s var(--ease); }
+.preloader.is-done .preloader-inner{ transform:translateY(-6px); opacity:0; transition:transform .6s var(--ease), opacity .45s var(--ease); }
+.preloader-inner{ position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; gap:22px; transition:transform .6s var(--ease), opacity .6s var(--ease); }
 
-/* Stage: progress ring + self-drawing logo + orbit */
-.preloader-stage{ position:relative; width:132px; height:132px; display:grid; place-items:center; }
-.preloader-progress{ position:absolute; inset:0; width:132px; height:132px; transform:rotate(-90deg); }
-.preloader-progress .pp-track{ fill:none; stroke:var(--border-strong); stroke-width:3; }
-.preloader-progress .pp-fill{ fill:none; stroke:url(#ppGrad); stroke:var(--grad-2); stroke-width:4; stroke-linecap:round; transition:stroke-dashoffset .3s var(--ease); filter:drop-shadow(0 0 6px color-mix(in srgb, var(--grad-2) 60%, transparent)); }
-.preloader-logo{ width:60px; height:60px; overflow:visible; }
-.preloader-logo .pl-stroke{
-  fill:none; stroke:var(--grad-3); stroke-width:3.2; stroke-linejoin:round; stroke-linecap:round;
-  stroke-dasharray:340; stroke-dashoffset:340;
-  animation:plDraw 1.8s var(--ease) forwards, plGlow 2.4s ease-in-out 1.8s infinite;
-  filter:drop-shadow(0 0 5px color-mix(in srgb, var(--grad-3) 55%, transparent));
+/* Clean monogram */
+.preloader-mark{
+  font-family:var(--font-display); font-weight:700; font-size:2.4rem; letter-spacing:.22em; text-indent:.22em;
+  background:var(--gradient-text); background-size:200% 200%;
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  animation:plDrift 3s ease infinite, plFade .7s var(--ease) both;
 }
-@keyframes plDraw{ to{ stroke-dashoffset:0; } }
-@keyframes plGlow{ 0%,100%{ opacity:.8; } 50%{ opacity:1; } }
-.preloader-orbit{ position:absolute; inset:0; animation:preloadSpin 3.4s linear infinite; }
-.preloader-orbit span{ position:absolute; top:2px; left:50%; width:7px; height:7px; margin-left:-3.5px; border-radius:50%; background:var(--grad-1); box-shadow:0 0 10px 1px color-mix(in srgb, var(--grad-1) 70%, transparent); }
-.preloader-orbit span:nth-child(2){ top:auto; bottom:2px; background:var(--grad-2); box-shadow:0 0 10px 1px color-mix(in srgb, var(--grad-2) 70%, transparent); }
-.preloader-orbit span:nth-child(3){ top:50%; left:2px; margin-top:-3.5px; background:var(--grad-3); box-shadow:0 0 10px 1px color-mix(in srgb, var(--grad-3) 70%, transparent); }
-@keyframes preloadSpin{ to{ transform:rotate(360deg); } }
+@keyframes plDrift{ 0%{ background-position:0% 50%; } 50%{ background-position:100% 50%; } 100%{ background-position:0% 50%; } }
+@keyframes plFade{ from{ opacity:0; transform:translateY(8px); } to{ opacity:1; transform:translateY(0); } }
 
-/* Name reveal, staggered */
-.preloader-word{ display:flex; gap:1px; font-family:var(--font-display); font-weight:700; font-size:1.5rem; letter-spacing:.32em; text-indent:.32em; }
-.preloader-word span{
-  background:var(--gradient-text); background-size:220% 220%; -webkit-background-clip:text; background-clip:text; color:transparent;
-  opacity:0; transform:translateY(12px); animation:plWord .6s var(--ease) forwards, accentDrift 3s ease infinite;
+/* Thin progress line */
+.preloader-bar{ width:120px; height:2px; border-radius:2px; background:var(--border-strong); overflow:hidden; position:relative; }
+.preloader-bar-fill{ position:absolute; inset:0 auto 0 0; width:0%; border-radius:2px; background:var(--gradient-main); transition:width .3s var(--ease); }
+
+@media (prefers-reduced-motion: reduce){
+  .preloader-mark{ animation:plFade .4s var(--ease) both; }
 }
-.preloader-word span:nth-child(1){ animation-delay:.15s,0s; }
-.preloader-word span:nth-child(2){ animation-delay:.23s,0s; }
-.preloader-word span:nth-child(3){ animation-delay:.31s,0s; }
-.preloader-word span:nth-child(4){ animation-delay:.39s,0s; }
-.preloader-word span:nth-child(5){ animation-delay:.47s,0s; }
-.preloader-word span:nth-child(6){ animation-delay:.55s,0s; }
-.preloader-word span:nth-child(7){ animation-delay:.63s,0s; }
-@keyframes plWord{ to{ opacity:1; transform:translateY(0); } }
-@keyframes preloadPulse{ 0%,100%{ opacity:.6; } 50%{ opacity:1; } }
-@keyframes accentDrift{ 0%{ background-position:0% 50%; } 50%{ background-position:100% 50%; } 100%{ background-position:0% 50%; } }
-
-.preloader-pct{ font-size:1.4rem; font-weight:600; letter-spacing:.06em; color:var(--text); }
-.preloader-pct i{ font-style:normal; font-size:.8rem; color:var(--text-faint); margin-left:1px; }
-.preloader-tagline{ font-size:.72rem; letter-spacing:.16em; text-transform:uppercase; color:var(--text-faint); animation:preloadPulse 2s ease-in-out infinite; }
 
 /* =========================================================
    BACKGROUND — AURORA + GRAIN
