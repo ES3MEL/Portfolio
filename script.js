@@ -2844,19 +2844,21 @@
     }
     // Track IDs of messages this browser created, so they can be deleted/aligned right.
     // Uses an in-memory Set (always works, even when iOS blocks localStorage) plus
-    // localStorage for persistence across reloads.
+    // localStorage for persistence across reloads. IDs are normalized to strings so
+    // number-vs-string mismatches never cause a missed match.
     const mineMem = new Set();
     function mineIds() {
       let stored = [];
       try { stored = JSON.parse(localStorage.getItem('agq-community-mine') || '[]'); } catch (e) {}
-      return [...new Set([...mineMem, ...stored])];
+      return [...new Set([...mineMem, ...stored.map(String)])];
     }
     function rememberMine(id) {
       if (id == null) return;
-      mineMem.add(id);
-      try { const a = mineIds(); if (!a.includes(id)) { a.push(id); } localStorage.setItem('agq-community-mine', JSON.stringify(a.slice(-200))); } catch (e) {}
+      const s = String(id);
+      mineMem.add(s);
+      try { const a = mineIds(); if (!a.includes(s)) { a.push(s); } localStorage.setItem('agq-community-mine', JSON.stringify(a.slice(-300))); } catch (e) {}
     }
-    function isMineId(id) { return mineMem.has(id) || mineIds().includes(id); }
+    function isMineId(id) { if (id == null) return false; return mineMem.has(String(id)) || mineIds().includes(String(id)); }
 
     // ---- Edit your own message ----
     let editingId = null;
@@ -2905,9 +2907,17 @@
           return;
         }
         const newMessage = replyPrefix + next;
+        // Use the node's live id (a temp row may have been upgraded to a real id)
+        const liveId = wrap.getAttribute('data-mid') || row.id;
+        // If still a temp id (not saved yet), just update the view locally.
+        if (String(liveId).startsWith('tmp-')) {
+          row.message = newMessage; textEl.textContent = next;
+          wrap.setAttribute('data-optmsg', newMessage);
+          close(); return;
+        }
         save.textContent = 'Saving…'; save.disabled = true;
         try {
-          const { error } = await sb.from('messages').update({ message: newMessage }).eq('id', row.id);
+          const { error } = await sb.from('messages').update({ message: newMessage }).eq('id', liveId);
           if (error) { save.textContent = 'Save'; save.disabled = false; alert('Edit failed: ' + (error.message || 'error') + '\n\nYou may need to add an UPDATE policy in Supabase.'); return; }
           // Update local view immediately
           row.message = newMessage;
@@ -3020,6 +3030,8 @@
 
     async function toggleReact(id, em, btn) {
       if (id == null) return;
+      // A just-sent message may still have a temporary id (not saved yet).
+      if (String(id).startsWith('tmp-')) { if (statusEl) statusEl.textContent = 'Give it a second — still saving…'; return; }
       const had = iReacted(id, em);
       // optimistic UI
       applyReaction(id, em, CID, !had);
@@ -3803,9 +3815,26 @@
           const h = document.createElement('div'); h.className = 'community-msg-head';
           const nm = document.createElement('span'); nm.className = 'community-msg-who'; nm.textContent = 'You';
           h.append(nm); b.append(h);
+          // If this is a reply, render the quote block too (same parser as the rich renderer)
+          let plainBody = String(message);
+          const frm = plainBody.match(/^⤷\{\{reply:([^:]*)::([\s\S]*?)\}\}\n?([\s\S]*)$/);
+          if (frm) {
+            const q = document.createElement('button');
+            q.type = 'button'; q.className = 'community-msg-quote';
+            q.innerHTML = `<span class="community-quote-name">${escapeHtml(frm[1] || 'someone')}</span><span class="community-quote-text">${escapeHtml(frm[2] || '')}</span>`;
+            q.addEventListener('click', () => jumpToOriginal(frm[1] || '', frm[2] || '', w));
+            b.append(q);
+            plainBody = frm[3] || '';
+          }
           const p = document.createElement('p'); p.className = 'community-msg-text';
-          p.textContent = String(message).replace(/^⤷\{\{reply:[^}]*\}\}\n?/, '');
+          p.textContent = plainBody;
           b.append(p);
+          // actions with a working Delete button
+          const acts = document.createElement('div'); acts.className = 'community-msg-actions';
+          const dl = document.createElement('button'); dl.type = 'button'; dl.className = 'community-msg-del'; dl.textContent = 'Delete';
+          dl.setAttribute('aria-label', 'Delete this message');
+          dl.addEventListener('click', () => { if (confirm('Delete this message?')) deleteMessage(w.getAttribute('data-mid'), w); });
+          acts.append(dl); b.append(acts);
           const avs = document.createElement('span'); avs.className = 'community-msg-av';
           avs.textContent = initials(name || 'Anonymous'); avs.style.background = colorFor(name || 'Anonymous');
           w.append(avs, b);
