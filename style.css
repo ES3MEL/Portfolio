@@ -3013,10 +3013,10 @@ img, svg, video, canvas, iframe, table, pre{ max-width:100%; }
 
 .community-chat{ position:relative; display:flex; flex-direction:column; background:var(--bg-panel); border:1px solid var(--border); border-radius:20px; overflow:hidden; box-shadow:var(--shadow-md); }
 /* Chat header bar — cleaner, minimal */
-.community-chat-head{ display:flex; align-items:center; gap:10px; padding:16px 20px; border-bottom:1px solid var(--border); position:relative; background:var(--bg-panel); }
-.community-chat-dot{ width:8px; height:8px; border-radius:50%; background:var(--grad-3); box-shadow:0 0 8px var(--grad-3); animation:onlineBlink 2s ease-in-out infinite; }
-.community-chat-title{ font-weight:600; font-size:.92rem; color:var(--text); letter-spacing:-.01em; }
-.community-chat-live{ margin-left:auto; font-size:.64rem; color:var(--text-faint); letter-spacing:.04em; text-transform:uppercase; padding:4px 10px; border-radius:100px; border:1px solid var(--border); }
+.community-chat-head{ display:flex; align-items:center; gap:8px; padding:14px 16px; border-bottom:1px solid var(--border); position:relative; background:var(--bg-panel); flex-wrap:wrap; }
+.community-chat-dot{ width:8px; height:8px; border-radius:50%; background:var(--grad-3); box-shadow:0 0 8px var(--grad-3); animation:onlineBlink 2s ease-in-out infinite; flex-shrink:0; }
+.community-chat-title{ font-weight:600; font-size:.92rem; color:var(--text); letter-spacing:-.01em; margin-right:auto; white-space:nowrap; }
+.community-chat-live{ font-size:.62rem; color:var(--text-faint); letter-spacing:.04em; text-transform:uppercase; padding:4px 10px; border-radius:100px; border:1px solid var(--border); white-space:nowrap; flex-shrink:0; }
 .community-chat-live.is-live{ color:var(--grad-3); border-color:color-mix(in srgb, var(--grad-3) 35%, transparent); background:color-mix(in srgb, var(--grad-3) 8%, transparent); }
 .community-setup{ padding:14px 18px; background:color-mix(in srgb, var(--grad-2) 8%, var(--bg-panel)); border-bottom:1px solid var(--border); font-size:.86rem; color:var(--text-dim); }
 .community-setup code{ font-family:var(--font-mono); font-size:.8em; color:var(--grad-3); }

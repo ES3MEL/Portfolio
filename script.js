@@ -3072,15 +3072,17 @@
     });
 
     async function deleteMessage(id, el) {
-      const { error } = await sb.from('messages').delete().eq('id', id);
-      if (error) {
-        console.error('[community] delete failed:', error);
-        if (statusEl) statusEl.textContent = 'Delete failed: ' + (error.message || 'unknown');
-        return;
-      }
+      // Remove locally right away for instant feedback (optimistic)
       if (el && el.parentNode) el.parentNode.removeChild(el);
       msgCount = Math.max(0, msgCount - 1);
       if (msgCountEl) msgCountEl.textContent = msgCount.toLocaleString();
+      const { error } = await sb.from('messages').delete().eq('id', id);
+      if (error) {
+        console.error('[community] delete failed:', error);
+        // Re-add is complex; instead tell the user clearly it needs a DB policy.
+        if (window.__agqToast) window.__agqToast('⚠ Delete needs a Supabase DELETE policy on "messages".');
+        else if (statusEl) statusEl.textContent = 'Delete failed (add a DELETE policy in Supabase): ' + (error.message || 'unknown');
+      }
     }
     let lastSender = null;
     let msgCount = 0;
@@ -3095,6 +3097,9 @@
 
     function addMessageEl(row, opts) {
       if (!feed) return;
+      // De-dupe: if this message id is already rendered (e.g. optimistic render
+      // already added it, or a duplicate realtime echo), skip.
+      if (row.id != null && feed.querySelector(`[data-mid="${row.id}"]`)) return;
       if (emptyMsg) emptyMsg.hidden = true;
       const who = row.name && row.name.trim() ? row.name.trim() : 'Anonymous';
       const mine = (myName() && who.toLowerCase() === myName().toLowerCase()) || (row.id != null && isMineId(row.id));
@@ -3141,6 +3146,31 @@
           const fig = document.createElement('div'); fig.className = 'community-msg-sticker';
           fig.innerHTML = `<span class="stk ${stk.a}">${stk.e}</span>`;
           bubble.append(fig);
+
+          // Actions for stickers: Reply + Delete (own or owner)
+          const sActions = document.createElement('div');
+          sActions.className = 'community-msg-actions';
+          const sReply = document.createElement('button');
+          sReply.type = 'button'; sReply.className = 'community-msg-reply'; sReply.textContent = 'Reply';
+          sReply.setAttribute('aria-label', 'Reply to this sticker');
+          sReply.addEventListener('click', () => startReply(who, stk.e));
+          sActions.append(sReply);
+          const sCanDelete = mine || (row.id != null && isMineId(row.id));
+          const sOwner = isOwner();
+          if ((sCanDelete || sOwner) && row.id != null) {
+            const sDel = document.createElement('button');
+            sDel.type = 'button';
+            sDel.className = 'community-msg-del' + (!sCanDelete && sOwner ? ' is-mod' : '');
+            sDel.textContent = (!sCanDelete && sOwner) ? 'Delete (mod)' : 'Delete';
+            sDel.setAttribute('aria-label', 'Delete this sticker');
+            sDel.addEventListener('click', () => {
+              const m = (!sCanDelete && sOwner) ? 'Delete this visitor\'s sticker?' : 'Delete this sticker?';
+              if (confirm(m)) deleteMessage(row.id, wrap);
+            });
+            sActions.append(sDel);
+          }
+          bubble.append(sActions);
+
           wrap.append(av, bubble);
           feed.appendChild(wrap);
           lastSender = who; msgCount++;
@@ -3558,6 +3588,7 @@
         const { data, error } = await sb.from('messages').insert({ name, message }).select();
         if (error) { if (statusEl) statusEl.textContent = 'Sticker failed: ' + (error.message || 'error'); return; }
         if (data && data[0] && data[0].id != null) rememberMine(data[0].id);
+        if (data && data[0]) { try { addMessageEl(data[0]); } catch (e) {} }
         lastPostAt = Date.now();
       } catch (e) {}
     }
@@ -3673,6 +3704,10 @@
       }
       // Remember this message's id as "mine" so it can be deleted later
       if (data && data[0] && data[0].id != null) rememberMine(data[0].id);
+      // Optimistically render it right away so the sender sees it immediately
+      // (doesn't wait for the realtime echo, which may be delayed or disabled).
+      // addMessageEl de-dupes by id, so the echo won't create a duplicate.
+      if (data && data[0]) { try { addMessageEl(data[0]); } catch (e) {} }
       if (name) updateVisitorName(name);
       lastPostAt = Date.now(); lastPostText = message; postsThisSession++;
       if (msgInput) msgInput.value = '';
