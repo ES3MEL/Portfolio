@@ -1334,24 +1334,24 @@
       year: '2025',
       status: 'Prototype',
       featured: false,
-      tagline: 'An interactive mobile app prototype with a clean, friendly interface and a guided click-through flow.',
-      desc: 'A high-fidelity, interactive mobile app prototype designed in Figma with a defined starting point and a fully navigable flow.',
+      tagline: 'A to-do list app that lets users create, edit, and manage their own tasks.',
+      desc: 'A high-fidelity mobile app design for creating and editing personal to-do lists, with a clean and friendly interface.',
       accent: ['#FFB800', '#7C5CFC'],
-      tech: ['Figma', 'Prototyping', 'UI/UX', 'Mobile Design'],
-      overview: 'BusyBee is a high-fidelity mobile app prototype built in Figma. It focuses on a clean, approachable interface and an interactive click-through experience, complete with a defined entry point so reviewers can walk the flow end to end.',
+      tech: ['Figma', 'UI/UX', 'Prototyping', 'Mobile Design'],
+      overview: 'BusyBee is a to-do list app designed in Figma to help users create and manage their own tasks. The focus was a clean, approachable interface that makes adding, editing, and organizing to-dos quick and effortless.',
       features: [
-        'High-fidelity, mobile-first screens.',
-        'Interactive prototype with a defined starting point and navigable flow.',
-        'Clean, friendly visual style.',
-        'Reusable component structure.'
+        'Create and add new to-do items.',
+        'Edit and update existing tasks.',
+        'Organize and manage a personal task list.',
+        'Clean, friendly, mobile-first interface.'
       ],
       process: [
-        { title: 'Concept', body: 'Framed the app direction and core screens.' },
-        { title: 'Design', body: 'Built high-fidelity mobile layouts in Figma.' },
-        { title: 'Prototype', body: 'Wired an interactive click-through flow with a set entry point.' }
+        { title: 'Concept', body: 'Focused the app around simple, everyday task management.' },
+        { title: 'Design', body: 'Built high-fidelity mobile screens for creating and editing to-dos in Figma.' },
+        { title: 'Refine', body: 'Polished the flow so adding and managing tasks feels effortless.' }
       ],
-      gallery: ['Home', 'Flow', 'Detail'],
-      links: [{ label: 'View Prototype', type: 'figma', url: 'https://www.figma.com/proto/LmSYpHNDLDR8LczsAFsDcO/BusyBee?node-id=265-1330&starting-point-node-id=38%3A499&t=FfWWtz8jxYDj9Dsj-1' }]
+      gallery: ['Task List', 'Add Task', 'Edit Task'],
+      links: [{ label: 'View Design', type: 'figma', url: 'https://www.figma.com/design/LmSYpHNDLDR8LczsAFsDcO/BusyBee?node-id=0-1&t=yvIsWCw0DkD153Mi-1' }]
     }
   ];
 
@@ -3745,33 +3745,59 @@
       }
 
       try { if (name) localStorage.setItem('agq-community-name', name); } catch (err) {}
-      if (statusEl) statusEl.textContent = 'Sending…';
-      const { data, error } = await sb.from('messages').insert({ name: name || 'Anonymous', message }).select();
-      if (error) {
-        console.error('[community] message insert failed:', error);
-        if (statusEl) statusEl.textContent = 'Message failed: ' + (error.message || 'unknown error');
-        return;
-      }
-      // Build the row for immediate display. If .select() returned the saved
-      // row, use it (has real id + created_at). Otherwise synthesize a temporary
-      // row so the sender ALWAYS sees their message, even if SELECT/realtime is
-      // restricted. The realtime echo (with the real id) de-dupes on text if no id.
-      let rowForRender = (data && data[0]) ? data[0] : {
-        id: 'tmp-' + Date.now(),
+
+      // 1) Render the message IMMEDIATELY (optimistic), before touching the DB.
+      //    This guarantees the sender always sees their message, even if the
+      //    network/DB is slow, throws, or the realtime echo never arrives.
+      const tempId = 'tmp-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+      const optimisticRow = {
+        id: tempId,
         name: name || 'Anonymous',
         message,
         created_at: new Date().toISOString(),
-        _optimistic: true
+        _optimistic: true,
+        _mineHint: true
       };
-      if (rowForRender.id != null && !String(rowForRender.id).startsWith('tmp-')) rememberMine(rowForRender.id);
-      else { rowForRender._mineHint = true; }
-      try { addMessageEl(rowForRender); } catch (e) {}
-      if (name) updateVisitorName(name);
-      lastPostAt = Date.now(); lastPostText = message; postsThisSession++;
+      try { addMessageEl(optimisticRow); } catch (e) { console.error(e); }
+
+      // Clear the composer right away for a snappy feel
+      const sentMessage = message;
       if (msgInput) msgInput.value = '';
       cancelReply();
       updateCount();
+      if (name) updateVisitorName(name);
+      lastPostAt = Date.now(); lastPostText = sentMessage; postsThisSession++;
       if (statusEl) statusEl.textContent = '';
+
+      // 2) Persist to Supabase. On success, upgrade the temp node to the real id.
+      //    On failure, flag the message so the sender knows it didn't save.
+      try {
+        const { data, error } = await sb.from('messages').insert({ name: name || 'Anonymous', message: sentMessage }).select();
+        if (error) throw error;
+        if (data && data[0] && data[0].id != null) {
+          rememberMine(data[0].id);
+          // upgrade the optimistic node with the real id (so edit/delete work + de-dup)
+          const tempNode = feed && feed.querySelector(`[data-mid="${tempId}"]`);
+          if (tempNode) {
+            tempNode.setAttribute('data-mid', data[0].id);
+            tempNode.removeAttribute('data-optmsg'); tempNode.removeAttribute('data-optname');
+          }
+        }
+      } catch (err) {
+        console.error('[community] message insert failed:', err);
+        const tempNode = feed && feed.querySelector(`[data-mid="${tempId}"]`);
+        if (tempNode) {
+          tempNode.classList.add('is-failed');
+          const b = tempNode.querySelector('.community-msg-text');
+          if (b && !tempNode.querySelector('.community-msg-failed')) {
+            const f = document.createElement('span');
+            f.className = 'community-msg-failed';
+            f.textContent = ' · not sent';
+            b.appendChild(f);
+          }
+        }
+        if (statusEl) statusEl.textContent = 'Message could not be saved (check connection / Supabase policies).';
+      }
     });
 
     // ---- Visitor log ----
