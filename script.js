@@ -3351,6 +3351,27 @@
         data.forEach(row => addMessageEl(row, { initial: true }));
       });
 
+    // Polling fallback: even if Supabase Realtime is off/unreliable, re-fetch
+    // Polling fallback: even if Supabase Realtime is off/unreliable, re-fetch
+    // recent messages periodically so everyone eventually sees new posts.
+    // addMessageEl de-dupes by id, so already-shown messages are skipped.
+    // NOTE: polling only ADDS messages — it never removes them (deletions are
+    // handled by the realtime DELETE listener). This avoids wiping messages if
+    // a fetch returns partial/empty results.
+    let pollTimer = null;
+    async function pollMessages() {
+      try {
+        const { data, error } = await sb.from('messages').select('*').order('created_at', { ascending: true }).limit(100);
+        if (error || !data || !data.length) return;
+        data.forEach(row => addMessageEl(row));
+      } catch (e) {}
+    }
+    pollTimer = setInterval(pollMessages, 6000); // every 6s
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) { if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } }
+      else if (!pollTimer) { pollMessages(); pollTimer = setInterval(pollMessages, 6000); }
+    });
+
     // Jump-to-newest button
     jumpBtn?.addEventListener('click', () => {
       if (feed) feed.scrollTo({ top: feed.scrollHeight, behavior: 'smooth' });
@@ -3630,17 +3651,23 @@
       const now = Date.now();
       if (now - lastPostAt < COOLDOWN_MS) { if (statusEl) statusEl.textContent = 'Please wait a few seconds before posting again.'; return; }
       const message = `🎯{{sticker:${id}}}`;
+      // Render immediately (optimistic) so the sender sees it right away
+      const tempId = 'tmp-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+      try { addMessageEl({ id: tempId, name, message, created_at: new Date().toISOString(), _optimistic: true, _mineHint: true }); } catch (e) {}
+      lastPostAt = Date.now();
+      // Persist
       try {
         const { data, error } = await sb.from('messages').insert({ name, message }).select();
-        if (error) { if (statusEl) statusEl.textContent = 'Sticker failed: ' + (error.message || 'error'); return; }
-        let rowForRender = (data && data[0]) ? data[0] : {
-          id: 'tmp-' + Date.now(), name, message, created_at: new Date().toISOString(), _optimistic: true
-        };
-        if (rowForRender.id != null && !String(rowForRender.id).startsWith('tmp-')) rememberMine(rowForRender.id);
-        else rowForRender._mineHint = true;
-        try { addMessageEl(rowForRender); } catch (e) {}
-        lastPostAt = Date.now();
-      } catch (e) {}
+        if (error) throw error;
+        if (data && data[0] && data[0].id != null) {
+          rememberMine(data[0].id);
+          const tempNode = feed && feed.querySelector(`[data-mid="${tempId}"]`);
+          if (tempNode) { tempNode.setAttribute('data-mid', data[0].id); tempNode.removeAttribute('data-optmsg'); tempNode.removeAttribute('data-optname'); }
+        }
+      } catch (e) {
+        console.error('[community] sticker insert failed:', e);
+        if (statusEl) statusEl.textContent = 'Sticker could not be saved (check connection / Supabase policies).';
+      }
     }
     // expose sticker lookup for the message renderer
     window.__agqStickerById = stickerById;
@@ -3759,6 +3786,36 @@
         _mineHint: true
       };
       try { addMessageEl(optimisticRow); } catch (e) { console.error(e); }
+      // Guarantee the just-sent message is visible: clear any active filter state
+      // on it and scroll the feed to the bottom so the sender always sees it.
+      if (feed) {
+        let justSent = feed.querySelector(`[data-mid="${tempId}"]`);
+        // Failsafe: if the rich renderer didn't produce a node (threw), append a
+        // simple bubble so the sender ALWAYS sees their message.
+        if (!justSent) {
+          if (emptyMsg) emptyMsg.hidden = true;
+          const w = document.createElement('div');
+          w.className = 'community-msg is-mine';
+          w.setAttribute('data-mid', tempId);
+          w.setAttribute('data-optmsg', String(message));
+          w.setAttribute('data-optname', String(name || 'Anonymous'));
+          const b = document.createElement('div'); b.className = 'community-msg-bubble';
+          const h = document.createElement('div'); h.className = 'community-msg-head';
+          const nm = document.createElement('span'); nm.className = 'community-msg-who'; nm.textContent = 'You';
+          h.append(nm); b.append(h);
+          const p = document.createElement('p'); p.className = 'community-msg-text';
+          p.textContent = String(message).replace(/^⤷\{\{reply:[^}]*\}\}\n?/, '');
+          b.append(p);
+          const avs = document.createElement('span'); avs.className = 'community-msg-av';
+          avs.textContent = initials(name || 'Anonymous'); avs.style.background = colorFor(name || 'Anonymous');
+          w.append(avs, b);
+          feed.appendChild(w);
+          justSent = w;
+        }
+        if (justSent) { justSent.style.display = ''; }
+        feed.scrollTop = feed.scrollHeight;
+        if (jumpBtn) { jumpBtn.hidden = true; jumpBtn.classList.remove('has-new'); }
+      }
 
       // Clear the composer right away for a snappy feel
       const sentMessage = message;

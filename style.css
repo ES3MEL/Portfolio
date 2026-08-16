@@ -3573,3 +3573,8 @@ img, svg, video, canvas, iframe, table, pre{ max-width:100%; }
 .tools-subhead-sub{ font-size:.9rem; color:var(--text-dim); line-height:1.55; margin-top:4px; max-width:56ch; }
 @media (max-width:600px){ .tools-subhead{ margin-top:32px; padding-top:24px; } }
 .tools-intro{ margin-top:24px; }
+
+/* Failed-to-send message state */
+.community-msg.is-failed{ opacity:.72; }
+.community-msg.is-failed .community-msg-text{ border-color:color-mix(in srgb, #ef4444 45%, var(--border)); }
+.community-msg-failed{ color:#ef4444; font-size:.7rem; font-weight:600; }
