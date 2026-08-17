@@ -2438,6 +2438,11 @@
     if (!openBtn || !panel) return;
 
     function setAccent(name) {
+      // A preset accent should clear any inline custom-color overrides
+      if (name !== 'custom') {
+        root.style.removeProperty('--grad-1'); root.style.removeProperty('--grad-2');
+        root.style.removeProperty('--grad-3'); root.style.removeProperty('--grad-accent');
+      }
       root.setAttribute('data-accent', name);
       try { localStorage.setItem('agq-accent', name); } catch (e) {}
       swatches.forEach(s => {
@@ -2455,6 +2460,99 @@
       if (s.dataset.accent !== 'mono') { root.removeAttribute('data-clean'); try { localStorage.removeItem('agq-clean'); } catch (e) {} }
       setAccent(s.dataset.accent); pushRecent(s.dataset.accent); if (window.__agqUnlock) window.__agqUnlock('theme');
     }));
+
+    /* ----- Custom color picker ----- */
+    const customInput = $('#customColorInput');
+    const customPreview = $('#customColorPreview');
+    const customHex = $('#customColorHex');
+    const customApply = $('#customColorApply');
+    // Convert hex → HSL so we can derive harmonious gradient stops
+    function hexToHsl(hex) {
+      let r = parseInt(hex.slice(1, 3), 16) / 255, g = parseInt(hex.slice(3, 5), 16) / 255, b = parseInt(hex.slice(5, 7), 16) / 255;
+      const mx = Math.max(r, g, b), mn = Math.min(r, g, b); let h = 0, s = 0, l = (mx + mn) / 2;
+      if (mx !== mn) {
+        const d = mx - mn; s = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn);
+        if (mx === r) h = (g - b) / d + (g < b ? 6 : 0); else if (mx === g) h = (b - r) / d + 2; else h = (r - g) / d + 4;
+        h /= 6;
+      }
+      return { h: h * 360, s: s * 100, l: l * 100 };
+    }
+    function hsl(h, s, l) { return `hsl(${((h % 360) + 360) % 360} ${Math.max(0, Math.min(100, s))}% ${Math.max(0, Math.min(100, l))}%)`; }
+    // Build a pleasing 3-stop analogous gradient from one base color
+    function stopsFromHex(hex) {
+      const { h, s, l } = hexToHsl(hex);
+      const c1 = hsl(h - 18, Math.max(s, 60), Math.min(l + 4, 62));
+      const c2 = hsl(h, Math.max(s, 62), Math.min(Math.max(l, 52), 60));
+      const c3 = hsl(h + 22, Math.max(s, 58), Math.min(l + 10, 68));
+      return { c1, c2, c3 };
+    }
+    function previewCustom(hex) {
+      const { c1, c2, c3 } = stopsFromHex(hex);
+      if (customPreview) {
+        customPreview.style.setProperty('--custom-c1', c1);
+        customPreview.style.setProperty('--custom-c2', c2);
+        customPreview.style.setProperty('--custom-c3', c3);
+      }
+    }
+    // normalize typed input into a valid #RRGGBB, or return null
+    function normalizeHex(raw) {
+      let v = (raw || '').trim().replace(/^#/, '');
+      if (/^[0-9a-fA-F]{3}$/.test(v)) v = v.split('').map(c => c + c).join('');
+      if (/^[0-9a-fA-F]{6}$/.test(v)) return '#' + v.toUpperCase();
+      return null;
+    }
+    function applyCustom(hex) {
+      const { c1, c2, c3 } = stopsFromHex(hex);
+      root.style.setProperty('--grad-1', c1);
+      root.style.setProperty('--grad-2', c2);
+      root.style.setProperty('--grad-3', c3);
+      root.style.setProperty('--grad-accent', c2);
+      root.setAttribute('data-accent', 'custom');
+      root.removeAttribute('data-clean');
+      try {
+        localStorage.setItem('agq-accent', 'custom');
+        localStorage.setItem('agq-custom-color', hex);
+      } catch (e) {}
+      // sync inputs
+      if (customInput) customInput.value = hex;
+      if (customHex) { customHex.value = hex.toUpperCase(); customHex.classList.remove('is-invalid'); }
+      // clear active state on preset swatches
+      swatches.forEach(s => { s.classList.remove('is-active'); s.setAttribute('aria-pressed', 'false'); });
+      if (window.__agqUnlock) window.__agqUnlock('theme');
+      if (window.__agqSound) window.__agqSound.play('click');
+    }
+    // restore a previously chosen custom color
+    let savedAccent = 'aurora';
+    try { savedAccent = localStorage.getItem('agq-accent') || 'aurora'; } catch (e) {}
+    if (savedAccent === 'custom') {
+      let cc = '#7C5CFC';
+      try { cc = localStorage.getItem('agq-custom-color') || '#7C5CFC'; } catch (e) {}
+      if (customInput) customInput.value = cc;
+      if (customHex) customHex.value = cc.toUpperCase();
+      previewCustom(cc);
+      applyCustom(cc);
+    } else {
+      if (customInput) previewCustom(customInput.value);
+    }
+    // color picker → live preview + sync hex field
+    customInput?.addEventListener('input', (e) => {
+      const v = e.target.value; previewCustom(v);
+      if (customHex) { customHex.value = v.toUpperCase(); customHex.classList.remove('is-invalid'); }
+    });
+    // typed hex → validate + live preview
+    customHex?.addEventListener('input', () => {
+      const norm = normalizeHex(customHex.value);
+      if (norm) { customHex.classList.remove('is-invalid'); previewCustom(norm); if (customInput) customInput.value = norm; }
+      else { customHex.classList.add('is-invalid'); }
+    });
+    customHex?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); const norm = normalizeHex(customHex.value); if (norm) applyCustom(norm); }
+    });
+    customApply?.addEventListener('click', () => {
+      const norm = normalizeHex(customHex ? customHex.value : (customInput ? customInput.value : ''));
+      if (norm) applyCustom(norm);
+      else if (customHex) customHex.classList.add('is-invalid');
+    });
 
     /* ----- Theme gallery: categories, favorites, recent, search ----- */
     const CATS = {
@@ -2675,8 +2773,13 @@
     }
     function setCursor(name) {
       const isCustom = name && name !== 'default';
-      if (isCustom) { root.setAttribute('data-cursor', name); ensureCursorEl(); }
-      else {
+      // Follower-based cursors need the JS element; CSS-based ones (arrow/pointer/cross) don't.
+      const followerTypes = ['dot', 'ring', 'glow', 'trail'];
+      if (isCustom) {
+        root.setAttribute('data-cursor', name);
+        if (followerTypes.includes(name)) ensureCursorEl();
+        else if (cursorEl) { cursorEl.remove(); cursorEl = null; if (cursorRAF) cancelAnimationFrame(cursorRAF); cursorRAF = null; }
+      } else {
         root.removeAttribute('data-cursor');
         if (cursorEl) { cursorEl.remove(); cursorEl = null; if (cursorRAF) cancelAnimationFrame(cursorRAF); cursorRAF = null; }
       }
@@ -2850,6 +2953,22 @@
       const n = (name && name.trim()) ? name.trim() : 'Anonymous';
       let h = 0; for (let i = 0; i < n.length; i++) h = (h * 31 + n.charCodeAt(i)) % 360;
       return `hsl(${h} 65% 55%)`;
+    }
+    // Clean default profile picture as an SVG (uses the active accent colors).
+    // gender: 'female' | 'male'  → a simple, modern avatar silhouette.
+    function genderAvatarSVG(gender) {
+      const c1 = 'var(--grad-1)', c2 = 'var(--grad-2)';
+      const bg = `<defs><linearGradient id="agqAv" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient></defs><rect width="40" height="40" rx="20" fill="url(#agqAv)"/>`;
+      if (gender === 'female') {
+        // minimal: head + shoulders + subtle hair framing, all in soft white
+        return `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">${bg}<g fill="#fff"><path d="M13.5 18.5c0-4.6 2.7-7.5 6.5-7.5s6.5 2.9 6.5 7.5c0 1.2-.2 2-.5 3 .8.3 1.3.9 1.3 1.9v.6h-2.4c-.1-.5-.3-1-.6-1.4.7-1 1.2-2.3 1.2-3.9 0-3.4-2.3-5.2-5.5-5.2s-5.5 1.8-5.5 5.2c0 1.6.5 2.9 1.2 3.9-.3.4-.5.9-.6 1.4H12.7v-.6c0-1 .5-1.6 1.3-1.9-.3-1-.5-1.8-.5-3z" opacity=".9"/><circle cx="20" cy="18.5" r="4.6"/><path d="M29.5 30.5c0-4.2-4.3-6.2-9.5-6.2s-9.5 2-9.5 6.2V31h19z"/></g></svg>`;
+      }
+      // male: minimal head + shoulders
+      return `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">${bg}<g fill="#fff"><circle cx="20" cy="17" r="5.2"/><path d="M29.5 30.5c0-4.4-4.3-6.6-9.5-6.6s-9.5 2.2-9.5 6.6V31h19z"/></g></svg>`;
+    }
+    function setGenderAvatar(el, gender) {
+      el.classList.add('is-profile');
+      el.innerHTML = genderAvatarSVG(gender);
     }
 
     // Track the current user's display name to align their own messages
@@ -3186,8 +3305,8 @@
       // Default profile avatar: if we know this sender's gender, show a
       // female/male profile glyph; otherwise fall back to initials.
       const avGender = (mine ? myGender() : (row._gender || row.gender || '')) || '';
-      if (avGender === 'female') { av.textContent = '👩'; av.classList.add('is-profile'); }
-      else if (avGender === 'male') { av.textContent = '👨'; av.classList.add('is-profile'); }
+      if (avGender === 'female') { setGenderAvatar(av, 'female'); }
+      else if (avGender === 'male') { setGenderAvatar(av, 'male'); }
       else { av.textContent = initials(who); av.style.background = colorFor(who); }
       if (grouped) av.style.visibility = 'hidden';
       const bubble = document.createElement('div'); bubble.className = 'community-msg-bubble';
@@ -3942,8 +4061,8 @@
         const av = document.createElement('span');
         av.className = 'community-visitor-av';
         const g = (v.gender || '').toLowerCase();
-        if (g === 'female') { av.textContent = '👩'; av.classList.add('is-profile'); }
-        else if (g === 'male') { av.textContent = '👨'; av.classList.add('is-profile'); }
+        if (g === 'female') { setGenderAvatar(av, 'female'); }
+        else if (g === 'male') { setGenderAvatar(av, 'male'); }
         else { av.textContent = initials(nm); av.style.background = colorFor(nm); }
         const info = document.createElement('div'); info.className = 'community-visitor-info';
         const name = document.createElement('span'); name.className = 'community-visitor-name'; name.textContent = nm;
@@ -3960,52 +4079,73 @@
     let myVisitId = null;
     try { myVisitId = localStorage.getItem('agq-visit-id') || sessionStorage.getItem('agq-visit-id'); } catch (e) {}
 
-    // Ask the visitor for their real name once (first visit). If they skip it,
-    // fall back to "Anonymous" — they can still type their name in the composer.
-    // Gender helpers — used to pick a default forum profile avatar.
+    // Gender helper — used to pick a default forum profile avatar.
     function myGender() {
       try { return (localStorage.getItem('agq-gender') || '').trim().toLowerCase(); } catch (e) { return ''; }
     }
-    function askGender() {
-      let g = myGender();
-      if (g) return g;
-      let asked = false;
-      try { asked = localStorage.getItem('agq-gender-asked') === '1'; } catch (e) {}
-      if (!asked) {
-        try {
-          const ans = window.prompt('One more thing — are you Female or Male?\nType F for Female, M for Male (or leave blank to skip).', '');
-          try { localStorage.setItem('agq-gender-asked', '1'); } catch (e) {}
-          const a = (ans || '').trim().toLowerCase();
-          if (a === 'f' || a === 'female' || a === 'girl' || a === 'woman') g = 'female';
-          else if (a === 'm' || a === 'male' || a === 'boy' || a === 'man') g = 'male';
-          if (g) { try { localStorage.setItem('agq-gender', g); } catch (e) {} }
-        } catch (e) {}
-      }
-      return g;
-    }
 
-    function askRealName() {
-      let n = '';
-      try { n = (localStorage.getItem('agq-community-name') || '').trim(); } catch (e) {}
-      if (n) return n; // already known
-      let asked = false;
-      try { asked = localStorage.getItem('agq-name-asked') === '1'; } catch (e) {}
-      if (!asked) {
+    // Custom on-brand welcome dialog that collects name + gender in one step.
+    // Returns a Promise resolving to the chosen name (may be '' if skipped).
+    function runWelcomeDialog() {
+      return new Promise((resolve) => {
+        let known = '';
+        try { known = (localStorage.getItem('agq-community-name') || '').trim(); } catch (e) {}
+        let asked = false;
+        try { asked = localStorage.getItem('agq-welcome-done') === '1'; } catch (e) {}
+        // If we already have a name or already asked, don't show again.
+        if (known || asked) {
+          if (known && nameInput && !nameInput.value.trim()) nameInput.value = known;
+          return resolve(known);
+        }
+        const overlay = $('#welcomeOverlay');
+        const nameEl = $('#welcomeName');
+        const errEl = $('#welcomeErr');
+        const genderBox = $('#welcomeGender');
+        const goBtn = $('#welcomeGo');
+        const skipBtn = $('#welcomeSkip');
+        if (!overlay || !nameEl) { // fallback: no dialog in DOM
+          try { localStorage.setItem('agq-welcome-done', '1'); } catch (e) {}
+          return resolve('');
+        }
+        let chosenGender = '';
+        overlay.hidden = false;
+        // Fill the gender option previews with the same SVG avatars used in the forum
         try {
-          const entered = window.prompt('Welcome to Allyssa\'s portfolio! 👋\nWhat\'s your name? (This shows in the community forum.)', '');
-          try { localStorage.setItem('agq-name-asked', '1'); } catch (e) {}
-          const clean = (entered || '').trim().slice(0, 40);
-          if (clean && (typeof hasProfanity !== 'function' || !hasProfanity(clean))) {
-            n = clean;
-            try { localStorage.setItem('agq-community-name', n); } catch (e) {}
-          }
+          const wf = $('#wgFemale'), wm = $('#wgMale');
+          if (wf) wf.innerHTML = genderAvatarSVG('female');
+          if (wm) wm.innerHTML = genderAvatarSVG('male');
         } catch (e) {}
-      }
-      // Ask gender right after the name (only once per browser)
-      askGender();
-      // reflect whatever we have in the composer name field
-      if (n && nameInput && !nameInput.value.trim()) nameInput.value = n;
-      return n; // may be '' → will be stored as Anonymous until they set it
+        setTimeout(() => { try { nameEl.focus(); } catch (e) {} }, 100);
+
+        genderBox?.addEventListener('click', (e) => {
+          const opt = e.target.closest('.welcome-gender-opt');
+          if (!opt) return;
+          chosenGender = opt.dataset.gender || '';
+          $$('.welcome-gender-opt', genderBox).forEach(b => b.classList.toggle('is-selected', b === opt));
+        });
+
+        function finish(nameVal) {
+          try { localStorage.setItem('agq-welcome-done', '1'); } catch (e) {}
+          if (nameVal) { try { localStorage.setItem('agq-community-name', nameVal); } catch (e) {} }
+          if (chosenGender) { try { localStorage.setItem('agq-gender', chosenGender); } catch (e) {} }
+          overlay.hidden = true;
+          if (nameVal && nameInput && !nameInput.value.trim()) nameInput.value = nameVal;
+          resolve(nameVal || '');
+        }
+
+        function submit() {
+          const clean = (nameEl.value || '').trim().slice(0, 40);
+          if (clean && typeof hasProfanity === 'function' && hasProfanity(clean)) {
+            if (errEl) { errEl.hidden = false; errEl.textContent = 'Please choose a friendlier name.'; }
+            return;
+          }
+          if (errEl) errEl.hidden = true;
+          finish(clean);
+        }
+        goBtn?.addEventListener('click', submit);
+        skipBtn?.addEventListener('click', () => finish(''));
+        nameEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); submit(); } });
+      });
     }
 
     (async function logVisit() {
@@ -4015,7 +4155,7 @@
         if (document.readyState === 'complete') setTimeout(cb, 600);
         else window.addEventListener('load', () => setTimeout(cb, 600), { once: true });
       }
-      const vname = await new Promise((resolve) => { ready(() => resolve(askRealName())); });
+      const vname = await new Promise((resolve) => { ready(() => resolve(runWelcomeDialog())); }).then(r => r);
       if (!myVisitId) {
         try {
           const myG = myGender();
