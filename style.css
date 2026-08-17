@@ -147,24 +147,52 @@ html{ scrollbar-width:thin; scrollbar-color:var(--grad-2) var(--bg); }
 }
 .preloader.is-done{ opacity:0; visibility:hidden; pointer-events:none; }
 .preloader.is-done .preloader-inner{ transform:translateY(-6px); opacity:0; transition:transform .6s var(--ease), opacity .45s var(--ease); }
-.preloader-inner{ position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; gap:22px; transition:transform .6s var(--ease), opacity .6s var(--ease); }
+.preloader-inner{ position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; gap:26px; transition:transform .6s var(--ease), opacity .6s var(--ease); }
 
-/* Clean monogram */
+/* Soft aurora glow behind the monogram */
+.preloader-inner::before{
+  content:""; position:absolute; top:-30px; left:50%; transform:translateX(-50%);
+  width:240px; height:240px; border-radius:50%; z-index:-1;
+  background:radial-gradient(circle, color-mix(in srgb, var(--grad-2) 28%, transparent), transparent 70%);
+  filter:blur(30px); animation:plHalo 4s ease-in-out infinite;
+}
+@keyframes plHalo{ 0%,100%{ opacity:.5; transform:translateX(-50%) scale(.9); } 50%{ opacity:.9; transform:translateX(-50%) scale(1.08); } }
+
+/* Ring stage: drawing progress ring + monogram + orbiting dot */
+.preloader-ring{ position:relative; width:132px; height:132px; display:grid; place-items:center; }
+.preloader-ring svg{ position:absolute; inset:0; width:132px; height:132px; transform:rotate(-90deg); }
+.preloader-ring .pl-ring-track{ fill:none; stroke:var(--border-strong); stroke-width:3; }
+.preloader-ring .pl-ring-fill{
+  fill:none; stroke:var(--grad-2); stroke-width:4; stroke-linecap:round;
+  stroke-dasharray:339.3; stroke-dashoffset:339.3;
+  transition:stroke-dashoffset .3s var(--ease);
+  filter:drop-shadow(0 0 6px color-mix(in srgb, var(--grad-2) 55%, transparent));
+}
 .preloader-mark{
-  font-family:var(--font-display); font-weight:700; font-size:2.4rem; letter-spacing:.22em; text-indent:.22em;
-  background:var(--gradient-text); background-size:200% 200%;
+  font-family:var(--font-display); font-weight:700; font-size:1.9rem; letter-spacing:.16em; text-indent:.16em;
+  background:var(--gradient-text); background-size:220% 220%;
   -webkit-background-clip:text; background-clip:text; color:transparent;
-  animation:plDrift 3s ease infinite, plFade .7s var(--ease) both;
+  animation:plDrift 3.2s ease-in-out infinite, plFade .7s var(--ease) both;
 }
 @keyframes plDrift{ 0%{ background-position:0% 50%; } 50%{ background-position:100% 50%; } 100%{ background-position:0% 50%; } }
-@keyframes plFade{ from{ opacity:0; transform:translateY(8px); } to{ opacity:1; transform:translateY(0); } }
+@keyframes plFade{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:translateY(0); } }
+/* Orbiting accent dot circling the ring */
+.preloader-orbit-dot{ position:absolute; top:50%; left:50%; width:0; height:0; animation:plOrbit 2.2s linear infinite; }
+.preloader-orbit-dot::after{
+  content:""; position:absolute; top:-66px; left:-4px; width:8px; height:8px; border-radius:50%;
+  background:var(--grad-3); box-shadow:0 0 10px 2px color-mix(in srgb, var(--grad-3) 70%, transparent);
+}
+@keyframes plOrbit{ from{ transform:rotate(0deg); } to{ transform:rotate(360deg); } }
 
-/* Thin progress line */
-.preloader-bar{ width:120px; height:2px; border-radius:2px; background:var(--border-strong); overflow:hidden; position:relative; }
-.preloader-bar-fill{ position:absolute; inset:0 auto 0 0; width:0%; border-radius:2px; background:var(--gradient-main); transition:width .3s var(--ease); }
+/* Meta: counter + label */
+.preloader-meta{ display:flex; flex-direction:column; align-items:center; gap:6px; }
+.preloader-pct{ font-size:1.15rem; font-weight:600; letter-spacing:.04em; color:var(--text); }
+.preloader-pct i{ font-style:normal; font-size:.7rem; color:var(--text-faint); margin-left:1px; }
+.preloader-word{ font-size:.66rem; letter-spacing:.24em; text-transform:uppercase; color:var(--text-faint); animation:plWordPulse 2s ease-in-out infinite; }
+@keyframes plWordPulse{ 0%,100%{ opacity:.55; } 50%{ opacity:1; } }
 
 @media (prefers-reduced-motion: reduce){
-  .preloader-mark{ animation:plFade .4s var(--ease) both; }
+  .preloader-mark, .preloader-orbit-dot, .preloader-inner::before, .preloader-word{ animation:none; }
 }
 
 /* =========================================================
@@ -1429,6 +1457,89 @@ html{ scrollbar-width:thin; scrollbar-color:var(--grad-2) var(--bg); }
 :root[data-accent="rose"]   { --grad-1:#EC4899; --grad-2:#F472B6; --grad-3:#FDA4AF; --grad-accent:#F472B6; }
 :root[data-accent="neon"]   { --grad-1:#22D3EE; --grad-2:#3B82F6; --grad-3:#E879F9; --grad-accent:#22D3EE; }
 :root[data-accent="gold"]   { --grad-1:#B45309; --grad-2:#F59E0B; --grad-3:#FDE047; --grad-accent:#F59E0B; }
+/* --- Cartoon / character-inspired themes (original names & palettes) --- */
+:root[data-accent="seasponge"] { --grad-1:#FFD93B; --grad-2:#FFB627; --grad-3:#4EC5F1; --grad-accent:#FFC93C; }  /* cheerful undersea */
+:root[data-accent="webslinger"]{ --grad-1:#E23636; --grad-2:#B11313; --grad-3:#2B3A9C; --grad-accent:#E23636; }  /* red + navy hero */
+:root[data-accent="speedhero"] { --grad-1:#1E90FF; --grad-2:#3AC0F0; --grad-3:#FFD23F; --grad-accent:#1E90FF; }  /* blue + gold speedster */
+:root[data-accent="plumberbros"]{ --grad-1:#E52521; --grad-2:#43B047; --grad-3:#049CD8; --grad-accent:#E52521; } /* classic game trio */
+:root[data-accent="ogre"]      { --grad-1:#7CB342; --grad-2:#A4C639; --grad-3:#C0894A; --grad-accent:#8BC34A; }  /* swamp green + brown */
+:root[data-accent="starknight"]{ --grad-1:#0B1E5B; --grad-2:#1E3A8A; --grad-3:#FACC15; --grad-accent:#FACC15; }  /* midnight + gold */
+:root[data-accent="candycat"]  { --grad-1:#FF5FA2; --grad-2:#FF8DC7; --grad-3:#7DE2FC; --grad-accent:#FF5FA2; }  /* pink + sky, playful */
+:root[data-accent="pikapop"]   { --grad-1:#FFCB05; --grad-2:#FDD835; --grad-3:#E3350D; --grad-accent:#FFCB05; }  /* yellow + red spark */
+:root[data-accent="sugarpop"]  { --grad-1:#FF3D9A; --grad-2:#00C2E8; --grad-3:#7CF76B; --grad-accent:#FF3D9A; }  /* pink+blue+green trio */
+:root[data-accent="skyhero"]   { --grad-1:#2B6CE0; --grad-2:#E23636; --grad-3:#F5C542; --grad-accent:#2B6CE0; }  /* primary-color hero */
+:root[data-accent="mouseclub"] { --grad-1:#111111; --grad-2:#E4000F; --grad-3:#FFD34E; --grad-accent:#E4000F; }  /* black+red+yellow classic */
+:root[data-accent="bluepup"]   { --grad-1:#1E7FD6; --grad-2:#F39C2D; --grad-3:#7FD4F5; --grad-accent:#1E7FD6; }  /* blue heeler pup */
+:root[data-accent="spookjelly"]{ --grad-1:#7A3FF2; --grad-2:#00E0B8; --grad-3:#FF77AC; --grad-accent:#7A3FF2; }  /* purple + mint */
+:root[data-accent="explorer"]  { --grad-1:#FF6A2B; --grad-2:#FFC531; --grad-3:#37B24D; --grad-accent:#FF6A2B; }  /* orange + green explorer */
+:root[data-accent="avatarair"] { --grad-1:#2C86C4; --grad-2:#E8A33D; --grad-3:#7FB5D6; --grad-accent:#E8A33D; }  /* blue + saffron */
+:root[data-accent="dragonz"]   { --grad-1:#FF8A00; --grad-2:#FFD100; --grad-3:#1FA84C; --grad-accent:#FF8A00; }  /* fiery orange + green */
+:root[data-accent="candycloud"]{ --grad-1:#FF9EC4; --grad-2:#B79BFF; --grad-3:#8FE3FF; --grad-accent:#FF9EC4; }  /* pastel dream */
+/* --- Cartoon / character-inspired themes, batch 3 --- */
+:root[data-accent="spongepants"]{ --grad-1:#F7E017; --grad-2:#8FD14F; --grad-3:#4EC5F1; --grad-accent:#F7E017; } /* yellow square, green pants */
+:root[data-accent="patrickstar"]{ --grad-1:#FF9EB3; --grad-2:#FF6F91; --grad-3:#59C36A; --grad-accent:#FF6F91; } /* pink star, green shorts */
+:root[data-accent="bathero"]    { --grad-1:#0B0F1A; --grad-2:#2B2F45; --grad-3:#F5C542; --grad-accent:#F5C542; } /* dark knight + gold */
+:root[data-accent="webhero"]    { --grad-1:#D42E2E; --grad-2:#1E2A78; --grad-3:#111; --grad-accent:#D42E2E; }        /* red/blue/black web */
+:root[data-accent="ironsuit"]   { --grad-1:#B01E1E; --grad-2:#E8A33D; --grad-3:#5A0F0F; --grad-accent:#E8A33D; }   /* red + gold armor */
+:root[data-accent="hulksmash"]  { --grad-1:#3FA34D; --grad-2:#7CB342; --grad-3:#6B3FA0; --grad-accent:#3FA34D; }   /* green + purple */
+:root[data-accent="frozenqueen"]{ --grad-1:#8FD3FF; --grad-2:#C7B9FF; --grad-3:#EAF6FF; --grad-accent:#8FD3FF; }   /* icy blue/lilac */
+:root[data-accent="minionpop"]  { --grad-1:#FFDA1F; --grad-2:#F5C000; --grad-3:#1E7FD6; --grad-accent:#FFDA1F; }   /* yellow + denim blue */
+:root[data-accent="unicornmagic"]{ --grad-1:#FF87D1; --grad-2:#9D7BFF; --grad-3:#5FE0E8; --grad-accent:#FF87D1; }  /* rainbow pastel */
+:root[data-accent="turtlepizza"]{ --grad-1:#2E9E4B; --grad-2:#66C044; --grad-3:#E24A2E; --grad-accent:#2E9E4B; }   /* green + red bandana */
+:root[data-accent="pinkpanther"]{ --grad-1:#F45BB0; --grad-2:#FF8FD1; --grad-3:#5A3FA0; --grad-accent:#F45BB0; }   /* hot pink + violet */
+:root[data-accent="scoobysnack"]{ --grad-1:#7CB342; --grad-2:#A4C639; --grad-3:#8B5E3C; --grad-accent:#7CB342; }   /* green + brown */
+:root[data-accent="looneytune"] { --grad-1:#E23636; --grad-2:#F5A623; --grad-3:#2B6CE0; --grad-accent:#E23636; }   /* bold primary trio */
+:root[data-accent="simpsonyellow"]{ --grad-1:#FFD90F; --grad-2:#4FB0E5; --grad-3:#E23636; --grad-accent:#FFD90F; } /* yellow + blue + red */
+:root[data-accent="rickportal"] { --grad-1:#00E08F; --grad-2:#4FD1FF; --grad-3:#B7F542; --grad-accent:#00E08F; }   /* portal green */
+/* --- Cartoon / hero-inspired, batch 4 --- */
+:root[data-accent="captainshield"]{ --grad-1:#1E4FA0; --grad-2:#E23636; --grad-3:#F0F0F0; --grad-accent:#1E4FA0; } /* red white blue */
+:root[data-accent="thundergod"]  { --grad-1:#3A6EA5; --grad-2:#9AC4F5; --grad-3:#E8C24A; --grad-accent:#E8C24A; }   /* storm blue + gold */
+:root[data-accent="pantherking"] { --grad-1:#3A1F6B; --grad-2:#6B3FA0; --grad-3:#A88BE0; --grad-accent:#6B3FA0; }   /* regal purple */
+:root[data-accent="wandavision"] { --grad-1:#B01E4E; --grad-2:#E23670; --grad-3:#9A3FE0; --grad-accent:#E23670; }   /* scarlet + magic */
+:root[data-accent="aquahero"]    { --grad-1:#0E8A8A; --grad-2:#1FB6A6; --grad-3:#E8A33D; --grad-accent:#1FB6A6; }   /* teal + gold trident */
+:root[data-accent="flashspeed"]  { --grad-1:#C81E1E; --grad-2:#FF3D3D; --grad-3:#FFD23F; --grad-accent:#FF3D3D; }   /* red + lightning gold */
+:root[data-accent="wonderhero"]  { --grad-1:#C41E3A; --grad-2:#1E5AC4; --grad-3:#E8C24A; --grad-accent:#C41E3A; }   /* red blue gold */
+:root[data-accent="jokerchaos"]  { --grad-1:#4CAF50; --grad-2:#7A3FA0; --grad-3:#B7F542; --grad-accent:#7A3FA0; }   /* green + purple */
+:root[data-accent="sonicblue"]   { --grad-1:#1560E0; --grad-2:#3A9EFF; --grad-3:#E8A33D; --grad-accent:#1560E0; }   /* blue + tan */
+:root[data-accent="pokeball"]    { --grad-1:#E23636; --grad-2:#F0F0F0; --grad-3:#222; --grad-accent:#E23636; }       /* red white black */
+:root[data-accent="adventuretime"]{ --grad-1:#4FC3F7; --grad-2:#FFD54F; --grad-3:#81C784; --grad-accent:#4FC3F7; }  /* candy land */
+:root[data-accent="gravityfalls"]{ --grad-1:#2E6B5E; --grad-2:#E8A33D; --grad-3:#C0894A; --grad-accent:#2E6B5E; }   /* forest + amber mystery */
+:root[data-accent="stevenuniverse"]{ --grad-1:#FF5FA2; --grad-2:#7A5FD9; --grad-3:#5FD9E8; --grad-accent:#FF5FA2; } /* gem pastels */
+/* --- Girly / cute themes --- */
+:root[data-accent="ballerina"]   { --grad-1:#FFB6C1; --grad-2:#FF8FB1; --grad-3:#FFE0EC; --grad-accent:#FF8FB1; }   /* soft ballet pink */
+:root[data-accent="strawberry"]  { --grad-1:#FF4D6D; --grad-2:#FF8FA3; --grad-3:#FFD6E0; --grad-accent:#FF4D6D; }   /* strawberry milk */
+:root[data-accent="bubblegum"]   { --grad-1:#FF6FD8; --grad-2:#FFA6E0; --grad-3:#B5F5EC; --grad-accent:#FF6FD8; }   /* pink + mint */
+:root[data-accent="cottoncandy"] { --grad-1:#FF9EE5; --grad-2:#B39DFF; --grad-3:#9EE7FF; --grad-accent:#FF9EE5; }   /* pastel swirl */
+:root[data-accent="rosegold"]    { --grad-1:#E8A0A0; --grad-2:#F0C0A8; --grad-3:#F5D9C0; --grad-accent:#E8A0A0; }   /* rose gold */
+:root[data-accent="lilacdream"]  { --grad-1:#C8A8FF; --grad-2:#E0B8FF; --grad-3:#F5D9FF; --grad-accent:#C8A8FF; }   /* soft lilac */
+:root[data-accent="peachy"]      { --grad-1:#FFAD8F; --grad-2:#FFC9B0; --grad-3:#FFE5D9; --grad-accent:#FFAD8F; }   /* peachy keen */
+:root[data-accent="sakurabloom"] { --grad-1:#FF8FBF; --grad-2:#FFB3D1; --grad-3:#FFE0EC; --grad-accent:#FF8FBF; }   /* cherry blossom */
+/* --- Marvel-inspired (original names, hero color palettes) --- */
+:root[data-accent="mvl-red"]     { --grad-1:#ED1D24; --grad-2:#B01015; --grad-3:#F5C518; --grad-accent:#ED1D24; }   /* classic comic red + gold */
+:root[data-accent="mvl-iron"]    { --grad-1:#A01818; --grad-2:#E8A33D; --grad-3:#7A0F0F; --grad-accent:#E8A33D; } /* iron red + gold */
+:root[data-accent="mvl-cap"]     { --grad-1:#1E4FA0; --grad-2:#E23636; --grad-3:#EAEAEA; --grad-accent:#1E4FA0; }   /* cap blue/red/white */
+:root[data-accent="mvl-hulk"]    { --grad-1:#4CAF50; --grad-2:#2E7D32; --grad-3:#7A3FA0; --grad-accent:#4CAF50; }   /* hulk green + purple */
+:root[data-accent="mvl-thor"]    { --grad-1:#3A6EA5; --grad-2:#9AC4F5; --grad-3:#E8C24A; --grad-accent:#E8C24A; }   /* asgard storm + gold */
+:root[data-accent="mvl-thanos"]  { --grad-1:#7A4FA0; --grad-2:#9B6FC0; --grad-3:#E8A33D; --grad-accent:#7A4FA0; }   /* titan purple + gauntlet */
+:root[data-accent="mvl-strange"] { --grad-1:#B01E4E; --grad-2:#E23670; --grad-3:#3FBFA0; --grad-accent:#E23670; }   /* mystic crimson + green */
+:root[data-accent="mvl-panther"] { --grad-1:#2A1B4A; --grad-2:#5A3F9A; --grad-3:#9B7FD0; --grad-accent:#5A3F9A; }   /* vibranium purple */
+:root[data-accent="mvl-venom"]   { --grad-1:#0A0A12; --grad-2:#2A2A3A; --grad-3:#E8E8F0; --grad-accent:#2A2A3A; }   /* symbiote black + white */
+:root[data-accent="mvl-deadpool"]{ --grad-1:#C81E1E; --grad-2:#8A1414; --grad-3:#1A1A1A; --grad-accent:#C81E1E; }   /* merc red + black */
+:root[data-accent="mvl-wanda"]   { --grad-1:#9A1640; --grad-2:#D42E5E; --grad-3:#7A2EB0; --grad-accent:#D42E5E; }   /* scarlet witch */
+:root[data-accent="mvl-loki"]    { --grad-1:#1E6B3A; --grad-2:#2E9E4B; --grad-3:#E8C24A; --grad-accent:#2E9E4B; }   /* loki green + gold */
+/* --- Plain / flat solid accents (minimal, no gradient spread — single hue) --- */
+:root[data-accent="flatblue"]   { --grad-1:#3B82F6; --grad-2:#3B82F6; --grad-3:#3B82F6; --grad-accent:#3B82F6; }
+:root[data-accent="flatviolet"] { --grad-1:#8B5CF6; --grad-2:#8B5CF6; --grad-3:#8B5CF6; --grad-accent:#8B5CF6; }
+:root[data-accent="flatteal"]   { --grad-1:#14B8A6; --grad-2:#14B8A6; --grad-3:#14B8A6; --grad-accent:#14B8A6; }
+:root[data-accent="flatgreen"]  { --grad-1:#22C55E; --grad-2:#22C55E; --grad-3:#22C55E; --grad-accent:#22C55E; }
+:root[data-accent="flatrose"]   { --grad-1:#F43F5E; --grad-2:#F43F5E; --grad-3:#F43F5E; --grad-accent:#F43F5E; }
+:root[data-accent="flatamber"]  { --grad-1:#F59E0B; --grad-2:#F59E0B; --grad-3:#F59E0B; --grad-accent:#F59E0B; }
+:root[data-accent="flatslate"]  { --grad-1:#64748B; --grad-2:#64748B; --grad-3:#64748B; --grad-accent:#64748B; }
+:root[data-accent="flatindigo"] { --grad-1:#6366F1; --grad-2:#6366F1; --grad-3:#6366F1; --grad-accent:#6366F1; }
+:root[data-accent="flatcyan"]   { --grad-1:#06B6D4; --grad-2:#06B6D4; --grad-3:#06B6D4; --grad-accent:#06B6D4; }
+:root[data-accent="flatplum"]   { --grad-1:#9333EA; --grad-2:#9333EA; --grad-3:#9333EA; --grad-accent:#9333EA; }
+:root[data-accent="flatink"]    { --grad-1:#334155; --grad-2:#334155; --grad-3:#334155; --grad-accent:#334155; }
+:root[data-accent="flatcoral"]  { --grad-1:#FB7185; --grad-2:#FB7185; --grad-3:#FB7185; --grad-accent:#FB7185; }
 :root[data-accent="mint"]   { --grad-1:#10B981; --grad-2:#2DD4BF; --grad-3:#67E8F9; --grad-accent:#2DD4BF; }
 :root[data-accent="crimson"]{ --grad-1:#7F1D1D; --grad-2:#DC2626; --grad-3:#FB923C; --grad-accent:#EF4444; }
 :root[data-accent="mono"]   { --grad-1:#64748B; --grad-2:#94A3B8; --grad-3:#CBD5E1; --grad-accent:#94A3B8; }
@@ -1531,6 +1642,84 @@ html{ scrollbar-width:thin; scrollbar-color:var(--grad-2) var(--bg); }
 :root[data-theme="light"][data-accent="rose"]   { --grad-1:#DB2777; --grad-2:#E11D74; --grad-3:#BE185D; --grad-accent:#DB2777; }
 :root[data-theme="light"][data-accent="neon"]   { --grad-1:#0891B2; --grad-2:#2563EB; --grad-3:#C026D3; --grad-accent:#0891B2; }
 :root[data-theme="light"][data-accent="gold"]   { --grad-1:#92400E; --grad-2:#D97706; --grad-3:#CA8A04; --grad-accent:#D97706; }
+/* Cartoon-inspired — light-mode tuned (deeper for contrast on white) */
+:root[data-theme="light"][data-accent="seasponge"] { --grad-1:#E0A500; --grad-2:#E08A00; --grad-3:#1596C9; --grad-accent:#E0A500; }
+:root[data-theme="light"][data-accent="webslinger"]{ --grad-1:#C21F1F; --grad-2:#8E0E0E; --grad-3:#1E2A78; --grad-accent:#C21F1F; }
+:root[data-theme="light"][data-accent="speedhero"] { --grad-1:#1565C0; --grad-2:#0E7FB0; --grad-3:#C79A00; --grad-accent:#1565C0; }
+:root[data-theme="light"][data-accent="plumberbros"]{ --grad-1:#C41A16; --grad-2:#2E8B32; --grad-3:#0378A8; --grad-accent:#C41A16; }
+:root[data-theme="light"][data-accent="ogre"]      { --grad-1:#5A8A2A; --grad-2:#6E9022; --grad-3:#946330; --grad-accent:#5A8A2A; }
+:root[data-theme="light"][data-accent="starknight"]{ --grad-1:#0B1E5B; --grad-2:#1E3A8A; --grad-3:#B8890B; --grad-accent:#0B1E5B; }
+:root[data-theme="light"][data-accent="candycat"]  { --grad-1:#E0357F; --grad-2:#E06BA8; --grad-3:#1BA4CC; --grad-accent:#E0357F; }
+:root[data-theme="light"][data-accent="pikapop"]   { --grad-1:#D9A400; --grad-2:#C79A00; --grad-3:#C21E0A; --grad-accent:#D9A400; }
+:root[data-theme="light"][data-accent="sugarpop"]  { --grad-1:#D91F78; --grad-2:#0596B4; --grad-3:#3FA82F; --grad-accent:#D91F78; }
+:root[data-theme="light"][data-accent="skyhero"]   { --grad-1:#1D4FB0; --grad-2:#C21F1F; --grad-3:#C79A00; --grad-accent:#1D4FB0; }
+:root[data-theme="light"][data-accent="mouseclub"] { --grad-1:#111111; --grad-2:#C1000C; --grad-3:#C79A00; --grad-accent:#C1000C; }
+:root[data-theme="light"][data-accent="bluepup"]   { --grad-1:#1560A8; --grad-2:#C77A15; --grad-3:#1E88C4; --grad-accent:#1560A8; }
+:root[data-theme="light"][data-accent="spookjelly"]{ --grad-1:#6023D0; --grad-2:#049E82; --grad-3:#D14C86; --grad-accent:#6023D0; }
+:root[data-theme="light"][data-accent="explorer"]  { --grad-1:#D9531A; --grad-2:#D99A15; --grad-3:#2B8A3E; --grad-accent:#D9531A; }
+:root[data-theme="light"][data-accent="avatarair"] { --grad-1:#1E6BA8; --grad-2:#C77E1E; --grad-3:#3E82A8; --grad-accent:#C77E1E; }
+:root[data-theme="light"][data-accent="dragonz"]   { --grad-1:#D96E00; --grad-2:#C79A00; --grad-3:#178A3C; --grad-accent:#D96E00; }
+:root[data-theme="light"][data-accent="candycloud"]{ --grad-1:#D96F9A; --grad-2:#8A6ED9; --grad-3:#3EA8D6; --grad-accent:#D96F9A; }
+:root[data-theme="light"][data-accent="spongepants"]{ --grad-1:#C7B400; --grad-2:#5A9E2E; --grad-3:#1596C9; --grad-accent:#C7B400; }
+:root[data-theme="light"][data-accent="patrickstar"]{ --grad-1:#D9527A; --grad-2:#D93E67; --grad-3:#3E9E4E; --grad-accent:#D93E67; }
+:root[data-theme="light"][data-accent="bathero"]    { --grad-1:#0B0F1A; --grad-2:#2B2F45; --grad-3:#B8890B; --grad-accent:#0B0F1A; }
+:root[data-theme="light"][data-accent="webhero"]    { --grad-1:#B01E1E; --grad-2:#1E2A78; --grad-3:#111; --grad-accent:#B01E1E; }
+:root[data-theme="light"][data-accent="ironsuit"]   { --grad-1:#8E1414; --grad-2:#C77E1E; --grad-3:#5A0F0F; --grad-accent:#8E1414; }
+:root[data-theme="light"][data-accent="hulksmash"]  { --grad-1:#2E7D3A; --grad-2:#5A8A2A; --grad-3:#5A2E8A; --grad-accent:#2E7D3A; }
+:root[data-theme="light"][data-accent="frozenqueen"]{ --grad-1:#2E8BC4; --grad-2:#7A6ED9; --grad-3:#5AA8D6; --grad-accent:#2E8BC4; }
+:root[data-theme="light"][data-accent="minionpop"]  { --grad-1:#C7A400; --grad-2:#B08A00; --grad-3:#1560A8; --grad-accent:#C7A400; }
+:root[data-theme="light"][data-accent="unicornmagic"]{ --grad-1:#D95FA8; --grad-2:#7A5FD9; --grad-3:#2EA8B0; --grad-accent:#D95FA8; }
+:root[data-theme="light"][data-accent="turtlepizza"]{ --grad-1:#237A3A; --grad-2:#4A9E2E; --grad-3:#C41A16; --grad-accent:#237A3A; }
+:root[data-theme="light"][data-accent="pinkpanther"]{ --grad-1:#D93E93; --grad-2:#D96FB0; --grad-3:#5A2E8A; --grad-accent:#D93E93; }
+:root[data-theme="light"][data-accent="scoobysnack"]{ --grad-1:#5A8A2A; --grad-2:#6E9022; --grad-3:#6B4A2A; --grad-accent:#5A8A2A; }
+:root[data-theme="light"][data-accent="looneytune"] { --grad-1:#C21F1F; --grad-2:#C77E00; --grad-3:#1D4FB0; --grad-accent:#C21F1F; }
+:root[data-theme="light"][data-accent="simpsonyellow"]{ --grad-1:#C7A400; --grad-2:#2E88C4; --grad-3:#C21F1F; --grad-accent:#C7A400; }
+:root[data-theme="light"][data-accent="rickportal"] { --grad-1:#009E64; --grad-2:#2EA8D6; --grad-3:#7AA82E; --grad-accent:#009E64; }
+:root[data-theme="light"][data-accent="captainshield"]{ --grad-1:#1E4FA0; --grad-2:#C21F1F; --grad-3:#8A8A8A; --grad-accent:#1E4FA0; }
+:root[data-theme="light"][data-accent="thundergod"]  { --grad-1:#2E5A8A; --grad-2:#3E7EC4; --grad-3:#C79A15; --grad-accent:#2E5A8A; }
+:root[data-theme="light"][data-accent="pantherking"] { --grad-1:#3A1F6B; --grad-2:#5A2E8A; --grad-3:#7A5FB0; --grad-accent:#5A2E8A; }
+:root[data-theme="light"][data-accent="wandavision"] { --grad-1:#9A1640; --grad-2:#C41F5E; --grad-3:#7A2EB0; --grad-accent:#C41F5E; }
+:root[data-theme="light"][data-accent="aquahero"]    { --grad-1:#0A6E6E; --grad-2:#15968A; --grad-3:#C77E1E; --grad-accent:#15968A; }
+:root[data-theme="light"][data-accent="flashspeed"]  { --grad-1:#A81616; --grad-2:#D92E2E; --grad-3:#C79A00; --grad-accent:#D92E2E; }
+:root[data-theme="light"][data-accent="wonderhero"]  { --grad-1:#A81630; --grad-2:#1848A0; --grad-3:#C79A15; --grad-accent:#A81630; }
+:root[data-theme="light"][data-accent="jokerchaos"]  { --grad-1:#3A8A3E; --grad-2:#5A2E8A; --grad-3:#7AA82E; --grad-accent:#5A2E8A; }
+:root[data-theme="light"][data-accent="sonicblue"]   { --grad-1:#1250B0; --grad-2:#2E7EC4; --grad-3:#C77E1E; --grad-accent:#1250B0; }
+:root[data-theme="light"][data-accent="pokeball"]    { --grad-1:#C21F1F; --grad-2:#8A8A8A; --grad-3:#222; --grad-accent:#C21F1F; }
+:root[data-theme="light"][data-accent="adventuretime"]{ --grad-1:#2E96C4; --grad-2:#C7A415; --grad-3:#4A9E5A; --grad-accent:#2E96C4; }
+:root[data-theme="light"][data-accent="gravityfalls"]{ --grad-1:#235A4E; --grad-2:#C77E1E; --grad-3:#946330; --grad-accent:#235A4E; }
+:root[data-theme="light"][data-accent="stevenuniverse"]{ --grad-1:#D93E7F; --grad-2:#5A3FB0; --grad-3:#2EA8B8; --grad-accent:#D93E7F; }
+:root[data-theme="light"][data-accent="ballerina"]   { --grad-1:#E86F8A; --grad-2:#E85A82; --grad-3:#F0A8BE; --grad-accent:#E85A82; }
+:root[data-theme="light"][data-accent="strawberry"]  { --grad-1:#E11D48; --grad-2:#F0567A; --grad-3:#F0A8BE; --grad-accent:#E11D48; }
+:root[data-theme="light"][data-accent="bubblegum"]   { --grad-1:#D93EB0; --grad-2:#E06FC4; --grad-3:#3EB8A8; --grad-accent:#D93EB0; }
+:root[data-theme="light"][data-accent="cottoncandy"] { --grad-1:#D95FB8; --grad-2:#7A5FD9; --grad-3:#2E9ED9; --grad-accent:#D95FB8; }
+:root[data-theme="light"][data-accent="rosegold"]    { --grad-1:#C46F6F; --grad-2:#C78A6F; --grad-3:#C79A82; --grad-accent:#C46F6F; }
+:root[data-theme="light"][data-accent="lilacdream"]  { --grad-1:#9A6FD9; --grad-2:#B87ED9; --grad-3:#C78AD9; --grad-accent:#9A6FD9; }
+:root[data-theme="light"][data-accent="peachy"]      { --grad-1:#E8724A; --grad-2:#E8906F; --grad-3:#E8A882; --grad-accent:#E8724A; }
+:root[data-theme="light"][data-accent="sakurabloom"] { --grad-1:#E85A93; --grad-2:#E87AA8; --grad-3:#F0A8BE; --grad-accent:#E85A93; }
+:root[data-theme="light"][data-accent="mvl-red"]     { --grad-1:#C21014; --grad-2:#8A0C10; --grad-3:#C79A00; --grad-accent:#C21014; }
+:root[data-theme="light"][data-accent="mvl-iron"]    { --grad-1:#8A1414; --grad-2:#C77E1E; --grad-3:#6A0D0D; --grad-accent:#8A1414; }
+:root[data-theme="light"][data-accent="mvl-cap"]     { --grad-1:#1A458A; --grad-2:#C21F1F; --grad-3:#8A8A8A; --grad-accent:#1A458A; }
+:root[data-theme="light"][data-accent="mvl-hulk"]    { --grad-1:#2E7D32; --grad-2:#256628; --grad-3:#5A2E8A; --grad-accent:#2E7D32; }
+:root[data-theme="light"][data-accent="mvl-thor"]    { --grad-1:#2E5A8A; --grad-2:#3E7EC4; --grad-3:#C79A15; --grad-accent:#2E5A8A; }
+:root[data-theme="light"][data-accent="mvl-thanos"]  { --grad-1:#5A3F8A; --grad-2:#7A5FA0; --grad-3:#C77E1E; --grad-accent:#5A3F8A; }
+:root[data-theme="light"][data-accent="mvl-strange"] { --grad-1:#9A1640; --grad-2:#C41F5E; --grad-3:#2E9A82; --grad-accent:#C41F5E; }
+:root[data-theme="light"][data-accent="mvl-panther"] { --grad-1:#2A1B4A; --grad-2:#4A327A; --grad-3:#7A5FB0; --grad-accent:#4A327A; }
+:root[data-theme="light"][data-accent="mvl-venom"]   { --grad-1:#0A0A12; --grad-2:#3A3A4A; --grad-3:#6A6A7A; --grad-accent:#0A0A12; }
+:root[data-theme="light"][data-accent="mvl-deadpool"]{ --grad-1:#A81616; --grad-2:#6A0F0F; --grad-3:#1A1A1A; --grad-accent:#A81616; }
+:root[data-theme="light"][data-accent="mvl-wanda"]   { --grad-1:#8A1438; --grad-2:#B01F4E; --grad-3:#5A2E8A; --grad-accent:#B01F4E; }
+:root[data-theme="light"][data-accent="mvl-loki"]    { --grad-1:#1A5A32; --grad-2:#238A3E; --grad-3:#C79A15; --grad-accent:#238A3E; }
+:root[data-theme="light"][data-accent="flatblue"]   { --grad-1:#1D4ED8; --grad-2:#1D4ED8; --grad-3:#1D4ED8; --grad-accent:#1D4ED8; }
+:root[data-theme="light"][data-accent="flatviolet"] { --grad-1:#6D28D9; --grad-2:#6D28D9; --grad-3:#6D28D9; --grad-accent:#6D28D9; }
+:root[data-theme="light"][data-accent="flatteal"]   { --grad-1:#0D9488; --grad-2:#0D9488; --grad-3:#0D9488; --grad-accent:#0D9488; }
+:root[data-theme="light"][data-accent="flatgreen"]  { --grad-1:#16A34A; --grad-2:#16A34A; --grad-3:#16A34A; --grad-accent:#16A34A; }
+:root[data-theme="light"][data-accent="flatrose"]   { --grad-1:#E11D48; --grad-2:#E11D48; --grad-3:#E11D48; --grad-accent:#E11D48; }
+:root[data-theme="light"][data-accent="flatamber"]  { --grad-1:#D97706; --grad-2:#D97706; --grad-3:#D97706; --grad-accent:#D97706; }
+:root[data-theme="light"][data-accent="flatslate"]  { --grad-1:#475569; --grad-2:#475569; --grad-3:#475569; --grad-accent:#475569; }
+:root[data-theme="light"][data-accent="flatindigo"] { --grad-1:#4F46E5; --grad-2:#4F46E5; --grad-3:#4F46E5; --grad-accent:#4F46E5; }
+:root[data-theme="light"][data-accent="flatcyan"]   { --grad-1:#0891B2; --grad-2:#0891B2; --grad-3:#0891B2; --grad-accent:#0891B2; }
+:root[data-theme="light"][data-accent="flatplum"]   { --grad-1:#7E22CE; --grad-2:#7E22CE; --grad-3:#7E22CE; --grad-accent:#7E22CE; }
+:root[data-theme="light"][data-accent="flatink"]    { --grad-1:#1E293B; --grad-2:#1E293B; --grad-3:#1E293B; --grad-accent:#1E293B; }
+:root[data-theme="light"][data-accent="flatcoral"]  { --grad-1:#F43F5E; --grad-2:#F43F5E; --grad-3:#F43F5E; --grad-accent:#F43F5E; }
 :root[data-theme="light"][data-accent="mint"]   { --grad-1:#059669; --grad-2:#0D9488; --grad-3:#0891B2; --grad-accent:#0D9488; }
 :root[data-theme="light"][data-accent="crimson"]{ --grad-1:#7F1D1D; --grad-2:#B91C1C; --grad-3:#C2410C; --grad-accent:#B91C1C; }
 :root[data-theme="light"][data-accent="mono"]   { --grad-1:#334155; --grad-2:#475569; --grad-3:#64748B; --grad-accent:#475569; }
@@ -1588,7 +1777,40 @@ html{ scrollbar-width:thin; scrollbar-color:var(--grad-2) var(--bg); }
   border-radius:11px; cursor:pointer; background:transparent; border:1px solid transparent;
   transition:border-color .18s ease, transform .18s ease, background .18s ease;
 }
-.accent-swatch span{ width:100%; aspect-ratio:1.6/1; border-radius:8px; box-shadow:inset 0 0 0 1px rgba(255,255,255,.14); }
+.accent-swatch span{
+  width:100%; aspect-ratio:1.6/1; border-radius:8px; box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);
+  background-size:200% 200%;
+  animation:swatchFlow 6s cubic-bezier(.45,.05,.35,.95) infinite;
+}
+/* Realistic, organic gradient drift — eases through positions like flowing light */
+@keyframes swatchFlow{
+  0%{ background-position:15% 30%; }
+  20%{ background-position:65% 15%; }
+  45%{ background-position:100% 60%; }
+  65%{ background-position:55% 100%; }
+  85%{ background-position:10% 75%; }
+  100%{ background-position:15% 30%; }
+}
+/* Stagger each swatch so the panel feels alive, not synchronized */
+.accent-swatch:nth-child(4n) span{ animation-duration:7s; animation-delay:-1.2s; }
+.accent-swatch:nth-child(4n+1) span{ animation-duration:6.2s; animation-delay:-3s; }
+.accent-swatch:nth-child(4n+2) span{ animation-duration:6.8s; animation-delay:-.6s; }
+.accent-swatch:nth-child(4n+3) span{ animation-duration:7.4s; animation-delay:-2.2s; }
+.accent-swatch.is-active span{ box-shadow:inset 0 0 0 1px rgba(255,255,255,.22), 0 0 0 2px color-mix(in srgb, var(--grad-3) 55%, transparent); }
+/* Flat/solid swatches are single-color — no gradient motion needed */
+.accent-swatch[data-accent^="flat"] span{ animation:none; background-size:100% 100%; }
+@media (prefers-reduced-motion: reduce){ .accent-swatch span{ animation:none; } }
+/* Plain mode: freeze the gradient/decorative motion for a clean, still look.
+   (Scoped to swatches + gradient surfaces — does not disable functional UI animations.) */
+:root[data-anim="plain"] .accent-swatch span{ animation:none; background-position:30% 40%; }
+:root[data-anim="plain"] .btn-primary,
+:root[data-anim="plain"] .nav-cta,
+:root[data-anim="plain"] .brand-mark,
+:root[data-anim="plain"] .tag-label,
+:root[data-anim="plain"] .dash-clock,
+:root[data-anim="plain"] .dash-card--clock,
+:root[data-anim="plain"] .hero-orb,
+:root[data-anim="plain"] .aurora{ animation:none !important; }
 .accent-swatch em{ font-family:var(--font-mono); font-style:normal; font-size:.6rem; color:var(--text-dim); letter-spacing:.03em; }
 .accent-swatch:hover{ transform:translateY(-2px); background:var(--bg-panel-2); }
 .accent-swatch.is-active{ border-color:var(--grad-3); background:var(--bg-panel-2); }
@@ -1897,9 +2119,30 @@ html{ scrollbar-width:thin; scrollbar-color:var(--grad-2) var(--bg); }
 :root[data-anim="pulse"] .dash-metric-num,
 :root[data-anim="pulse"] .aurora{ animation:animPulse 2.8s ease-in-out infinite; }
 
+/* Flow — realistic, organic gradient movement (the improved default motion) */
+:root[data-anim="flow"] .btn-primary,
+:root[data-anim="flow"] .nav-cta,
+:root[data-anim="flow"] .brand-mark,
+:root[data-anim="flow"] .social-btn--cv,
+:root[data-anim="flow"] .back-to-top,
+:root[data-anim="flow"] .pcard-featured-tag,
+:root[data-anim="flow"] .dash-card--clock,
+:root[data-anim="flow"] .cta-glow,
+:root[data-anim="flow"] .tag-label,
+:root[data-anim="flow"] .dash-clock,
+:root[data-anim="flow"] .dash-metric-num{ background-size:220% 220% !important; animation:animFlow 9s cubic-bezier(.45,.05,.35,.95) infinite; }
+
 @keyframes animDrift{ 0%{ background-position:0% 50%; } 50%{ background-position:100% 50%; } 100%{ background-position:0% 50%; } }
+@keyframes animFlow{
+  0%{ background-position:15% 30%; }
+  20%{ background-position:70% 15%; }
+  45%{ background-position:100% 65%; }
+  65%{ background-position:50% 100%; }
+  85%{ background-position:5% 70%; }
+  100%{ background-position:15% 30%; }
+}
 @keyframes animHue{ 0%{ filter:hue-rotate(0deg); } 100%{ filter:hue-rotate(360deg); } }
-@keyframes animPulse{ 0%,100%{ filter:brightness(1); } 50%{ filter:brightness(1.4) saturate(1.15); } }
+@keyframes animPulse{ 0%,100%{ filter:brightness(1); } 50%{ filter:brightness(1.35) saturate(1.12); } }
 @media (prefers-reduced-motion: reduce){ :root[data-anim] *{ animation:none !important; } }
 
 /* Motion option buttons */
@@ -2216,11 +2459,12 @@ html{ scrollbar-width:thin; scrollbar-color:var(--grad-2) var(--bg); }
 .accent-search:focus{ outline:none; border-color:var(--grad-3); box-shadow:0 0 0 3px color-mix(in srgb, var(--grad-3) 20%, transparent); }
 .accent-cats{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
 .accent-cat{
-  padding:5px 10px; border-radius:100px; font-size:.68rem; cursor:pointer; white-space:nowrap;
+  padding:5px 11px; border-radius:100px; font-size:.68rem; font-weight:500; cursor:pointer; white-space:nowrap;
   color:var(--text-dim); background:var(--bg-panel-2); border:1px solid var(--border); transition:color .18s var(--ease), border-color .18s var(--ease), background .18s var(--ease);
+  -webkit-tap-highlight-color:transparent;
 }
-.accent-cat:hover{ color:var(--text); border-color:var(--grad-3); }
-.accent-cat.is-active{ color:var(--on-gradient); background:var(--gradient-main); border-color:transparent; }
+.accent-cat:hover{ color:var(--text); border-color:color-mix(in srgb, var(--grad-3) 50%, var(--border)); }
+.accent-cat.is-active{ color:var(--on-gradient); background:var(--gradient-main); border-color:transparent; box-shadow:0 3px 10px -4px color-mix(in srgb, var(--grad-1) 55%, transparent); }
 .accent-empty{ font-size:.8rem; color:var(--text-faint); text-align:center; padding:14px 0; }
 .accent-swatch{ position:relative; }
 .accent-fav{
@@ -3000,6 +3244,7 @@ img, svg, video, canvas, iframe, table, pre{ max-width:100%; }
 @keyframes msgIn{ from{ opacity:0; transform:translateY(6px); } to{ opacity:1; transform:none; } }
 .community-msg-av{ flex-shrink:0; width:36px; height:36px; border-radius:50%; display:grid; place-items:center;
   font-size:.72rem; font-weight:700; color:#fff; font-family:var(--font-mono); }
+.community-msg-av.is-profile{ font-size:1.15rem; background:var(--bg-panel-2); border:1px solid var(--border); }
 .community-msg-bubble{ flex:1; min-width:0; }
 .community-msg-head{ display:flex; align-items:baseline; gap:8px; margin-bottom:5px; }
 .community-msg-who{ font-weight:600; font-size:.82rem; color:var(--text); }
@@ -3027,6 +3272,7 @@ img, svg, video, canvas, iframe, table, pre{ max-width:100%; }
 .community-visitor{ display:flex; align-items:center; gap:11px; font-size:.86rem; padding:9px 10px; border-radius:12px; transition:background .18s; }
 .community-visitor:hover{ background:var(--bg-panel-2); }
 .community-visitor-av{ width:34px; height:34px; flex-shrink:0; border-radius:50%; display:grid; place-items:center; font-size:.66rem; font-weight:700; color:#fff; font-family:var(--font-mono); }
+.community-visitor-av.is-profile{ font-size:1.05rem; background:var(--bg-panel-2); border:1px solid var(--border); }
 .community-visitor-info{ min-width:0; display:flex; flex-direction:column; gap:1px; }
 .community-visitor-name{ color:var(--text); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .community-visitor-time{ font-size:.64rem; color:var(--text-faint); }
@@ -3554,3 +3800,171 @@ img, svg, video, canvas, iframe, table, pre{ max-width:100%; }
 .community-msg.is-failed{ opacity:.72; }
 .community-msg.is-failed .community-msg-text{ border-color:color-mix(in srgb, #ef4444 45%, var(--border)); }
 .community-msg-failed{ color:#ef4444; font-size:.7rem; font-weight:600; }
+
+/* =========================================================
+   THEMED BACKGROUND PATTERNS (activate with certain themes)
+========================================================= */
+.bg-theme-pattern{
+  position:fixed; inset:0; z-index:-1; pointer-events:none; opacity:0;
+  transition:opacity .6s var(--ease); background-repeat:repeat; background-position:center;
+}
+/* Web Slinger → subtle spider-web lines */
+:root[data-accent="webslinger"] .bg-theme-pattern{
+  opacity:.10;
+  background-image:
+    repeating-radial-gradient(circle at 15% 20%, transparent 0 26px, color-mix(in srgb, var(--grad-1) 60%, transparent) 26px 27px, transparent 27px 54px),
+    repeating-radial-gradient(circle at 85% 80%, transparent 0 30px, color-mix(in srgb, var(--grad-3) 60%, transparent) 30px 31px, transparent 31px 62px),
+    conic-gradient(from 0deg at 15% 20%, color-mix(in srgb, var(--grad-1) 40%, transparent) 0 1deg, transparent 1deg 30deg, color-mix(in srgb, var(--grad-1) 40%, transparent) 30deg 31deg, transparent 31deg 60deg, color-mix(in srgb, var(--grad-1) 40%, transparent) 60deg 61deg, transparent 61deg 90deg, color-mix(in srgb, var(--grad-1) 40%, transparent) 90deg 91deg, transparent 91deg 120deg, color-mix(in srgb, var(--grad-1) 40%, transparent) 120deg 121deg, transparent 121deg);
+  background-size:340px 340px, 340px 340px, 480px 480px;
+}
+:root[data-theme="light"][data-accent="webslinger"] .bg-theme-pattern{ opacity:.07; }
+
+/* Sea Sponge → bubbles rising */
+:root[data-accent="seasponge"] .bg-theme-pattern{
+  opacity:.12;
+  background-image:
+    radial-gradient(circle at 20% 80%, color-mix(in srgb, var(--grad-3) 55%, transparent) 0 6px, transparent 7px),
+    radial-gradient(circle at 60% 60%, color-mix(in srgb, var(--grad-3) 45%, transparent) 0 9px, transparent 10px),
+    radial-gradient(circle at 80% 30%, color-mix(in srgb, var(--grad-3) 50%, transparent) 0 5px, transparent 6px),
+    radial-gradient(circle at 40% 20%, color-mix(in srgb, var(--grad-3) 40%, transparent) 0 7px, transparent 8px);
+  background-size:220px 260px, 300px 340px, 180px 220px, 260px 300px;
+  animation:bubbleRise 14s linear infinite;
+}
+@keyframes bubbleRise{ from{ background-position:0 0,0 0,0 0,0 0; } to{ background-position:0 -260px,0 -340px,0 -220px,0 -300px; } }
+
+/* Pika Pop → lightning zigzags (subtle) */
+:root[data-accent="pikapop"] .bg-theme-pattern{
+  opacity:.08;
+  background-image:repeating-linear-gradient(115deg, transparent 0 60px, color-mix(in srgb, var(--grad-1) 60%, transparent) 60px 62px, transparent 62px 120px);
+  background-size:200px 200px;
+}
+
+/* Candy Cloud / Candy Cat → soft polka dots */
+:root[data-accent="candycloud"] .bg-theme-pattern,
+:root[data-accent="candycat"] .bg-theme-pattern{
+  opacity:.10;
+  background-image:radial-gradient(circle, color-mix(in srgb, var(--grad-1) 45%, transparent) 0 4px, transparent 5px);
+  background-size:44px 44px;
+}
+
+/* Star Knight → starfield */
+:root[data-accent="starknight"] .bg-theme-pattern{
+  opacity:.14;
+  background-image:
+    radial-gradient(circle at 10% 20%, #fff 0 1.5px, transparent 2px),
+    radial-gradient(circle at 70% 50%, color-mix(in srgb, var(--grad-3) 80%, transparent) 0 2px, transparent 3px),
+    radial-gradient(circle at 40% 80%, #fff 0 1px, transparent 2px),
+    radial-gradient(circle at 90% 30%, color-mix(in srgb, var(--grad-3) 70%, transparent) 0 1.5px, transparent 2px);
+  background-size:160px 160px, 220px 220px, 190px 190px, 240px 240px;
+  animation:starTwinkle 6s ease-in-out infinite;
+}
+@keyframes starTwinkle{ 0%,100%{ opacity:.14; } 50%{ opacity:.22; } }
+
+/* Plain mode freezes themed pattern animations too */
+:root[data-anim="plain"] .bg-theme-pattern{ animation:none !important; }
+@media (prefers-reduced-motion: reduce){ .bg-theme-pattern{ animation:none !important; } }
+
+/* Web Hero → web pattern (same as web slinger) */
+:root[data-accent="webhero"] .bg-theme-pattern{
+  opacity:.10;
+  background-image:
+    repeating-radial-gradient(circle at 15% 20%, transparent 0 26px, color-mix(in srgb, var(--grad-1) 60%, transparent) 26px 27px, transparent 27px 54px),
+    repeating-radial-gradient(circle at 85% 80%, transparent 0 30px, color-mix(in srgb, var(--grad-2) 60%, transparent) 30px 31px, transparent 31px 62px);
+  background-size:340px 340px, 340px 340px;
+}
+/* Portal / Rick → drifting portal swirls */
+:root[data-accent="rickportal"] .bg-theme-pattern{
+  opacity:.10;
+  background-image:repeating-radial-gradient(circle at 50% 50%, transparent 0 18px, color-mix(in srgb, var(--grad-1) 55%, transparent) 18px 20px, transparent 20px 40px);
+  background-size:160px 160px; animation:portalSpin 24s linear infinite;
+}
+@keyframes portalSpin{ from{ background-position:0 0; } to{ background-position:160px 160px; } }
+/* Iron Suit / Dark Knight → subtle tech hex-ish diagonal lines */
+:root[data-accent="ironsuit"] .bg-theme-pattern,
+:root[data-accent="bathero"] .bg-theme-pattern{
+  opacity:.07;
+  background-image:repeating-linear-gradient(60deg, transparent 0 22px, color-mix(in srgb, var(--grad-3) 50%, transparent) 22px 23px, transparent 23px 44px);
+  background-size:120px 120px;
+}
+/* Unicorn / Candy → soft rainbow dots */
+:root[data-accent="unicornmagic"] .bg-theme-pattern{
+  opacity:.12;
+  background-image:radial-gradient(circle, color-mix(in srgb, var(--grad-1) 50%, transparent) 0 4px, transparent 5px);
+  background-size:40px 40px;
+}
+
+/* --- Girly themes → floating hearts + sparkles --- */
+:root[data-accent="ballerina"] .bg-theme-pattern,
+:root[data-accent="strawberry"] .bg-theme-pattern,
+:root[data-accent="bubblegum"] .bg-theme-pattern,
+:root[data-accent="cottoncandy"] .bg-theme-pattern,
+:root[data-accent="rosegold"] .bg-theme-pattern,
+:root[data-accent="lilacdream"] .bg-theme-pattern,
+:root[data-accent="peachy"] .bg-theme-pattern,
+:root[data-accent="sakurabloom"] .bg-theme-pattern{
+  opacity:.14;
+  background-image:
+    radial-gradient(circle at 20% 30%, color-mix(in srgb, var(--grad-1) 55%, transparent) 0 3px, transparent 4px),
+    radial-gradient(circle at 65% 60%, color-mix(in srgb, var(--grad-2) 50%, transparent) 0 5px, transparent 6px),
+    radial-gradient(circle at 85% 20%, color-mix(in srgb, var(--grad-1) 45%, transparent) 0 2.5px, transparent 3.5px),
+    radial-gradient(circle at 40% 85%, color-mix(in srgb, var(--grad-2) 45%, transparent) 0 4px, transparent 5px);
+  background-size:200px 220px, 260px 280px, 160px 180px, 240px 260px;
+  animation:girlyFloat 16s linear infinite;
+}
+@keyframes girlyFloat{ from{ background-position:0 0,0 0,0 0,0 0; } to{ background-position:0 -220px,20px -280px,-15px -180px,10px -260px; } }
+
+/* --- Hero themes → subtle comic dot (halftone) accent --- */
+:root[data-accent="captainshield"] .bg-theme-pattern,
+:root[data-accent="wonderhero"] .bg-theme-pattern,
+:root[data-accent="flashspeed"] .bg-theme-pattern,
+:root[data-accent="pokeball"] .bg-theme-pattern{
+  opacity:.08;
+  background-image:radial-gradient(circle, color-mix(in srgb, var(--grad-1) 60%, transparent) 0 2px, transparent 3px);
+  background-size:24px 24px;
+}
+/* Thunder → diagonal lightning streaks */
+:root[data-accent="thundergod"] .bg-theme-pattern,
+:root[data-accent="flashspeed"] .bg-theme-pattern{
+  opacity:.09;
+  background-image:repeating-linear-gradient(115deg, transparent 0 50px, color-mix(in srgb, var(--grad-3) 55%, transparent) 50px 52px, transparent 52px 104px);
+  background-size:220px 220px;
+}
+/* Panther / Scarlet → regal radial glow rings */
+:root[data-accent="pantherking"] .bg-theme-pattern,
+:root[data-accent="wandavision"] .bg-theme-pattern{
+  opacity:.10;
+  background-image:repeating-radial-gradient(circle at 50% 40%, transparent 0 40px, color-mix(in srgb, var(--grad-2) 45%, transparent) 40px 42px, transparent 42px 84px);
+  background-size:360px 360px;
+}
+
+/* =========================================================
+   CUSTOM CURSOR (opt-in via design panel)
+========================================================= */
+.agq-cursor{
+  position:fixed; top:0; left:0; z-index:9999; pointer-events:none; opacity:0;
+  margin-left:-9px; margin-top:-9px; transition:opacity .25s ease, width .18s ease, height .18s ease, background .18s ease, border-color .18s ease;
+  will-change:transform;
+}
+/* Hide the native cursor only when a custom one is active */
+:root[data-cursor="dot"], :root[data-cursor="ring"], :root[data-cursor="glow"], :root[data-cursor="trail"]{ cursor:none; }
+:root[data-cursor="dot"] a, :root[data-cursor="ring"] a, :root[data-cursor="glow"] a, :root[data-cursor="trail"] a,
+:root[data-cursor="dot"] button, :root[data-cursor="ring"] button, :root[data-cursor="glow"] button, :root[data-cursor="trail"] button{ cursor:none; }
+
+/* Dot — small solid accent dot */
+:root[data-cursor="dot"] .agq-cursor{ width:18px; height:18px; border-radius:50%; background:var(--grad-2); box-shadow:0 0 0 1px color-mix(in srgb, var(--grad-2) 40%, transparent); }
+:root[data-cursor="dot"] .agq-cursor.is-hover{ width:26px; height:26px; background:var(--grad-3); }
+
+/* Ring — hollow outline ring */
+:root[data-cursor="ring"] .agq-cursor{ width:24px; height:24px; border-radius:50%; background:transparent; border:2px solid var(--grad-2); }
+:root[data-cursor="ring"] .agq-cursor.is-hover{ width:36px; height:36px; border-color:var(--grad-3); background:color-mix(in srgb, var(--grad-3) 12%, transparent); }
+
+/* Glow — soft glowing orb */
+:root[data-cursor="glow"] .agq-cursor{ width:22px; height:22px; border-radius:50%; background:radial-gradient(circle, color-mix(in srgb, var(--grad-2) 80%, transparent), transparent 70%); filter:blur(2px); box-shadow:0 0 14px 4px color-mix(in srgb, var(--grad-2) 45%, transparent); }
+:root[data-cursor="glow"] .agq-cursor.is-hover{ width:34px; height:34px; box-shadow:0 0 22px 8px color-mix(in srgb, var(--grad-3) 50%, transparent); }
+
+/* Trail — accent dot with a soft gradient tail feel (uses stronger easing already) */
+:root[data-cursor="trail"] .agq-cursor{ width:16px; height:16px; border-radius:50%; background:var(--gradient-main); box-shadow:0 0 12px 3px color-mix(in srgb, var(--grad-1) 40%, transparent); }
+:root[data-cursor="trail"] .agq-cursor.is-hover{ width:24px; height:24px; }
+
+@media (prefers-reduced-motion: reduce){ .agq-cursor{ transition:opacity .2s ease; } }
+@media (pointer: coarse){ .agq-cursor{ display:none !important; } }

@@ -31,25 +31,30 @@
   /* ---------- Preloader ---------- */
   function initPreloader() {
     const pre = $('#preloader');
-    const bar = $('#preloaderBarFill');
+    const ring = $('#preloaderRing');
+    const pctEl = $('#preloaderPct');
     if (!pre) return;
 
+    const R = 54, C = 2 * Math.PI * R; // 339.29
+    if (ring) { ring.style.strokeDasharray = C.toFixed(1); ring.style.strokeDashoffset = C.toFixed(1); }
+
     if (prefersReducedMotion) {
-      // Show briefly then reveal, no animation loop
       window.addEventListener('load', () => setTimeout(() => pre.classList.add('is-done'), 300));
       setTimeout(() => pre.classList.add('is-done'), 1200);
       return;
     }
 
     let pct = 0, target = 0, finished = false;
-    function paint() { if (bar) bar.style.width = Math.min(pct, 100).toFixed(1) + '%'; }
-
-    // Smooth progress that eases toward 90%, then completes on window load
+    function paint() {
+      const shown = Math.min(Math.round(pct), 100);
+      if (pctEl) pctEl.innerHTML = shown + '<i>%</i>';
+      if (ring) ring.style.strokeDashoffset = (C * (1 - Math.min(pct, 100) / 100)).toFixed(1);
+    }
     const timer = setInterval(() => {
       target = Math.min(target + Math.random() * 16, finished ? 100 : 90);
-      pct += (target - pct) * 0.22;
+      pct += (target - pct) * 0.2;
       paint();
-      if (finished && pct >= 99) { pct = 100; paint(); done(); clearInterval(timer); }
+      if (finished && pct >= 99.3) { pct = 100; paint(); done(); clearInterval(timer); }
     }, 90);
 
     function done() { pre.classList.add('is-done'); }
@@ -58,7 +63,6 @@
       finished = true; target = 100;
       setTimeout(() => { if (!pre.classList.contains('is-done')) { pct = 100; paint(); done(); clearInterval(timer); } }, 700);
     });
-    // Safety timeout so it never hangs
     setTimeout(() => { finished = true; }, 3500);
   }
 
@@ -2458,7 +2462,11 @@
       warm: ['sunset','ember','coral','amber','gold','goldenhour','peach','coffee','cocoa','crimson','ruby','fireice'],
       vibrant: ['grape','fuchsia','candy','cyberpunk','vaporwave','nebula','galaxy','neon','rose','sakura'],
       nature: ['forest','emerald','sage','lime','mint','tropical','ocean','lavender'],
-      neutral: ['mono','midnight','coffee']
+      neutral: ['mono','midnight','coffee'],
+      fun: ['seasponge','webslinger','speedhero','plumberbros','ogre','starknight','candycat','pikapop','sugarpop','skyhero','mouseclub','bluepup','spookjelly','explorer','avatarair','dragonz','candycloud','spongepants','patrickstar','bathero','webhero','ironsuit','hulksmash','frozenqueen','minionpop','unicornmagic','turtlepizza','pinkpanther','scoobysnack','looneytune','simpsonyellow','rickportal','captainshield','thundergod','pantherking','wandavision','aquahero','flashspeed','wonderhero','jokerchaos','sonicblue','pokeball','adventuretime','gravityfalls','stevenuniverse'],
+      girly: ['ballerina','strawberry','bubblegum','cottoncandy','rosegold','lilacdream','peachy','sakurabloom','candycat','candycloud','sakura','rose','flamingo','sugarpop','unicornmagic'],
+      marvel: ['mvl-red','mvl-iron','mvl-cap','mvl-hulk','mvl-thor','mvl-thanos','mvl-strange','mvl-panther','mvl-venom','mvl-deadpool','mvl-wanda','mvl-loki'],
+      plain: ['flatblue','flatviolet','flatteal','flatgreen','flatrose','flatamber','flatindigo','flatcyan','flatplum','flatcoral','flatslate','flatink','mono']
     };
     function catsFor(name) { return Object.keys(CATS).filter(c => CATS[c].includes(name)); }
     swatches.forEach(s => { s.dataset.cats = catsFor(s.dataset.accent).join(' '); });
@@ -2638,6 +2646,54 @@
     radBox?.addEventListener('click', (e) => {
       const btn = e.target.closest('.anim-opt');
       if (btn) setRadius(btn.dataset.radius);
+    });
+
+    // cursor style selector — custom cursor follower
+    const cursorBox = $('#cursorOptions');
+    let cursorEl = null, cursorRAF = null, cx = -100, cy = -100, tx = -100, ty = -100;
+    function ensureCursorEl() {
+      if (cursorEl) return cursorEl;
+      cursorEl = document.createElement('div');
+      cursorEl.className = 'agq-cursor';
+      cursorEl.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(cursorEl);
+      window.addEventListener('mousemove', (e) => { tx = e.clientX; ty = e.clientY; if (cursorEl) cursorEl.style.opacity = '1'; });
+      window.addEventListener('mouseleave', () => { if (cursorEl) cursorEl.style.opacity = '0'; });
+      // grow on interactive hover
+      document.addEventListener('mouseover', (e) => {
+        if (e.target.closest('a, button, input, textarea, select, .accent-swatch, [role="button"]')) cursorEl.classList.add('is-hover');
+        else cursorEl.classList.remove('is-hover');
+      });
+      function loop() {
+        // ease toward target (trailing motion)
+        cx += (tx - cx) * 0.2; cy += (ty - cy) * 0.2;
+        if (cursorEl) cursorEl.style.transform = `translate(${cx}px, ${cy}px)`;
+        cursorRAF = requestAnimationFrame(loop);
+      }
+      loop();
+      return cursorEl;
+    }
+    function setCursor(name) {
+      const isCustom = name && name !== 'default';
+      if (isCustom) { root.setAttribute('data-cursor', name); ensureCursorEl(); }
+      else {
+        root.removeAttribute('data-cursor');
+        if (cursorEl) { cursorEl.remove(); cursorEl = null; if (cursorRAF) cancelAnimationFrame(cursorRAF); cursorRAF = null; }
+      }
+      try { localStorage.setItem('agq-cursor', name || 'default'); } catch (e) {}
+      if (cursorBox) $$('.anim-opt', cursorBox).forEach(b => {
+        const on = b.dataset.cursor === (name || 'default');
+        b.classList.toggle('is-active', on); b.setAttribute('aria-pressed', String(on));
+      });
+    }
+    let cursorName = 'default';
+    try { cursorName = localStorage.getItem('agq-cursor') || 'default'; } catch (e) {}
+    // only enable custom cursors on devices with a fine pointer (mouse)
+    const hasFinePointer = window.matchMedia && window.matchMedia('(pointer: fine)').matches;
+    if (hasFinePointer) setCursor(cursorName); else setCursor('default');
+    cursorBox?.addEventListener('click', (e) => {
+      const btn = e.target.closest('.anim-opt');
+      if (btn) { if (!hasFinePointer && btn.dataset.cursor !== 'default') { if (window.__agqToast) window.__agqToast('Custom cursors need a mouse.'); return; } setCursor(btn.dataset.cursor); if (window.__agqSound) window.__agqSound.play('click'); }
     });
 
     // gradient motion speed
@@ -3126,8 +3182,13 @@
       // Tag optimistic temp rows so the realtime echo can find & upgrade them
       if (row._optimistic) { wrap.setAttribute('data-optmsg', String(row.message)); wrap.setAttribute('data-optname', String(who)); }
       const av = document.createElement('span');
-      av.className = 'community-msg-av'; av.textContent = initials(who);
-      av.style.background = colorFor(who);
+      av.className = 'community-msg-av';
+      // Default profile avatar: if we know this sender's gender, show a
+      // female/male profile glyph; otherwise fall back to initials.
+      const avGender = (mine ? myGender() : (row._gender || row.gender || '')) || '';
+      if (avGender === 'female') { av.textContent = '👩'; av.classList.add('is-profile'); }
+      else if (avGender === 'male') { av.textContent = '👨'; av.classList.add('is-profile'); }
+      else { av.textContent = initials(who); av.style.background = colorFor(who); }
       if (grouped) av.style.visibility = 'hidden';
       const bubble = document.createElement('div'); bubble.className = 'community-msg-bubble';
       if (!grouped) {
@@ -3819,7 +3880,13 @@
       // 2) Persist to Supabase. On success, upgrade the temp node to the real id.
       //    On failure, flag the message so the sender knows it didn't save.
       try {
-        const { data, error } = await sb.from('messages').insert({ name: name || 'Anonymous', message: sentMessage }).select();
+        const myG = myGender();
+        let ins = await sb.from('messages').insert(myG ? { name: name || 'Anonymous', message: sentMessage, gender: myG } : { name: name || 'Anonymous', message: sentMessage }).select();
+        // If the DB has no "gender" column yet, retry without it so posting still works.
+        if (ins.error && myG && /gender/i.test(ins.error.message || '')) {
+          ins = await sb.from('messages').insert({ name: name || 'Anonymous', message: sentMessage }).select();
+        }
+        const { data, error } = ins;
         if (error) throw error;
         if (data && data[0] && data[0].id != null) {
           rememberMine(data[0].id);
@@ -3873,7 +3940,11 @@
         const li = document.createElement('li');
         li.className = 'community-visitor';
         const av = document.createElement('span');
-        av.className = 'community-visitor-av'; av.textContent = initials(nm); av.style.background = colorFor(nm);
+        av.className = 'community-visitor-av';
+        const g = (v.gender || '').toLowerCase();
+        if (g === 'female') { av.textContent = '👩'; av.classList.add('is-profile'); }
+        else if (g === 'male') { av.textContent = '👨'; av.classList.add('is-profile'); }
+        else { av.textContent = initials(nm); av.style.background = colorFor(nm); }
         const info = document.createElement('div'); info.className = 'community-visitor-info';
         const name = document.createElement('span'); name.className = 'community-visitor-name'; name.textContent = nm;
         const t = document.createElement('span'); t.className = 'community-visitor-time mono'; t.textContent = relTime(v.created_at);
@@ -3891,6 +3962,28 @@
 
     // Ask the visitor for their real name once (first visit). If they skip it,
     // fall back to "Anonymous" — they can still type their name in the composer.
+    // Gender helpers — used to pick a default forum profile avatar.
+    function myGender() {
+      try { return (localStorage.getItem('agq-gender') || '').trim().toLowerCase(); } catch (e) { return ''; }
+    }
+    function askGender() {
+      let g = myGender();
+      if (g) return g;
+      let asked = false;
+      try { asked = localStorage.getItem('agq-gender-asked') === '1'; } catch (e) {}
+      if (!asked) {
+        try {
+          const ans = window.prompt('One more thing — are you Female or Male?\nType F for Female, M for Male (or leave blank to skip).', '');
+          try { localStorage.setItem('agq-gender-asked', '1'); } catch (e) {}
+          const a = (ans || '').trim().toLowerCase();
+          if (a === 'f' || a === 'female' || a === 'girl' || a === 'woman') g = 'female';
+          else if (a === 'm' || a === 'male' || a === 'boy' || a === 'man') g = 'male';
+          if (g) { try { localStorage.setItem('agq-gender', g); } catch (e) {} }
+        } catch (e) {}
+      }
+      return g;
+    }
+
     function askRealName() {
       let n = '';
       try { n = (localStorage.getItem('agq-community-name') || '').trim(); } catch (e) {}
@@ -3908,6 +4001,8 @@
           }
         } catch (e) {}
       }
+      // Ask gender right after the name (only once per browser)
+      askGender();
       // reflect whatever we have in the composer name field
       if (n && nameInput && !nameInput.value.trim()) nameInput.value = n;
       return n; // may be '' → will be stored as Anonymous until they set it
@@ -3923,7 +4018,12 @@
       const vname = await new Promise((resolve) => { ready(() => resolve(askRealName())); });
       if (!myVisitId) {
         try {
-          const { data } = await sb.from('visitors').insert({ name: vname || 'Anonymous' }).select();
+          const myG = myGender();
+          let vins = await sb.from('visitors').insert(myG ? { name: vname || 'Anonymous', gender: myG } : { name: vname || 'Anonymous' }).select();
+          if (vins.error && myG && /gender/i.test(vins.error.message || '')) {
+            vins = await sb.from('visitors').insert({ name: vname || 'Anonymous' }).select();
+          }
+          const data = vins.data;
           if (data && data[0]) {
             myVisitId = data[0].id;
             try { localStorage.setItem('agq-visit-id', String(myVisitId)); sessionStorage.setItem('agq-visit-id', String(myVisitId)); } catch (e) {}

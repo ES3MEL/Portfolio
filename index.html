@@ -107,8 +107,18 @@
 <!-- Loading animation -->
 <div class="preloader" id="preloader" aria-hidden="true">
   <div class="preloader-inner">
-    <div class="preloader-mark mono">AGQ</div>
-    <div class="preloader-bar"><span class="preloader-bar-fill" id="preloaderBarFill"></span></div>
+    <div class="preloader-ring">
+      <svg viewBox="0 0 120 120" aria-hidden="true">
+        <circle class="pl-ring-track" cx="60" cy="60" r="54"></circle>
+        <circle class="pl-ring-fill" id="preloaderRing" cx="60" cy="60" r="54"></circle>
+      </svg>
+      <div class="preloader-mark mono">AGQ</div>
+      <span class="preloader-orbit-dot"></span>
+    </div>
+    <div class="preloader-meta">
+      <span class="preloader-pct mono" id="preloaderPct">0<i>%</i></span>
+      <span class="preloader-word" id="preloaderWord">Loading portfolio</span>
+    </div>
   </div>
 </div>
 
@@ -120,6 +130,7 @@
 </div>
 <div class="bg-grain" aria-hidden="true"></div>
 <div class="bg-code" id="bgCode" aria-hidden="true"></div>
+<div class="bg-theme-pattern" aria-hidden="true"></div>
 
 <div class="progress-rail" aria-hidden="true"><div class="progress-fill" id="progressFill"></div></div>
 <div class="cursor-ring" id="cursorRing" aria-hidden="true"></div>
@@ -186,6 +197,10 @@
               <button class="accent-cat" data-cat="vibrant" role="tab" aria-selected="false">Vibrant</button>
               <button class="accent-cat" data-cat="nature" role="tab" aria-selected="false">Nature</button>
               <button class="accent-cat" data-cat="neutral" role="tab" aria-selected="false">Neutral</button>
+              <button class="accent-cat" data-cat="fun" role="tab" aria-selected="false">🎬 Fun</button>
+              <button class="accent-cat" data-cat="marvel" role="tab" aria-selected="false">🦸 Marvel</button>
+              <button class="accent-cat" data-cat="girly" role="tab" aria-selected="false">💗 Girly</button>
+              <button class="accent-cat" data-cat="plain" role="tab" aria-selected="false">Plain</button>
             </div>
             <p class="accent-empty" id="accentEmpty" hidden>No themes match.</p>
             <div class="accent-grid">
@@ -198,6 +213,71 @@
               <button class="accent-swatch" data-accent="rose" aria-pressed="false" title="Rose"><span style="background:linear-gradient(135deg,#EC4899,#F472B6,#FDA4AF)"></span><em>Rose</em></button>
               <button class="accent-swatch" data-accent="neon" aria-pressed="false" title="Neon"><span style="background:linear-gradient(135deg,#22D3EE,#3B82F6,#E879F9)"></span><em>Neon</em></button>
               <button class="accent-swatch" data-accent="gold" aria-pressed="false" title="Gold"><span style="background:linear-gradient(135deg,#B45309,#F59E0B,#FDE047)"></span><em>Gold</em></button>
+              <button class="accent-swatch" data-accent="seasponge" aria-pressed="false" title="Sea Sponge — cheerful undersea"><span style="background:linear-gradient(135deg,#FFD93B,#FFB627,#4EC5F1)"></span><em>Sea Sponge</em></button>
+              <button class="accent-swatch" data-accent="webslinger" aria-pressed="false" title="Web Slinger — red & navy hero"><span style="background:linear-gradient(135deg,#E23636,#B11313,#2B3A9C)"></span><em>Web Slinger</em></button>
+              <button class="accent-swatch" data-accent="speedhero" aria-pressed="false" title="Speed Hero — blue & gold"><span style="background:linear-gradient(135deg,#1E90FF,#3AC0F0,#FFD23F)"></span><em>Speed Hero</em></button>
+              <button class="accent-swatch" data-accent="plumberbros" aria-pressed="false" title="Plumber Bros — classic game trio"><span style="background:linear-gradient(135deg,#E52521,#43B047,#049CD8)"></span><em>Plumber Bros</em></button>
+              <button class="accent-swatch" data-accent="ogre" aria-pressed="false" title="Ogre — swamp green"><span style="background:linear-gradient(135deg,#7CB342,#A4C639,#C0894A)"></span><em>Ogre</em></button>
+              <button class="accent-swatch" data-accent="starknight" aria-pressed="false" title="Star Knight — midnight & gold"><span style="background:linear-gradient(135deg,#0B1E5B,#1E3A8A,#FACC15)"></span><em>Star Knight</em></button>
+              <button class="accent-swatch" data-accent="candycat" aria-pressed="false" title="Candy Cat — pink & sky"><span style="background:linear-gradient(135deg,#FF5FA2,#FF8DC7,#7DE2FC)"></span><em>Candy Cat</em></button>
+              <button class="accent-swatch" data-accent="pikapop" aria-pressed="false" title="Pika Pop — yellow & red spark"><span style="background:linear-gradient(135deg,#FFCB05,#FDD835,#E3350D)"></span><em>Pika Pop</em></button>
+              <button class="accent-swatch" data-accent="sugarpop" aria-pressed="false" title="Sugar Pop — pink, blue & green trio"><span style="background:linear-gradient(135deg,#FF3D9A,#00C2E8,#7CF76B)"></span><em>Sugar Pop</em></button>
+              <button class="accent-swatch" data-accent="skyhero" aria-pressed="false" title="Sky Hero — primary-color hero"><span style="background:linear-gradient(135deg,#2B6CE0,#E23636,#F5C542)"></span><em>Sky Hero</em></button>
+              <button class="accent-swatch" data-accent="mouseclub" aria-pressed="false" title="Mouse Club — black, red & yellow"><span style="background:linear-gradient(135deg,#111111,#E4000F,#FFD34E)"></span><em>Mouse Club</em></button>
+              <button class="accent-swatch" data-accent="bluepup" aria-pressed="false" title="Blue Pup — blue heeler"><span style="background:linear-gradient(135deg,#1E7FD6,#F39C2D,#7FD4F5)"></span><em>Blue Pup</em></button>
+              <button class="accent-swatch" data-accent="spookjelly" aria-pressed="false" title="Spook Jelly — purple & mint"><span style="background:linear-gradient(135deg,#7A3FF2,#00E0B8,#FF77AC)"></span><em>Spook Jelly</em></button>
+              <button class="accent-swatch" data-accent="explorer" aria-pressed="false" title="Explorer — orange & green"><span style="background:linear-gradient(135deg,#FF6A2B,#FFC531,#37B24D)"></span><em>Explorer</em></button>
+              <button class="accent-swatch" data-accent="avatarair" aria-pressed="false" title="Air Nomad — blue & saffron"><span style="background:linear-gradient(135deg,#2C86C4,#E8A33D,#7FB5D6)"></span><em>Air Nomad</em></button>
+              <button class="accent-swatch" data-accent="dragonz" aria-pressed="false" title="Dragon Z — fiery orange & green"><span style="background:linear-gradient(135deg,#FF8A00,#FFD100,#1FA84C)"></span><em>Dragon Z</em></button>
+              <button class="accent-swatch" data-accent="candycloud" aria-pressed="false" title="Candy Cloud — pastel dream"><span style="background:linear-gradient(135deg,#FF9EC4,#B79BFF,#8FE3FF)"></span><em>Candy Cloud</em></button>
+              <button class="accent-swatch" data-accent="spongepants" aria-pressed="false" title="Sponge Pants — yellow square"><span style="background:linear-gradient(135deg,#F7E017,#8FD14F,#4EC5F1)"></span><em>Sponge Pants</em></button>
+              <button class="accent-swatch" data-accent="patrickstar" aria-pressed="false" title="Pink Star — pink & green"><span style="background:linear-gradient(135deg,#FF9EB3,#FF6F91,#59C36A)"></span><em>Pink Star</em></button>
+              <button class="accent-swatch" data-accent="bathero" aria-pressed="false" title="Dark Knight — black & gold"><span style="background:linear-gradient(135deg,#0B0F1A,#2B2F45,#F5C542)"></span><em>Dark Knight</em></button>
+              <button class="accent-swatch" data-accent="webhero" aria-pressed="false" title="Web Hero — red, blue & black"><span style="background:linear-gradient(135deg,#D42E2E,#1E2A78,#111)"></span><em>Web Hero</em></button>
+              <button class="accent-swatch" data-accent="ironsuit" aria-pressed="false" title="Iron Suit — red & gold armor"><span style="background:linear-gradient(135deg,#B01E1E,#E8A33D,#5A0F0F)"></span><em>Iron Suit</em></button>
+              <button class="accent-swatch" data-accent="hulksmash" aria-pressed="false" title="Green Smash — green & purple"><span style="background:linear-gradient(135deg,#3FA34D,#7CB342,#6B3FA0)"></span><em>Green Smash</em></button>
+              <button class="accent-swatch" data-accent="frozenqueen" aria-pressed="false" title="Frozen Queen — icy blue & lilac"><span style="background:linear-gradient(135deg,#8FD3FF,#C7B9FF,#EAF6FF)"></span><em>Frozen Queen</em></button>
+              <button class="accent-swatch" data-accent="minionpop" aria-pressed="false" title="Minion Pop — yellow & denim"><span style="background:linear-gradient(135deg,#FFDA1F,#F5C000,#1E7FD6)"></span><em>Minion Pop</em></button>
+              <button class="accent-swatch" data-accent="unicornmagic" aria-pressed="false" title="Unicorn Magic — rainbow pastel"><span style="background:linear-gradient(135deg,#FF87D1,#9D7BFF,#5FE0E8)"></span><em>Unicorn</em></button>
+              <button class="accent-swatch" data-accent="turtlepizza" aria-pressed="false" title="Turtle Power — green & red"><span style="background:linear-gradient(135deg,#2E9E4B,#66C044,#E24A2E)"></span><em>Turtle Power</em></button>
+              <button class="accent-swatch" data-accent="pinkpanther" aria-pressed="false" title="Pink Panther — hot pink & violet"><span style="background:linear-gradient(135deg,#F45BB0,#FF8FD1,#5A3FA0)"></span><em>Pink Panther</em></button>
+              <button class="accent-swatch" data-accent="scoobysnack" aria-pressed="false" title="Mystery Van — green & brown"><span style="background:linear-gradient(135deg,#7CB342,#A4C639,#8B5E3C)"></span><em>Mystery Van</em></button>
+              <button class="accent-swatch" data-accent="looneytune" aria-pressed="false" title="Looney — bold primary trio"><span style="background:linear-gradient(135deg,#E23636,#F5A623,#2B6CE0)"></span><em>Looney</em></button>
+              <button class="accent-swatch" data-accent="simpsonyellow" aria-pressed="false" title="Yellow Toon — yellow, blue & red"><span style="background:linear-gradient(135deg,#FFD90F,#4FB0E5,#E23636)"></span><em>Yellow Toon</em></button>
+              <button class="accent-swatch" data-accent="rickportal" aria-pressed="false" title="Portal — sci-fi green"><span style="background:linear-gradient(135deg,#00E08F,#4FD1FF,#B7F542)"></span><em>Portal</em></button>
+              <button class="accent-swatch" data-accent="captainshield" aria-pressed="false" title="Captain Shield — red, white & blue"><span style="background:linear-gradient(135deg,#1E4FA0,#E23636,#F0F0F0)"></span><em>Captain</em></button>
+              <button class="accent-swatch" data-accent="thundergod" aria-pressed="false" title="Thunder God — storm & gold"><span style="background:linear-gradient(135deg,#3A6EA5,#9AC4F5,#E8C24A)"></span><em>Thunder</em></button>
+              <button class="accent-swatch" data-accent="pantherking" aria-pressed="false" title="Panther King — regal purple"><span style="background:linear-gradient(135deg,#3A1F6B,#6B3FA0,#A88BE0)"></span><em>Panther King</em></button>
+              <button class="accent-swatch" data-accent="wandavision" aria-pressed="false" title="Scarlet Magic — crimson & violet"><span style="background:linear-gradient(135deg,#B01E4E,#E23670,#9A3FE0)"></span><em>Scarlet</em></button>
+              <button class="accent-swatch" data-accent="aquahero" aria-pressed="false" title="Aqua Hero — teal & gold"><span style="background:linear-gradient(135deg,#0E8A8A,#1FB6A6,#E8A33D)"></span><em>Aqua Hero</em></button>
+              <button class="accent-swatch" data-accent="flashspeed" aria-pressed="false" title="Flash Speed — red & lightning"><span style="background:linear-gradient(135deg,#C81E1E,#FF3D3D,#FFD23F)"></span><em>Flash</em></button>
+              <button class="accent-swatch" data-accent="wonderhero" aria-pressed="false" title="Wonder Hero — red, blue & gold"><span style="background:linear-gradient(135deg,#C41E3A,#1E5AC4,#E8C24A)"></span><em>Wonder</em></button>
+              <button class="accent-swatch" data-accent="jokerchaos" aria-pressed="false" title="Chaos — green & purple"><span style="background:linear-gradient(135deg,#4CAF50,#7A3FA0,#B7F542)"></span><em>Chaos</em></button>
+              <button class="accent-swatch" data-accent="sonicblue" aria-pressed="false" title="Speedster — blue & tan"><span style="background:linear-gradient(135deg,#1560E0,#3A9EFF,#E8A33D)"></span><em>Speedster</em></button>
+              <button class="accent-swatch" data-accent="pokeball" aria-pressed="false" title="Poke — red, white & black"><span style="background:linear-gradient(135deg,#E23636,#F0F0F0,#222)"></span><em>Poke</em></button>
+              <button class="accent-swatch" data-accent="adventuretime" aria-pressed="false" title="Adventure — candy land"><span style="background:linear-gradient(135deg,#4FC3F7,#FFD54F,#81C784)"></span><em>Adventure</em></button>
+              <button class="accent-swatch" data-accent="gravityfalls" aria-pressed="false" title="Mystery Woods — forest & amber"><span style="background:linear-gradient(135deg,#2E6B5E,#E8A33D,#C0894A)"></span><em>Mystery Woods</em></button>
+              <button class="accent-swatch" data-accent="stevenuniverse" aria-pressed="false" title="Gem — pastel crystals"><span style="background:linear-gradient(135deg,#FF5FA2,#7A5FD9,#5FD9E8)"></span><em>Gem</em></button>
+              <button class="accent-swatch" data-accent="ballerina" aria-pressed="false" title="Ballerina — soft ballet pink"><span style="background:linear-gradient(135deg,#FFB6C1,#FF8FB1,#FFE0EC)"></span><em>Ballerina</em></button>
+              <button class="accent-swatch" data-accent="strawberry" aria-pressed="false" title="Strawberry Milk"><span style="background:linear-gradient(135deg,#FF4D6D,#FF8FA3,#FFD6E0)"></span><em>Strawberry</em></button>
+              <button class="accent-swatch" data-accent="bubblegum" aria-pressed="false" title="Bubblegum — pink & mint"><span style="background:linear-gradient(135deg,#FF6FD8,#FFA6E0,#B5F5EC)"></span><em>Bubblegum</em></button>
+              <button class="accent-swatch" data-accent="cottoncandy" aria-pressed="false" title="Cotton Candy — pastel swirl"><span style="background:linear-gradient(135deg,#FF9EE5,#B39DFF,#9EE7FF)"></span><em>Cotton Candy</em></button>
+              <button class="accent-swatch" data-accent="rosegold" aria-pressed="false" title="Rose Gold"><span style="background:linear-gradient(135deg,#E8A0A0,#F0C0A8,#F5D9C0)"></span><em>Rose Gold</em></button>
+              <button class="accent-swatch" data-accent="lilacdream" aria-pressed="false" title="Lilac Dream — soft lilac"><span style="background:linear-gradient(135deg,#C8A8FF,#E0B8FF,#F5D9FF)"></span><em>Lilac Dream</em></button>
+              <button class="accent-swatch" data-accent="peachy" aria-pressed="false" title="Peachy Keen"><span style="background:linear-gradient(135deg,#FFAD8F,#FFC9B0,#FFE5D9)"></span><em>Peachy</em></button>
+              <button class="accent-swatch" data-accent="sakurabloom" aria-pressed="false" title="Sakura Bloom — cherry blossom"><span style="background:linear-gradient(135deg,#FF8FBF,#FFB3D1,#FFE0EC)"></span><em>Sakura Bloom</em></button>
+              <button class="accent-swatch" data-accent="mvl-red" aria-pressed="false" title="Comic Red — classic red & gold"><span style="background:linear-gradient(135deg,#ED1D24,#B01015,#F5C518)"></span><em>Comic Red</em></button>
+              <button class="accent-swatch" data-accent="mvl-iron" aria-pressed="false" title="Iron Armor — red & gold"><span style="background:linear-gradient(135deg,#A01818,#E8A33D,#7A0F0F)"></span><em>Iron Armor</em></button>
+              <button class="accent-swatch" data-accent="mvl-cap" aria-pressed="false" title="First Avenger — blue, red & white"><span style="background:linear-gradient(135deg,#1E4FA0,#E23636,#EAEAEA)"></span><em>First Avenger</em></button>
+              <button class="accent-swatch" data-accent="mvl-hulk" aria-pressed="false" title="Rage Green — green & purple"><span style="background:linear-gradient(135deg,#4CAF50,#2E7D32,#7A3FA0)"></span><em>Rage Green</em></button>
+              <button class="accent-swatch" data-accent="mvl-thor" aria-pressed="false" title="Asgard — storm blue & gold"><span style="background:linear-gradient(135deg,#3A6EA5,#9AC4F5,#E8C24A)"></span><em>Asgard</em></button>
+              <button class="accent-swatch" data-accent="mvl-thanos" aria-pressed="false" title="Titan — purple & gauntlet gold"><span style="background:linear-gradient(135deg,#7A4FA0,#9B6FC0,#E8A33D)"></span><em>Titan</em></button>
+              <button class="accent-swatch" data-accent="mvl-strange" aria-pressed="false" title="Mystic — crimson & green"><span style="background:linear-gradient(135deg,#B01E4E,#E23670,#3FBFA0)"></span><em>Mystic</em></button>
+              <button class="accent-swatch" data-accent="mvl-panther" aria-pressed="false" title="Vibranium — deep purple"><span style="background:linear-gradient(135deg,#2A1B4A,#5A3F9A,#9B7FD0)"></span><em>Vibranium</em></button>
+              <button class="accent-swatch" data-accent="mvl-venom" aria-pressed="false" title="Symbiote — black & white"><span style="background:linear-gradient(135deg,#0A0A12,#2A2A3A,#E8E8F0)"></span><em>Symbiote</em></button>
+              <button class="accent-swatch" data-accent="mvl-deadpool" aria-pressed="false" title="Merc — red & black"><span style="background:linear-gradient(135deg,#C81E1E,#8A1414,#1A1A1A)"></span><em>Merc</em></button>
+              <button class="accent-swatch" data-accent="mvl-wanda" aria-pressed="false" title="Scarlet Hex — crimson & violet"><span style="background:linear-gradient(135deg,#9A1640,#D42E5E,#7A2EB0)"></span><em>Scarlet Hex</em></button>
+              <button class="accent-swatch" data-accent="mvl-loki" aria-pressed="false" title="Trickster — green & gold"><span style="background:linear-gradient(135deg,#1E6B3A,#2E9E4B,#E8C24A)"></span><em>Trickster</em></button>
               <button class="accent-swatch" data-accent="mint" aria-pressed="false" title="Mint"><span style="background:linear-gradient(135deg,#10B981,#2DD4BF,#67E8F9)"></span><em>Mint</em></button>
               <button class="accent-swatch" data-accent="crimson" aria-pressed="false" title="Crimson"><span style="background:linear-gradient(135deg,#7F1D1D,#DC2626,#FB923C)"></span><em>Crimson</em></button>
               <button class="accent-swatch" data-accent="lagoon" aria-pressed="false" title="Lagoon"><span style="background:linear-gradient(135deg,#0EA5E9,#14B8A6,#84CC16)"></span><em>Lagoon</em></button>
@@ -239,10 +319,24 @@
               <button class="accent-swatch" data-accent="dusk" aria-pressed="false" title="Dusk"><span style="background:linear-gradient(135deg,#4338CA,#7C3AED,#EC4899)"></span><em>Dusk</em></button>
               <button class="accent-swatch" data-accent="steel" aria-pressed="false" title="Steel"><span style="background:linear-gradient(135deg,#475569,#0EA5E9,#94A3B8)"></span><em>Steel</em></button>
               <button class="accent-swatch" data-accent="mono" aria-pressed="false" title="Slate"><span style="background:linear-gradient(135deg,#64748B,#94A3B8,#CBD5E1)"></span><em>Slate</em></button>
+              <button class="accent-swatch" data-accent="flatblue" aria-pressed="false" title="Flat Blue — solid, no gradient"><span style="background:#3B82F6"></span><em>Flat Blue</em></button>
+              <button class="accent-swatch" data-accent="flatviolet" aria-pressed="false" title="Flat Violet — solid"><span style="background:#8B5CF6"></span><em>Flat Violet</em></button>
+              <button class="accent-swatch" data-accent="flatteal" aria-pressed="false" title="Flat Teal — solid"><span style="background:#14B8A6"></span><em>Flat Teal</em></button>
+              <button class="accent-swatch" data-accent="flatgreen" aria-pressed="false" title="Flat Green — solid"><span style="background:#22C55E"></span><em>Flat Green</em></button>
+              <button class="accent-swatch" data-accent="flatrose" aria-pressed="false" title="Flat Rose — solid"><span style="background:#F43F5E"></span><em>Flat Rose</em></button>
+              <button class="accent-swatch" data-accent="flatamber" aria-pressed="false" title="Flat Amber — solid"><span style="background:#F59E0B"></span><em>Flat Amber</em></button>
+              <button class="accent-swatch" data-accent="flatindigo" aria-pressed="false" title="Flat Indigo — solid"><span style="background:#6366F1"></span><em>Flat Indigo</em></button>
+              <button class="accent-swatch" data-accent="flatcyan" aria-pressed="false" title="Flat Cyan — solid"><span style="background:#06B6D4"></span><em>Flat Cyan</em></button>
+              <button class="accent-swatch" data-accent="flatplum" aria-pressed="false" title="Flat Plum — solid"><span style="background:#9333EA"></span><em>Flat Plum</em></button>
+              <button class="accent-swatch" data-accent="flatcoral" aria-pressed="false" title="Flat Coral — solid"><span style="background:#FB7185"></span><em>Flat Coral</em></button>
+              <button class="accent-swatch" data-accent="flatslate" aria-pressed="false" title="Flat Slate — solid"><span style="background:#64748B"></span><em>Flat Slate</em></button>
+              <button class="accent-swatch" data-accent="flatink" aria-pressed="false" title="Flat Ink — solid dark"><span style="background:#334155"></span><em>Flat Ink</em></button>
             </div>
             <p class="theme-panel-title mono">Gradient motion</p>
             <div class="anim-options" id="animOptions" role="group" aria-label="Gradient animation style">
               <button class="anim-opt is-active" data-anim="off" aria-pressed="true">Default</button>
+              <button class="anim-opt" data-anim="plain" aria-pressed="false">Plain</button>
+              <button class="anim-opt" data-anim="flow" aria-pressed="false">Flow</button>
               <button class="anim-opt" data-anim="drift" aria-pressed="false">Drift</button>
               <button class="anim-opt" data-anim="shimmer" aria-pressed="false">Shimmer</button>
               <button class="anim-opt" data-anim="hue" aria-pressed="false">Hue Shift</button>
@@ -273,6 +367,14 @@
               <button class="anim-opt" data-radius="round" aria-pressed="false">Rounded</button>
               <button class="anim-opt" data-radius="pill" aria-pressed="false">Pill</button>
               <button class="anim-opt" data-radius="squircle" aria-pressed="false">Squircle</button>
+            </div>
+            <p class="theme-panel-title mono">Cursor</p>
+            <div class="anim-options" id="cursorOptions" role="group" aria-label="Cursor style">
+              <button class="anim-opt is-active" data-cursor="default" aria-pressed="true">Default</button>
+              <button class="anim-opt" data-cursor="dot" aria-pressed="false">Dot</button>
+              <button class="anim-opt" data-cursor="ring" aria-pressed="false">Ring</button>
+              <button class="anim-opt" data-cursor="glow" aria-pressed="false">Glow</button>
+              <button class="anim-opt" data-cursor="trail" aria-pressed="false">Trail</button>
             </div>
             <p class="theme-panel-title mono">Background</p>
             <div class="anim-options anim-options--bg" id="bgOptions" role="group" aria-label="Background animation style">
