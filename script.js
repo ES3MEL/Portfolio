@@ -2971,6 +2971,33 @@
       el.innerHTML = genderAvatarSVG(gender);
     }
 
+    // Composer gender picker — lets anyone set their profile avatar anytime
+    // (also fixes cases where a visitor dismissed the welcome dialog on mobile).
+    (function initComposerGender() {
+      const pick = $('#communityGenderPick');
+      const cf = $('#cgFemale'), cm = $('#cgMale');
+      if (!pick) return;
+      if (cf) cf.innerHTML = genderAvatarSVG('female');
+      if (cm) cm.innerHTML = genderAvatarSVG('male');
+      function reflect() {
+        const g = myGender();
+        $$('.cgender-btn', pick).forEach(b => b.classList.toggle('is-active', b.dataset.gender === g));
+      }
+      reflect();
+      pick.addEventListener('click', (e) => {
+        const btn = e.target.closest('.cgender-btn');
+        if (!btn) return;
+        const g = btn.dataset.gender;
+        // toggle off if already selected
+        const current = myGender();
+        const next = (current === g) ? '' : g;
+        try { if (next) localStorage.setItem('agq-gender', next); else localStorage.removeItem('agq-gender'); } catch (err) {}
+        reflect();
+        if (window.__agqToast) window.__agqToast(next ? 'Profile updated ✓' : 'Profile cleared');
+        if (window.__agqSound) window.__agqSound.play('click');
+      });
+    })();
+
     // Track the current user's display name to align their own messages
     function myName() {
       // Prefer the live name field, fall back to the saved name

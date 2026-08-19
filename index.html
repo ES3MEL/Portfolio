@@ -132,27 +132,6 @@
 <div class="bg-code" id="bgCode" aria-hidden="true"></div>
 <div class="bg-theme-pattern" aria-hidden="true"></div>
 
-<!-- Welcome dialog: name + gender (custom, on-brand) -->
-<div class="welcome-overlay" id="welcomeOverlay" hidden>
-  <div class="welcome-card" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle">
-    <div class="welcome-mark mono">AGQ</div>
-    <h3 class="welcome-title" id="welcomeTitle">Welcome! 👋</h3>
-    <p class="welcome-sub">Tell us a bit about you — this shows in the community forum.</p>
-    <label class="welcome-label" for="welcomeName">Your name</label>
-    <input type="text" id="welcomeName" class="welcome-input" placeholder="e.g. Alex" maxlength="40" autocomplete="off">
-    <p class="welcome-err" id="welcomeErr" hidden></p>
-    <span class="welcome-label">You are</span>
-    <div class="welcome-gender" id="welcomeGender" role="group" aria-label="Gender">
-      <button type="button" class="welcome-gender-opt" data-gender="female"><span class="wg-emoji" id="wgFemale"></span><span>Female</span></button>
-      <button type="button" class="welcome-gender-opt" data-gender="male"><span class="wg-emoji" id="wgMale"></span><span>Male</span></button>
-    </div>
-    <div class="welcome-actions">
-      <button type="button" class="welcome-skip" id="welcomeSkip">Skip</button>
-      <button type="button" class="welcome-go" id="welcomeGo">Continue</button>
-    </div>
-  </div>
-</div>
-
 <div class="progress-rail" aria-hidden="true"><div class="progress-fill" id="progressFill"></div></div>
 <div class="cursor-ring" id="cursorRing" aria-hidden="true"></div>
 
@@ -208,17 +187,6 @@
               <span class="theme-panel-mode-hint mono">press T</span>
             </button>
             <p class="theme-panel-title mono">Accent gradient</p>
-            <div class="custom-accent" id="customAccent">
-              <label class="custom-accent-swatch" title="Pick your own color">
-                <input type="color" id="customColorInput" value="#7C5CFC" aria-label="Custom accent color">
-                <span class="custom-accent-preview" id="customColorPreview"></span>
-              </label>
-              <div class="custom-accent-field">
-                <span class="custom-accent-title">Custom color</span>
-                <input type="text" id="customColorHex" class="custom-accent-hexinput" value="#7C5CFC" maxlength="7" spellcheck="false" autocomplete="off" aria-label="Type a hex color code" placeholder="#7C5CFC">
-              </div>
-              <button type="button" class="custom-accent-apply" id="customColorApply">Apply</button>
-            </div>
             <input type="search" class="accent-search" id="accentSearch" placeholder="Search themes…" aria-label="Search accent themes" autocomplete="off">
             <div class="accent-cats" id="accentCats" role="tablist" aria-label="Theme categories">
               <button class="accent-cat is-active" data-cat="all" role="tab" aria-selected="true">All</button>
@@ -403,17 +371,13 @@
             <p class="theme-panel-title mono">Cursor</p>
             <div class="anim-options" id="cursorOptions" role="group" aria-label="Cursor style">
               <button class="anim-opt is-active" data-cursor="default" aria-pressed="true">Default</button>
-              <button class="anim-opt" data-cursor="arrow" aria-pressed="false">Arrow</button>
               <button class="anim-opt" data-cursor="dot" aria-pressed="false">Dot</button>
               <button class="anim-opt" data-cursor="ring" aria-pressed="false">Ring</button>
               <button class="anim-opt" data-cursor="glow" aria-pressed="false">Glow</button>
               <button class="anim-opt" data-cursor="trail" aria-pressed="false">Trail</button>
-              <button class="anim-opt" data-cursor="pointer" aria-pressed="false">Retro</button>
-              <button class="anim-opt" data-cursor="cross" aria-pressed="false">Cross</button>
             </div>
             <p class="theme-panel-title mono">Background</p>
             <div class="anim-options anim-options--bg" id="bgOptions" role="group" aria-label="Background animation style">
-              <button class="anim-opt is-active" data-bg="none" aria-pressed="true">Default</button>
               <button class="anim-opt" data-bg="code" aria-pressed="false">Code</button>
               <button class="anim-opt" data-bg="dots" aria-pressed="false">Particles</button>
               <button class="anim-opt" data-bg="stars" aria-pressed="false">Stars</button>
@@ -511,21 +475,14 @@
         </p>
 
         <h1 class="hero-title">
-          <span class="hero-title-line">Designing, testing,</span>
-          <span class="hero-title-line hero-title-line--grad">and documenting</span>
-          <span class="hero-title-line">digital products.</span>
+          <span class="hero-title-line">Hi, Im</span>
+           <span class="hero-title-line hero-title-line--grad">Allyssa Geanne</span>
         </h1>
 
         <p class="hero-role mono" data-reveal>
           <span id="typedRole"></span><span class="type-cursor" aria-hidden="true"></span>
         </p>
 
-        <p class="hero-desc" data-reveal>
-          I'm <strong>Allyssa Geanne Quinit</strong>, an Information Technology graduate with experience in
-          UI/UX design, manual quality assurance (QA), and product documentation. I'm currently seeking a
-          junior role where I can apply my skills, continue learning, and contribute to building
-          user-centered digital products while growing professionally.
-        </p>
 
         <div class="hero-actions" data-reveal>
           <a href="#projects" class="btn btn-primary magnetic">
@@ -581,10 +538,7 @@
           </span>
           <span class="avatar-sparkles" id="avatarSparkles" aria-hidden="true"></span>
 
-          <span class="frame-tag">
-            <span class="frame-dot" aria-hidden="true"></span>
-            id: agq_01 · verified
-          </span>
+    
         </div>
 
         <span class="avatar-bubble" id="avatarBubble" role="status" aria-live="polite"></span>
@@ -639,15 +593,11 @@
       <div class="about-grid">
         <div class="about-text">
           <p class="about-lead" data-reveal="left">
-            Information Technology graduate with hands-on experience in UI/UX design, manual quality
-            assurance (QA), business analysis, and project management through academic projects and
-            internship experience.
+            I’m Allyssa Geanne Quinit, an Information Technology graduate with experience in UI/UX design, manual QA, and product documentation. I’m seeking a junior-level role where I can apply my skills, continue learning, and contribute to building user-centered digital products.
+
           </p>
           <p class="about-sub" data-reveal>
-            Skilled in designing user-centered interfaces, identifying and documenting software issues,
-            conducting product research, and creating clear documentation to support team collaboration.
-            Detail-oriented, adaptable, and eager to learn, with a strong interest in the entire product
-            development lifecycle—from planning and design to testing and delivery.
+           Skilled in designing user-centered interfaces, identifying and documenting software issues, conducting product research, and creating clear documentation. Detail-oriented, adaptable, and eager to learn, with an interest in the full product development lifecycle—from planning and design to testing and delivery.
           </p>
 
           <div class="meta-row" data-reveal>
@@ -1181,7 +1131,7 @@
       <div class="section-head" data-reveal>
         <span class="tag-label">07 — Contact</span>
         <h2>Let's build something worth documenting</h2>
-        <p class="section-sub">Open to junior-level roles in UX, QA, or product. Drop a note below or reach me directly.</p>
+        <p class="section-sub">Open to junior-level opportunities in UI/UX Design, QA, and Business Analysis. Let’s connect—drop me a message below or reach out directly.</p>
       </div>
 
       <div class="contact-layout">
