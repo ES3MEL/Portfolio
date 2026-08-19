@@ -31,16 +31,18 @@
   /* ---------- Preloader ---------- */
   function initPreloader() {
     const pre = $('#preloader');
-    const ring = $('#preloaderRing');
+    const bar = $('#preloaderBar');
     const pctEl = $('#preloaderPct');
     if (!pre) return;
 
-    const R = 54, C = 2 * Math.PI * R; // 339.29
-    if (ring) { ring.style.strokeDasharray = C.toFixed(1); ring.style.strokeDashoffset = C.toFixed(1); }
+    // Start the soft loading music as soon as possible (plays if audio is unlocked;
+    // otherwise it begins on the visitor's first interaction — see initLoadingMusic).
+    try { if (window.__agqStartLoadingMusic) window.__agqStartLoadingMusic(); } catch (e) {}
 
     if (prefersReducedMotion) {
-      window.addEventListener('load', () => setTimeout(() => pre.classList.add('is-done'), 300));
-      setTimeout(() => pre.classList.add('is-done'), 1200);
+      window.addEventListener('load', () => setTimeout(() => finishAll(), 300));
+      setTimeout(() => finishAll(), 1200);
+      function finishAll(){ pre.classList.add('is-done'); document.documentElement.classList.add('is-loaded'); try { if (window.__agqStopLoadingMusic) window.__agqStopLoadingMusic(); } catch(e){} }
       return;
     }
 
@@ -48,7 +50,7 @@
     function paint() {
       const shown = Math.min(Math.round(pct), 100);
       if (pctEl) pctEl.innerHTML = shown + '<i>%</i>';
-      if (ring) ring.style.strokeDashoffset = (C * (1 - Math.min(pct, 100) / 100)).toFixed(1);
+      if (bar) bar.style.setProperty('--pl-progress', Math.min(pct, 100).toFixed(1) + '%');
     }
     const timer = setInterval(() => {
       target = Math.min(target + Math.random() * 16, finished ? 100 : 90);
@@ -61,6 +63,9 @@
       pre.classList.add('is-done');
       // Signal the hero to begin its slow reveal once the loader has cleared
       document.documentElement.classList.add('is-loaded');
+      // The music keeps playing until the hero has fully revealed, then fades out.
+      // The hero reveal transitions run ~1.9s; stop the music after they settle.
+      setTimeout(() => { try { if (window.__agqStopLoadingMusic) window.__agqStopLoadingMusic(); } catch (e) {} }, 2100);
     }
 
     window.addEventListener('load', () => {
@@ -5237,8 +5242,52 @@
         const notes = [523.25, 659.25, 783.99, 1046.5, 783.99];  // C E G C G — bright & friendly
         notes.forEach((f, i) => setTimeout(() => blip(f, 0.5, 'sine', 0.10), i * 130));
         setTimeout(() => blip(659.25, 0.8, 'triangle', 0.06), notes.length * 130);  // soft sustain
+      },
+      // Soft, airy shimmer for the hero reveal — a gentle "wake up" flourish
+      heroReveal: () => {
+        const notes = [392.0, 523.25, 659.25, 783.99];  // G C E G — light rising shimmer
+        notes.forEach((f, i) => setTimeout(() => blip(f, 0.7, 'sine', 0.07), i * 110));
+        setTimeout(() => blip(1046.5, 1.1, 'triangle', 0.045), notes.length * 110);  // airy tail
       }
     };
+
+    // ---- Ambient loading music: a gentle looping pad that plays while loading ----
+    let loadNodes = null;
+    function startLoadingMusic() {
+      if (prefersReducedMotion) return;
+      const ac = ensureCtx(); if (!ac || ac.state !== 'running') return;  // needs unlocked audio
+      if (loadNodes) return;  // already playing
+      const master = ac.createGain();
+      master.gain.setValueAtTime(0.0001, ac.currentTime);
+      master.gain.exponentialRampToValueAtTime(0.06, ac.currentTime + 1.2);  // gentle fade-in
+      master.connect(ac.destination);
+      // a soft chord pad (C major-ish) with slow shimmer
+      const freqs = [261.63, 329.63, 392.0, 523.25];
+      const oscs = freqs.map((f, i) => {
+        const o = ac.createOscillator(), g = ac.createGain();
+        o.type = i % 2 ? 'sine' : 'triangle'; o.frequency.value = f;
+        g.gain.value = 0.25 / freqs.length;
+        // slow tremolo for an airy, breathing texture
+        const lfo = ac.createOscillator(), lg = ac.createGain();
+        lfo.frequency.value = 0.15 + i * 0.05; lg.gain.value = 0.12 / freqs.length;
+        lfo.connect(lg); lg.connect(g.gain); lfo.start();
+        o.connect(g); g.connect(master); o.start();
+        return { o, lfo };
+      });
+      loadNodes = { master, oscs };
+    }
+    function stopLoadingMusic() {
+      if (!loadNodes) return;
+      const ac = ctx; const nodes = loadNodes; loadNodes = null;
+      if (!ac) return;
+      try {
+        nodes.master.gain.cancelScheduledValues(ac.currentTime);
+        nodes.master.gain.setValueAtTime(nodes.master.gain.value, ac.currentTime);
+        nodes.master.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 1.0);  // fade out
+        setTimeout(() => { try { nodes.oscs.forEach(n => { n.o.stop(); n.lfo.stop(); }); } catch (e) {} }, 1100);
+      } catch (e) {}
+    }
+
     return {
       play: (name) => { const fn = sounds[name]; if (fn) fn(); },
       // Plays the welcome arpeggio once, even if the general sound toggle is off,
@@ -5247,9 +5296,9 @@
         if (prefersReducedMotion) return;
         const wasEnabled = enabled; enabled = true; ensureCtx();
         try { sounds.welcome(); } catch (e) {}
-        // restore the user's real preference after the melody finishes
         setTimeout(() => { enabled = wasEnabled; }, 1200);
       },
+      startLoadingMusic, stopLoadingMusic, ensureCtx,
       setEnabled: (on) => { enabled = on; try { localStorage.setItem('agq-sound', on ? '1' : '0'); } catch (e) {} if (on) ensureCtx(); },
       setVolume: (v) => { volume = Math.min(1, Math.max(0, v)); try { localStorage.setItem('agq-sound-vol', String(Math.round(volume * 100))); } catch (e) {} },
       isEnabled: () => enabled,
@@ -5257,17 +5306,22 @@
     };
   })();
   window.__agqSound = AGQSound;
+  window.__agqStartLoadingMusic = () => { try { AGQSound.startLoadingMusic(); } catch (e) {} };
+  window.__agqStopLoadingMusic = () => { try { AGQSound.stopLoadingMusic(); } catch (e) {} };
 
-  // ---- Welcoming chime: plays once on the visitor's first interaction ----
-  // (Browsers block autoplay, so we wait for the first gesture. Once per session.)
-  (function initWelcomeSound() {
-    let played = false;
-    try { if (sessionStorage.getItem('agq-welcomed') === '1') played = true; } catch (e) {}
+  // ---- Loading music: unlocks audio on the first gesture, then plays the ambient
+  //  pad until the hero has fully revealed. If the visitor interacts during the
+  //  loading sequence, the music starts immediately; browsers block audio before
+  //  any gesture, so this is the compliant way to have "music while loading". ----
+  (function initLoadingMusic() {
     function fire() {
-      if (played) { cleanup(); return; }
-      played = true;
-      try { sessionStorage.setItem('agq-welcomed', '1'); } catch (e) {}
-      try { if (window.__agqSound && window.__agqSound.playWelcome) window.__agqSound.playWelcome(); } catch (e) {}
+      try {
+        if (window.__agqSound && window.__agqSound.ensureCtx) window.__agqSound.ensureCtx();
+        // Only start the ambient loading pad if the hero hasn't fully loaded yet.
+        if (!document.documentElement.classList.contains('is-loaded')) {
+          if (window.__agqStartLoadingMusic) window.__agqStartLoadingMusic();
+        }
+      } catch (e) {}
       cleanup();
     }
     function cleanup() {
@@ -5276,12 +5330,10 @@
       window.removeEventListener('scroll', fire);
       window.removeEventListener('touchstart', fire);
     }
-    if (!played) {
-      window.addEventListener('pointerdown', fire, { once: true, passive: true });
-      window.addEventListener('keydown', fire, { once: true });
-      window.addEventListener('scroll', fire, { once: true, passive: true });
-      window.addEventListener('touchstart', fire, { once: true, passive: true });
-    }
+    window.addEventListener('pointerdown', fire, { once: true, passive: true });
+    window.addEventListener('keydown', fire, { once: true });
+    window.addEventListener('scroll', fire, { once: true, passive: true });
+    window.addEventListener('touchstart', fire, { once: true, passive: true });
   })();
 
   function initSound() {

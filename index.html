@@ -108,16 +108,11 @@
 <div class="preloader" id="preloader" aria-hidden="true">
   <div class="preloader-inner">
     <div class="preloader-ring">
-      <svg viewBox="0 0 120 120" aria-hidden="true">
-        <circle class="pl-ring-track" cx="60" cy="60" r="54"></circle>
-        <circle class="pl-ring-fill" id="preloaderRing" cx="60" cy="60" r="54"></circle>
-      </svg>
       <div class="preloader-mark mono">AGQ</div>
-      <span class="preloader-orbit-dot"></span>
     </div>
     <div class="preloader-meta">
+      <span class="preloader-bar" id="preloaderBar"></span>
       <span class="preloader-pct mono" id="preloaderPct">0<i>%</i></span>
-      <span class="preloader-word" id="preloaderWord">Loading portfolio</span>
     </div>
   </div>
 </div>
@@ -159,7 +154,8 @@
 <!-- ===== NAV ===== -->
 <header class="site-header" id="siteHeader">
   <div class="nav">
-    <a href="#top" class="brand">
+    <a href="#top" class="brand" aria-label="Allyssa Geanne Quinit — home">
+      <span class="brand-dot" aria-hidden="true"></span>
       <span class="brand-mark">AGQ</span>
     </a>
 
@@ -1190,15 +1186,54 @@
             </a>
           </div>
 
-          <a class="contact-map" href="https://www.google.com/maps/search/?api=1&query=San+Roque+Dau,+Lubao,+Pampanga,+Philippines" target="_blank" rel="noopener noreferrer" aria-label="Open my location in Google Maps">
-            <iframe
-              title="Map showing San Roque Dau, Lubao, Pampanga"
-              src="https://www.google.com/maps?q=San%20Roque%20Dau,%20Lubao,%20Pampanga,%20Philippines&z=13&output=embed"
-              loading="lazy" referrerpolicy="no-referrer-when-downgrade" tabindex="-1"></iframe>
+          <a class="contact-map contact-map--custom" href="https://www.google.com/maps/search/?api=1&query=San+Roque+Dau,+Lubao,+Pampanga,+Philippines" target="_blank" rel="noopener noreferrer" aria-label="Open my location in Google Maps">
+            <svg class="contact-map-art" viewBox="0 0 400 240" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+              <defs>
+                <linearGradient id="mapArtBg" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="var(--grad-1)" stop-opacity="0.14"/>
+                  <stop offset="55%" stop-color="var(--grad-2)" stop-opacity="0.08"/>
+                  <stop offset="100%" stop-color="var(--grad-3)" stop-opacity="0.16"/>
+                </linearGradient>
+              </defs>
+              <rect width="400" height="240" fill="url(#mapArtBg)"/>
+              <!-- subtle grid -->
+              <g class="map-grid" stroke="var(--border)" stroke-width="0.6" opacity="0.5">
+                <path d="M0 40H400M0 80H400M0 120H400M0 160H400M0 200H400"/>
+                <path d="M50 0V240M100 0V240M150 0V240M200 0V240M250 0V240M300 0V240M350 0V240"/>
+              </g>
+              <!-- terrain / land blobs -->
+              <path class="map-land" d="M-20 150 C60 120 90 175 160 165 C230 155 250 205 340 190 C400 182 420 220 420 260 L-20 260 Z" fill="var(--grad-1)" opacity="0.10"/>
+              <path class="map-land" d="M-20 90 C40 70 120 95 150 70 C210 25 240 70 300 55 C360 42 400 70 420 55 L420 -20 L-20 -20 Z" fill="var(--grad-3)" opacity="0.09"/>
+              <!-- water body -->
+              <path class="map-water" d="M210 120 C250 108 290 118 330 100 C360 88 390 100 410 92 L410 150 C370 160 320 150 280 162 C245 172 220 158 210 150 Z" fill="var(--grad-2)" opacity="0.12"/>
+              <!-- road network -->
+              <g class="map-roads" stroke="var(--grad-3)" fill="none" stroke-linecap="round" opacity="0.5">
+                <path d="M0 175 C90 165 130 140 200 132 C270 124 320 150 400 138" stroke-width="2.4"/>
+                <path d="M60 240 C80 180 150 160 200 132 C250 104 240 40 260 0" stroke-width="1.8" opacity="0.7"/>
+                <path d="M0 60 C70 68 120 58 180 78 C240 98 280 84 400 96" stroke-width="1.6" opacity="0.55"/>
+                <path d="M120 0 C130 60 100 120 130 180 C150 218 120 240 120 240" stroke-width="1.3" opacity="0.45"/>
+                <path d="M300 0 C310 50 340 90 330 140 C322 184 350 210 360 240" stroke-width="1.3" opacity="0.45"/>
+                <path d="M200 132 C260 150 300 120 400 120" stroke-width="1.2" opacity="0.4" stroke-dasharray="4 5"/>
+                <path d="M0 210 C80 205 140 215 210 205 C280 195 330 210 400 200" stroke-width="1.1" opacity="0.35"/>
+              </g>
+              <!-- highlighted route to the pin -->
+              <path class="map-route" d="M40 220 C90 200 110 180 150 172 C185 165 195 150 200 118" fill="none"
+                    stroke="var(--grad-2)" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="6 7"/>
+              <circle class="map-route-start" cx="40" cy="220" r="4.5" fill="var(--grad-1)" stroke="#fff" stroke-width="1.6"/>
+              <!-- compass rose -->
+              <g class="map-compass" transform="translate(360 200)" opacity="0.75">
+                <circle r="15" fill="color-mix(in srgb, var(--bg-panel) 70%, transparent)" stroke="var(--border)" stroke-width="1"/>
+                <path d="M0 -11 L3 0 L0 11 L-3 0 Z" fill="var(--grad-2)"/>
+                <path d="M0 -11 L3 0 L0 0 Z" fill="var(--grad-3)"/>
+                <text x="0" y="-16" text-anchor="middle" font-size="7" font-family="var(--font-mono)" fill="var(--text-dim)">N</text>
+              </g>
+            </svg>
+            <span class="contact-map-glow" aria-hidden="true"></span>
             <span class="contact-map-label"><span class="cml-dot" aria-hidden="true"></span>Pampanga, Philippines</span>
             <span class="contact-map-pin" aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="26" height="26" fill="none"><path d="M12 22s7-6.2 7-12A7 7 0 005 10c0 5.8 7 12 7 12z" fill="var(--grad-2)" stroke="#fff" stroke-width="1.5"/><circle cx="12" cy="10" r="2.6" fill="#fff"/></svg>
+              <svg viewBox="0 0 24 24" width="30" height="30" fill="none"><path d="M12 22s7-6.2 7-12A7 7 0 005 10c0 5.8 7 12 7 12z" fill="var(--grad-2)" stroke="#fff" stroke-width="1.5"/><circle cx="12" cy="10" r="2.8" fill="#fff"/></svg>
             </span>
+            <span class="contact-map-coords mono" aria-hidden="true">14.94° N, 120.60° E</span>
             <span class="contact-map-hint mono">Open in Google Maps ↗</span>
           </a>
 
