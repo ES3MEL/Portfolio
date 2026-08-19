@@ -3355,6 +3355,46 @@
         bubble.append(quote);
       }
 
+      // File marker:  {{file:TYPE|NAME|DATAURL}}  — a shared PDF/Word document
+      const fm = String(bodyText).match(/^\{\{file:(pdf|doc)\|([^|]+)\|(data:[^}]+)\}\}$/);
+      if (fm) {
+        const ftype = fm[1], fname = fm[2], fdata = fm[3];
+        const card = document.createElement('a');
+        card.className = 'community-msg-file';
+        card.href = fdata; card.download = fname;
+        card.setAttribute('target', '_blank'); card.setAttribute('rel', 'noopener noreferrer');
+        card.innerHTML = `<span class="cmf-icon">${ftype === 'pdf' ? '📕' : '📘'}</span>` +
+          `<span class="cmf-meta"><span class="cmf-name"></span><span class="cmf-type mono">${ftype === 'pdf' ? 'PDF document' : 'Word document'} · tap to open</span></span>` +
+          `<span class="cmf-dl" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none"><path d="M12 4v11m0 0l-4-4m4 4l4-4M5 20h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`;
+        card.querySelector('.cmf-name').textContent = fname;
+        bubble.append(card);
+        const fActions = document.createElement('div');
+        fActions.className = 'community-msg-actions';
+        const fReply = document.createElement('button');
+        fReply.type = 'button'; fReply.className = 'community-msg-reply'; fReply.textContent = 'Reply';
+        fReply.addEventListener('click', () => startReply(who, '📄 ' + fname));
+        fActions.append(fReply);
+        const fCanDelete = mine || (row.id != null && isMineId(row.id));
+        const fOwner = isOwner();
+        if ((fCanDelete || fOwner) && row.id != null) {
+          const fDel = document.createElement('button');
+          fDel.type = 'button';
+          fDel.className = 'community-msg-del' + (!fCanDelete && fOwner ? ' is-mod' : '');
+          fDel.textContent = (!fCanDelete && fOwner) ? 'Delete (mod)' : 'Delete';
+          fDel.addEventListener('click', () => { if (confirm('Delete this file?')) deleteMessage(wrap.getAttribute('data-mid'), wrap); });
+          fActions.append(fDel);
+        }
+        bubble.append(fActions);
+        wrap.append(av, bubble);
+        feed.appendChild(wrap);
+        lastSender = who; msgCount++;
+        if (msgCountEl) msgCountEl.textContent = msgCount.toLocaleString();
+        if (statsBar) statsBar.hidden = false;
+        if (wasNear || mine || (opts && opts.initial)) { feed.scrollTop = feed.scrollHeight; if (jumpBtn) jumpBtn.hidden = true; }
+        else if (jumpBtn) { jumpBtn.hidden = false; jumpBtn.classList.add('has-new'); jumpBtn.textContent = '↓ New messages'; }
+        return;
+      }
+
       // Image marker:  {{img:DATAURL}}  — a user-attached image
       const im = String(bodyText).match(/^\{\{img:(data:image\/(?:png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+)\}\}$/);
       if (im) {
@@ -3436,14 +3476,25 @@
       }
 
       const text = document.createElement('p'); text.className = 'community-msg-text';
-      // Auto-linkify URLs (safe: build via DOM, escape everything else)
+      // Auto-linkify URLs (safe: build via DOM, escape everything else).
+      // Links pointing at obviously disrespectful/unsafe destinations are shown as
+      // plain, non-clickable text with a small flag instead of a live link.
+      const BAD_LINK = /(porn|xxx|nsfw|nude|hentai|sex|escort|onlyfans|rape|camgirl|adult-)/i;
       const parts = String(bodyText).split(/(https?:\/\/[^\s]+)/g);
       parts.forEach(part => {
         if (/^https?:\/\//.test(part)) {
-          const a = document.createElement('a');
-          a.href = part; a.target = '_blank'; a.rel = 'noopener noreferrer nofollow';
-          a.className = 'community-msg-link'; a.textContent = part;
-          text.appendChild(a);
+          if (BAD_LINK.test(part)) {
+            const flag = document.createElement('span');
+            flag.className = 'community-msg-link-blocked';
+            flag.textContent = '🚫 link removed';
+            flag.title = 'A link was hidden for being potentially inappropriate.';
+            text.appendChild(flag);
+          } else {
+            const a = document.createElement('a');
+            a.href = part; a.target = '_blank'; a.rel = 'noopener noreferrer nofollow';
+            a.className = 'community-msg-link'; a.textContent = part;
+            text.appendChild(a);
+          }
         } else if (part) {
           text.appendChild(document.createTextNode(part));
         }
@@ -4053,6 +4104,91 @@
       return true;
     }
 
+    // ========================================================
+    //  DOCUMENT UPLOAD — PDF / Word, with a filename safeguard
+    // ========================================================
+    let pendingFile = null;   // { name, type, dataUrl }
+    (function initFileUpload() {
+      const fileBtn = $('#communityFileToggle');
+      const fileInput = $('#communityFileInput');
+      const preview = $('#communityFilePreview');
+      const nameEl = $('#communityFileName');
+      const iconEl = $('#communityFileIcon');
+      const removeBtn = $('#communityFileRemove');
+      const statusF = $('#communityFileStatus');
+      if (!fileBtn || !fileInput) return;
+
+      function clearFile() {
+        pendingFile = null;
+        if (nameEl) nameEl.textContent = '';
+        if (preview) preview.hidden = true;
+        if (statusF) statusF.textContent = '';
+        fileInput.value = '';
+      }
+      removeBtn?.addEventListener('click', clearFile);
+      fileBtn.addEventListener('click', () => fileInput.click());
+
+      // Block obviously disrespectful / unsafe filenames.
+      const BAD_WORDS = /(porn|xxx|nsfw|nude|sex|hentai|fuck|shit|bitch|cunt|dick|pussy|rape|slut|whore)/i;
+      const OK_EXT = /\.(pdf|docx?|)$/i;
+
+      fileInput.addEventListener('change', () => {
+        const file = fileInput.files && fileInput.files[0];
+        if (!file) return;
+        const okType = /pdf|msword|officedocument\.wordprocessingml/i.test(file.type) || /\.(pdf|docx?)$/i.test(file.name);
+        if (!okType) { if (window.__agqToast) window.__agqToast('Only PDF or Word documents are allowed.'); clearFile(); return; }
+        if (BAD_WORDS.test(file.name)) {
+          if (window.__agqToast) window.__agqToast('⚠️ That file name looks inappropriate and was blocked. Please keep it respectful.');
+          clearFile(); return;
+        }
+        if (file.size > 6 * 1024 * 1024) { if (window.__agqToast) window.__agqToast('Document is too large (max 6MB).'); clearFile(); return; }
+        if (statusF) statusF.textContent = 'Attaching…';
+        if (preview) preview.hidden = false;
+        const isPdf = /pdf/i.test(file.type) || /\.pdf$/i.test(file.name);
+        if (iconEl) iconEl.textContent = isPdf ? '📕' : '📘';
+        if (nameEl) nameEl.textContent = file.name.slice(0, 60);
+        const fr = new FileReader();
+        fr.onload = () => {
+          pendingFile = { name: file.name.slice(0, 80).replace(/[|{}]/g, ''), type: isPdf ? 'pdf' : 'doc', dataUrl: fr.result };
+          if (statusF) statusF.textContent = 'Ready to send ✓';
+        };
+        fr.onerror = () => { if (window.__agqToast) window.__agqToast('Could not read that file.'); clearFile(); };
+        fr.readAsDataURL(file);
+      });
+
+      window.__agqPendingFile = () => pendingFile;
+      window.__agqClearFile = clearFile;
+    })();
+
+    async function sendFileMessage() {
+      const f = window.__agqPendingFile && window.__agqPendingFile();
+      if (!f) return false;
+      const name = (nameInput?.value || '').trim().slice(0, 40) || 'Anonymous';
+      const now = Date.now();
+      if (now - lastPostAt < COOLDOWN_MS) { if (statusEl) statusEl.textContent = 'Please wait a few seconds before posting again.'; return true; }
+      // marker:  {{file:TYPE|NAME|DATAURL}}
+      const message = `{{file:${f.type}|${f.name}|${f.dataUrl}}}`;
+      const tempId = 'tmp-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+      try { addMessageEl({ id: tempId, name, message, created_at: new Date().toISOString(), _optimistic: true, _mineHint: true }); } catch (e) {}
+      lastPostAt = Date.now();
+      try {
+        const myG = (typeof myGender === 'function') ? myGender() : '';
+        let ins = await sb.from('messages').insert(myG ? { name, message, gender: myG } : { name, message }).select();
+        if (ins.error && myG && /gender/i.test(ins.error.message || '')) ins = await sb.from('messages').insert({ name, message }).select();
+        if (ins.error) throw ins.error;
+        if (ins.data && ins.data[0] && ins.data[0].id != null) {
+          rememberMine(ins.data[0].id);
+          const tempNode = feed && feed.querySelector(`[data-mid="${tempId}"]`);
+          if (tempNode) tempNode.setAttribute('data-mid', ins.data[0].id);
+        }
+      } catch (e) {
+        console.error('[community] file insert failed:', e);
+        if (statusEl) statusEl.textContent = 'File could not be saved (it may be too large for the database).';
+      }
+      if (window.__agqClearFile) window.__agqClearFile();
+      return true;
+    }
+
     // ---- Basic anti-spam safeguards (front-end) ----
     let lastPostAt = 0;
     let lastPostText = '';
@@ -4131,9 +4267,11 @@
 
       // If an image is attached, send it (with or without accompanying text).
       const hasImage = window.__agqPendingImage && window.__agqPendingImage();
-      if (hasImage) {
+      const hasFile = window.__agqPendingFile && window.__agqPendingFile();
+      if (hasImage || hasFile) {
         try { if (name) localStorage.setItem('agq-community-name', name); } catch (err) {}
-        await sendImageMessage();
+        if (hasImage) await sendImageMessage();
+        if (hasFile) await sendFileMessage();
         if (!message) { if (msgInput) { msgInput.value = ''; msgInput.dispatchEvent(new Event('input')); } return; }
       }
 
