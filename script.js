@@ -57,13 +57,29 @@
       if (finished && pct >= 99.3) { pct = 100; paint(); done(); clearInterval(timer); }
     }, 90);
 
-    function done() { pre.classList.add('is-done'); }
+    function done() {
+      pre.classList.add('is-done');
+      // Signal the hero to begin its slow reveal once the loader has cleared
+      document.documentElement.classList.add('is-loaded');
+    }
 
     window.addEventListener('load', () => {
       finished = true; target = 100;
       setTimeout(() => { if (!pre.classList.contains('is-done')) { pct = 100; paint(); done(); clearInterval(timer); } }, 700);
     });
     setTimeout(() => { finished = true; }, 3500);
+  }
+
+  /* ---------- Hero reveal safety trigger ---------- */
+  function initHeroIntro() {
+    // The hero reveals when documentElement gets `is-loaded` (set by the preloader).
+    // As a safety net, ensure it's set shortly after load even if the preloader
+    // path was skipped, so the hero never stays hidden.
+    const mark = () => document.documentElement.classList.add('is-loaded');
+    if (document.readyState === 'complete') setTimeout(mark, 400);
+    else window.addEventListener('load', () => setTimeout(mark, 400), { once: true });
+    // hard fallback
+    setTimeout(mark, 2500);
   }
 
   /* ---------- Theme toggle (light/dark, saved + system-aware) ---------- */
@@ -505,7 +521,7 @@
   function initPitch() {
     const btn = $('#pitchBtn'), line = $('#pitchLine');
     if (!btn || !line) return;
-    const text = "I'm Allyssa — an IT graduate who designs user-centered interfaces, tests them until they're solid, and writes the documentation that keeps a team aligned. I work across UI/UX design, QA, and business analysis, and I'm looking for a role where I can help ship thoughtful, reliable products. Let's build something great together.";
+    const text = "I'm Allyssa, an IT graduate passionate about turning ideas into intuitive, reliable digital products. With experience in UI/UX, QA, and business analysis, I bring both a creative and detail-oriented perspective to the products I work on. I enjoy solving problems, refining ideas, and collaborating with teams to create meaningful user experiences.";
     const label = btn.querySelector('span');
     const origLabel = label ? label.textContent : '';
     let typing = false, speaking = false;
@@ -564,30 +580,74 @@
 
   /* ---------- Skills grid/list view toggle ---------- */
   /* ---------- Rotating hero eyebrow ---------- */
+  /* ---------- Hero mouse-parallax: subtle modern depth ---------- */
+  function initHeroParallax() {
+    const frame = document.getElementById('photoFrame');
+    if (!frame) return;
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (!(window.matchMedia && window.matchMedia('(pointer: fine)').matches)) return; // desktop only
+
+    let tx = 0, ty = 0, cx = 0, cy = 0, raf = null, hovering = false;
+    const MAX = 9; // gentle tilt degrees — subtle, not weird
+    function onMove(e) {
+      const r = frame.getBoundingClientRect();
+      tx = Math.max(-1, Math.min(1, (e.clientX - (r.left + r.width / 2)) / (r.width / 2)));
+      ty = Math.max(-1, Math.min(1, (e.clientY - (r.top + r.height / 2)) / (r.height / 2)));
+      if (!raf) raf = requestAnimationFrame(loop);
+    }
+    function onEnter() { hovering = true; frame.classList.add('is-tilting'); }
+    function onLeave() {
+      hovering = false; tx = 0; ty = 0;
+      if (!raf) raf = requestAnimationFrame(loop);
+    }
+    function loop() {
+      cx += (tx - cx) * 0.12; cy += (ty - cy) * 0.12;
+      const rotY = cx * MAX, rotX = -cy * MAX;
+      // tilt the whole cut-out together (image + glow + shadow move as one)
+      frame.style.transform = `rotateX(${rotX.toFixed(2)}deg) rotateY(${rotY.toFixed(2)}deg)`;
+      if (Math.abs(tx - cx) > 0.002 || Math.abs(ty - cy) > 0.002) {
+        raf = requestAnimationFrame(loop);
+      } else {
+        raf = null;
+        if (!hovering) {
+          // settle back to neutral and let the gentle float resume
+          frame.style.transform = '';
+          frame.classList.remove('is-tilting');
+        }
+      }
+    }
+    setTimeout(() => {
+      frame.addEventListener('mouseenter', onEnter, { passive: true });
+      frame.addEventListener('mousemove', onMove, { passive: true });
+      frame.addEventListener('mouseleave', onLeave, { passive: true });
+    }, 2700);
+
+    // Soft spotlight that follows the cursor across the hero
+    const hero = document.querySelector('.hero');
+    const spot = document.getElementById('heroSpotlight');
+    if (hero && spot) {
+      let sraf = null, spx = 50, spy = 40;
+      hero.addEventListener('mousemove', (e) => {
+        const r = hero.getBoundingClientRect();
+        spx = ((e.clientX - r.left) / r.width) * 100;
+        spy = ((e.clientY - r.top) / r.height) * 100;
+        if (!sraf) sraf = requestAnimationFrame(() => {
+          spot.style.setProperty('--sx', spx.toFixed(1) + '%');
+          spot.style.setProperty('--sy', spy.toFixed(1) + '%');
+          sraf = null;
+        });
+      }, { passive: true });
+    }
+  }
+
   /* ---------- Scroll progress bar ---------- */
   /* ---------- "Currently" card: live PH time ---------- */
   /* ---------- Move hero photo into About on mobile, back to hero on desktop ---------- */
   function initHeroPhotoRelocate() {
+    // The photo already sits right after the name in the markup; just tag it so
+    // the inline layout styles apply.
     const photo = document.getElementById('heroPhotoCol');
-    const mount = document.getElementById('aboutPhotoMount');
-    if (!photo || !mount) return;
-    const heroParent = photo.parentNode;               // original hero container
-    const heroNextSibling = photo.nextSibling;         // original position anchor
-    const mq = window.matchMedia('(max-width: 720px)');
-    function place(isMobile) {
-      if (isMobile) {
-        if (photo.parentNode !== mount) mount.appendChild(photo);
-      } else {
-        if (photo.parentNode !== heroParent) {
-          if (heroNextSibling && heroNextSibling.parentNode === heroParent) heroParent.insertBefore(photo, heroNextSibling);
-          else heroParent.appendChild(photo);
-        }
-      }
-    }
-    place(mq.matches);
-    // update on viewport changes (resize / rotate)
-    if (mq.addEventListener) mq.addEventListener('change', (e) => place(e.matches));
-    else if (mq.addListener) mq.addListener((e) => place(e.matches));
+    if (photo) photo.classList.add('hero-photo-inline');
   }
 
   function initNowCard() {
@@ -851,201 +911,128 @@
     const frame = $('#photoFrame');
     const img = $('#profileImg');
     const sleepImg = $('#profileImgSleep');
+    const sleepyImg = $('#profileImgSleepy');
     const fallback = $('#photoFallback');
+    const bubble = $('#avatarBubble');
+    const sparkles = $('#avatarSparkles');
     if (!frame || !img) return;
 
-    const sleepyImg = $('#profileImgSleepy');
-
-    // Normal photo: if it truly fails, show the AGQ fallback
+    // Fallback if the main photo fails to load
     if (img.complete && img.naturalWidth === 0) { img.style.display = 'none'; if (fallback) fallback.style.display = 'flex'; }
     img.addEventListener('error', () => { img.style.display = 'none'; if (fallback) fallback.style.display = 'flex'; });
     img.addEventListener('load', () => { img.style.display = ''; if (fallback) fallback.style.display = 'none'; });
 
-    // SELF-HEALING sleep/sleepy loader: test each file with an off-DOM Image().
-    // If it decodes -> point the real <img> at it. If it can't -> mark missing so the
-    // normal photo shows in that window (never a blank frame).
-    function healImage(realImgEl, url, missingClass) {
-      if (!realImgEl) return;
-      const test = new Image();
-      test.onload = () => {
-        if (test.naturalWidth > 0) { realImgEl.src = url; frame.classList.remove(missingClass); }
-        else { frame.classList.add(missingClass); }
-        apply();
-      };
-      test.onerror = () => { frame.classList.add(missingClass); apply(); };
-      test.src = url;
-    }
-    healImage(sleepImg, 'assets/profile-sleeping.jpg', 'sleep-img-missing');
-    healImage(sleepyImg, 'assets/profile-sleepy.jpg', 'sleepy-img-missing');
+    // The state images are embedded inline (base64) so they always load — no
+    // network healing needed. Just ensure the missing-classes are cleared.
+    function healImage() {}
+    frame.classList.remove('sleep-img-missing', 'sleepy-img-missing');
 
-    // Night = 7:00 PM (19) through 5:59 AM  |  Sleepy = 12 PM through 2:59 PM
-    function isNightNow() { const h = new Date().getHours(); return h >= 19 || h < 6; }
-    function isSleepyNow() { const h = new Date().getHours(); return h >= 12 && h < 15; }
+    // Time windows: night = 7pm-6am (sleeping), noon-3pm = sleepy, else day (formal)
+    let isNightNow = () => { const h = new Date().getHours(); return h >= 19 || h < 6; };
+    let isSleepyNow = () => { const h = new Date().getHours(); return h >= 12 && h < 15; };
 
-    let hovering = false;
-    let manualHint = false;   // when true, apply() won't overwrite the sleep-note text
+    // Show the state that matches the current time. CSS drives the cinematic
+    // cross-dissolve via [data-avatar]; the base (day) photo always stays under
+    // so the frame can never blank out. We only clear inline opacity so the CSS wins.
+    let userPicked = false;   // once the visitor clicks, stop auto-switching by time
     function apply() {
+      if (userPicked) return;
       const night = isNightNow();
       const sleepy = !night && isSleepyNow();
       let state = 'day';
-      if (!hovering) { if (night) state = 'sleeping'; else if (sleepy) state = 'sleepy'; }
+      if (night) state = 'sleeping'; else if (sleepy) state = 'sleepy';
       frame.setAttribute('data-avatar', state);
-      frame.classList.toggle('is-night', night);
-      frame.classList.toggle('is-sleepy', sleepy);
-      frame.classList.toggle('is-awake', state === 'day');
-      // Explicit visibility as a hard backup to the CSS (so nothing can leave a blank frame)
-      const sleepMissing = frame.classList.contains('sleep-img-missing');
-      const sleepyMissing = frame.classList.contains('sleepy-img-missing');
-      const showSleep = state === 'sleeping' && !sleepMissing;
-      const showSleepy = state === 'sleepy' && !sleepyMissing;
-      img.style.opacity = (showSleep || showSleepy) ? '0' : '1';
-      if (sleepImg) sleepImg.style.opacity = showSleep ? '1' : '0';
-      if (sleepyImg) sleepyImg.style.opacity = showSleepy ? '1' : '0';
-      // Friendly sleeping caption — only while actually sleeping (night, not awake).
-      // But don't clobber a manual hint (e.g. "Tap again to let me rest") when one is active.
-      const note = $('#avatarSleepNote');
-      if (note && !manualHint) {
-        if (state === 'sleeping') {
-          note.innerHTML = '<span class="asn-emoji">😴</span> Shhh… I\'m asleep. <b>Tap to wake me up!</b>';
-          note.classList.add('is-show');
-        } else {
-          note.classList.remove('is-show');
-        }
-      }
+      // remove any leftover inline opacity so the CSS transition controls everything
+      img.style.opacity = '';
+      if (sleepImg) sleepImg.style.opacity = '';
+      if (sleepyImg) sleepyImg.style.opacity = '';
     }
     apply();
-    // Re-check every 30s so it flips automatically if the clock crosses the boundary
     setInterval(apply, 30000);
 
-    // (Desktop mouse-tilt removed — the avatar is tap/click only now.)
-
-    // (hover handlers are defined below, after the message pools)
-
-    // Click: wave + sparkle + greeting bubble (both day and night)
-    const bubble = $('#avatarBubble');
-    const sparkles = $('#avatarSparkles');
-    const greetings = ['Hi there! 👋', 'Thanks for visiting!', 'Feel free to explore!', "Let's build something great!", 'Nice to meet you! ✨'];
-    // State-aware messages shown on hover
-    const hoverMsgs = {
-      day:      ['Hi! Thanks for stopping by 👋', 'Great to see you here! ✨', 'Feel free to look around 😊'],
-      sleepy:   ['Oh! *yawn* — you caught me mid-break ☕', 'Just recharging… but I\'m up! 🙂', 'A little sleepy, but ready to chat 💛'],
-      sleeping: ['Mmm… you woke me up! Hi there 😊', 'Good timing — I\'m awake now! ✨', 'Oh, hello! Thanks for the wake-up 👋']
-    };
+    // ---- Click cycles the photo through its states with the cinematic dissolve ----
+    const dayMsgs = ['Hi there! \ud83d\udc4b', 'Nice to meet you! \u2728', 'Feel free to look around!'];
+    const sleepyMsgs = ['A little sleepy today \ud83d\ude2a\u2615', 'Running on coffee right now \ud83d\ude34', 'Bit drowsy\u2026 but I\u2019m here! \ud83d\ude4a'];
+    const sleepingMsgs = ['Shhh\u2026 I\u2019m fast asleep \ud83d\ude34', 'Goodnight! See you soon \ud83c\udf19', 'Catching some rest \ud83d\udca4'];
+    const MSGS = { day: dayMsgs, sleepy: sleepyMsgs, sleeping: sleepingMsgs };
     let bubbleTimer = null;
-    function showBubble(text) {
+    function showBubble(text, hold) {
       if (!bubble) return;
       bubble.textContent = text;
       bubble.classList.add('is-show');
       clearTimeout(bubbleTimer);
-      bubbleTimer = setTimeout(() => bubble.classList.remove('is-show'), 2600);
+      bubbleTimer = setTimeout(() => bubble.classList.remove('is-show'), hold || 2400);
     }
-    function currentState() { return frame.getAttribute('data-avatar') || 'day'; }
-
-    // ----- Wake / sleep interaction -----
-    // `hovering` (reused as "awake override") forces the normal photo when true.
-    // Desktop: hover wakes, leave sleeps (only meaningful outside daytime).
-    // Touch: tap runs a sequence — at night: sleeping -> (tap) sleepy -> (tap) awake,
-    //        with a "tap again to let me sleep" hint; tapping once more returns to sleep.
-    let nightWakeStep = 0; // 0=asleep, 1=sleepy shown, 2=awake
-    let wakeHintTimer = null;
-
-    function setHint(text) {
-      const note = $('#avatarSleepNote');
-      if (!note) return;
-      if (text) { manualHint = true; note.textContent = text; note.classList.add('is-show'); }
-      else { manualHint = false; note.classList.remove('is-show'); }
-    }
-
-    // Profile is TAP/CLICK only (no hover-to-wake) so it behaves the same on
-    // mobile and desktop. Hover no longer changes the avatar state.
-
-    function playWakeFx() {
-      if (prefersReducedMotion) return;
-      frame.style.transform = '';
-      frame.classList.remove('is-waving'); void frame.offsetWidth; frame.classList.add('is-waving');
-      setTimeout(() => frame.classList.remove('is-waving'), 900);
-      if (sparkles) {
-        sparkles.innerHTML = '';
-        for (let i = 0; i < 7; i++) {
-          const s = document.createElement('i');
-          s.style.left = (15 + Math.random() * 70) + '%';
-          s.style.top = (10 + Math.random() * 70) + '%';
-          s.style.animationDelay = (Math.random() * 0.2).toFixed(2) + 's';
-          sparkles.appendChild(s);
-        }
-        setTimeout(() => { sparkles.innerHTML = ''; }, 1100);
+    function sparkle() {
+      if (prefersReducedMotion || !sparkles) return;
+      sparkles.innerHTML = '';
+      for (let i = 0; i < 6; i++) {
+        const s = document.createElement('i');
+        s.style.left = (18 + Math.random() * 64) + '%';
+        s.style.top = (14 + Math.random() * 60) + '%';
+        s.style.animationDelay = (Math.random() * 0.2).toFixed(2) + 's';
+        sparkles.appendChild(s);
       }
+      setTimeout(() => { if (sparkles) sparkles.innerHTML = ''; }, 1000);
+    }
+    function setState(state) {
+      frame.setAttribute('data-avatar', state);
     }
 
-    frame.addEventListener('click', () => {
-      const night = isNightNow();
-      const sleepy = !night && isSleepyNow();
-
-      if (night) {
-        // Night wake sequence: asleep -> sleepy -> awake -> (tap) back to sleep
-        if (nightWakeStep === 0) {
-          nightWakeStep = 1;
-          hovering = false;            // still not fully awake
-          frame.setAttribute('data-avatar', 'sleepy'); // show sleepy pic first
-          applyVisibilityFor('sleepy');
-          showBubble('Mmm… *yawn* who\'s there? 😴');
-          setHint('Tap again to fully wake me up ☀️');
-          return;
-        }
-        if (nightWakeStep === 1) {
-          nightWakeStep = 2;
-          hovering = true;             // fully awake -> normal photo
-          apply();
-          playWakeFx();
-          showBubble('I\'m up! Thanks for the wake-up 👋');
-          setHint('Tap again to let me sleep 🌙');
-          return;
-        }
-        // step 2 -> back to sleep
-        nightWakeStep = 0;
-        hovering = false;
-        setHint('');        // clear manual hint so apply() can restore the sleep caption
-        apply();
-        showBubble('Goodnight… 😴💤');
-        return;
+    // ---- Auto wake-up sequence on load ----
+    // If the visitor arrives at night, she starts asleep then gradually wakes:
+    //   sleeping -> (dissolve) sleepy -> (dissolve) awake + an apology bubble.
+    // In the afternoon she starts sleepy then wakes: sleepy -> awake + a note.
+    // Once the visitor clicks the photo, this auto-sequence is cancelled.
+    const wakeApology = ['Oops \u2014 sorry, I dozed off! \ud83d\ude34\u2192\ud83d\ude0a', 'Sorry, I fell asleep! I\u2019m up now \ud83d\udc4b', 'Ah, you caught me napping \u2014 hello! \ud83d\ude05'];
+    const sleepyNote = ['Sorry, I was feeling a little sleepy \ud83d\ude2a', 'Just shaking off the drowsiness \u2014 hi! \u2615', 'Was a bit sleepy, but I\u2019m awake now! \u2728'];
+    let autoTimers = [];
+    function clearAuto() { autoTimers.forEach(clearTimeout); autoTimers = []; }
+    function runAutoWake() {
+      if (userPicked || prefersReducedMotion) return;
+      const startNight = isNightNow() && !frame.classList.contains('sleep-img-missing');
+      const startSleepy = !startNight && isSleepyNow() && !frame.classList.contains('sleepy-img-missing');
+      if (startNight) {
+        // sleeping -> sleepy -> awake, then apology
+        setState('sleeping'); showBubble(pick(sleepingMsgs), 1800);
+        autoTimers.push(setTimeout(() => { if (userPicked) return; setState('sleepy'); showBubble('*yawn* waking up\u2026 \ud83d\ude2a', 1800); }, 2200));
+        autoTimers.push(setTimeout(() => { if (userPicked) return; setState('day'); userPicked = true; sparkle(); showBubble(pick(wakeApology), 3200); }, 4400));
+      } else if (startSleepy) {
+        // sleepy -> awake, then a light note
+        setState('sleepy'); showBubble(pick(sleepyMsgs), 1800);
+        autoTimers.push(setTimeout(() => { if (userPicked) return; setState('day'); userPicked = true; sparkle(); showBubble(pick(sleepyNote), 3200); }, 2400));
       }
+    }
+    function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+    // kick off the sequence after the hero has finished its cinematic reveal
+    autoTimers.push(setTimeout(runAutoWake, 2800));
 
-      // Daytime / sleepy: tap wakes; if in sleepy window, a second tap lets her rest again
-      if (sleepy) {
-        if (!hovering) {
-          // wake up from the sleepy state
-          hovering = true; apply(); playWakeFx();
-          showBubble(greetings[Math.floor(Math.random() * greetings.length)]);
-          setHint('Tap again to let me rest ☕');
-        } else {
-          // let her rest again → back to the sleepy photo
-          hovering = false; apply();
-          showBubble('Mmm… back to my break ☕😴');
-          setHint('');
-        }
-      } else {
-        // Pure daytime: just a friendly greeting + sparkle each tap
-        hovering = true; apply(); playWakeFx();
-        showBubble(greetings[Math.floor(Math.random() * greetings.length)]);
-        setHint('');
-      }
+    // available states, skipping any whose image failed to load
+    function cycleOrder() {
+      const order = ['day'];
+      if (!frame.classList.contains('sleepy-img-missing')) order.push('sleepy');
+      if (!frame.classList.contains('sleep-img-missing')) order.push('sleeping');
+      return order;
+    }
+    function interact() {
+      if (!userPicked) clearAuto();   // cancel the auto sequence on first interaction
+      userPicked = true;
+      const order = cycleOrder();
+      const cur = frame.getAttribute('data-avatar') || 'day';
+      const idx = order.indexOf(cur);
+      const next = order[(idx + 1) % order.length];
+      setState(next);   // CSS cross-dissolves to the new photo
+      showBubble(pick(MSGS[next] || dayMsgs));
+      sparkle();
+      if (window.__agqSound) window.__agqSound.play('pop');
       if (window.__agqUnlock) window.__agqUnlock('avatar');
-    });
-
-    // Helper: force which layer shows (used by the night sequence's sleepy step)
-    function applyVisibilityFor(state) {
-      const sleepMissing = frame.classList.contains('sleep-img-missing');
-      const sleepyMissing = frame.classList.contains('sleepy-img-missing');
-      const showSleep = state === 'sleeping' && !sleepMissing;
-      const showSleepy = state === 'sleepy' && !sleepyMissing;
-      img.style.opacity = (showSleep || showSleepy) ? '0' : '1';
-      if (sleepImg) sleepImg.style.opacity = showSleep ? '1' : '0';
-      if (sleepyImg) sleepyImg.style.opacity = showSleepy ? '1' : '0';
     }
+    frame.addEventListener('click', interact);
+    frame.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); interact(); } });
 
-    // Manual preview for testing regardless of time:
-    window.__agqPreviewNight = function (on) { isNightNow = () => !!on; if (on) isSleepyNow = () => false; nightWakeStep = 0; hovering = false; apply(); };
-    window.__agqPreviewSleepy = function (on) { isSleepyNow = () => !!on; if (on) isNightNow = () => false; hovering = false; apply(); };
+    // Manual preview helpers for testing
+    window.__agqPreviewNight = function (on) { isNightNow = () => !!on; if (on) isSleepyNow = () => false; userPicked = false; clearAuto(); runAutoWake(); };
+    window.__agqPreviewSleepy = function (on) { isSleepyNow = () => !!on; if (on) isNightNow = () => false; userPicked = false; clearAuto(); runAutoWake(); };
   }
 
   /* ---------- Sliding nav pill (desktop only) ---------- */
@@ -2956,9 +2943,12 @@
     }
     // Clean default profile picture as an SVG (uses the active accent colors).
     // gender: 'female' | 'male'  → a simple, modern avatar silhouette.
+    let __avUid = 0;
     function genderAvatarSVG(gender) {
       const c1 = 'var(--grad-1)', c2 = 'var(--grad-2)';
-      const bg = `<defs><linearGradient id="agqAv" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient></defs><rect width="40" height="40" rx="20" fill="url(#agqAv)"/>`;
+      // Unique gradient id per SVG — duplicate ids break url(#id) fills on mobile Safari/Chrome
+      const gid = 'agqAv' + (++__avUid);
+      const bg = `<defs><linearGradient id="${gid}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient></defs><rect width="40" height="40" rx="20" fill="url(#${gid})"/>`;
       if (gender === 'female') {
         // minimal: head + shoulders + subtle hair framing, all in soft white
         return `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">${bg}<g fill="#fff"><path d="M13.5 18.5c0-4.6 2.7-7.5 6.5-7.5s6.5 2.9 6.5 7.5c0 1.2-.2 2-.5 3 .8.3 1.3.9 1.3 1.9v.6h-2.4c-.1-.5-.3-1-.6-1.4.7-1 1.2-2.3 1.2-3.9 0-3.4-2.3-5.2-5.5-5.2s-5.5 1.8-5.5 5.2c0 1.6.5 2.9 1.2 3.9-.3.4-.5.9-.6 1.4H12.7v-.6c0-1 .5-1.6 1.3-1.9-.3-1-.5-1.8-.5-3z" opacity=".9"/><circle cx="20" cy="18.5" r="4.6"/><path d="M29.5 30.5c0-4.2-4.3-6.2-9.5-6.2s-9.5 2-9.5 6.2V31h19z"/></g></svg>`;
@@ -2971,12 +2961,16 @@
       el.innerHTML = genderAvatarSVG(gender);
     }
 
-    // Composer gender picker — lets anyone set their profile avatar anytime
-    // (also fixes cases where a visitor dismissed the welcome dialog on mobile).
+    // Composer gender picker — lets anyone set their profile avatar anytime,
+    // on both desktop and mobile.
+    const isMobileDevice = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+      (window.matchMedia && window.matchMedia('(max-width: 820px)').matches && 'ontouchstart' in window);
+
     (function initComposerGender() {
       const pick = $('#communityGenderPick');
-      const cf = $('#cgFemale'), cm = $('#cgMale');
       if (!pick) return;
+      pick.hidden = false; pick.style.display = '';
+      const cf = $('#cgFemale'), cm = $('#cgMale');
       if (cf) cf.innerHTML = genderAvatarSVG('female');
       if (cm) cm.innerHTML = genderAvatarSVG('male');
       function reflect() {
@@ -3359,6 +3353,42 @@
         quote.innerHTML = `<span class="community-quote-name">${escapeHtml(rName)}</span><span class="community-quote-text">${escapeHtml(rSnippet)}</span>`;
         quote.addEventListener('click', () => jumpToOriginal(rName, rSnippet, wrap));
         bubble.append(quote);
+      }
+
+      // Image marker:  {{img:DATAURL}}  — a user-attached image
+      const im = String(bodyText).match(/^\{\{img:(data:image\/(?:png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+)\}\}$/);
+      if (im) {
+        const fig = document.createElement('div'); fig.className = 'community-msg-image';
+        const pic = document.createElement('img');
+        pic.src = im[1]; pic.alt = 'Shared image'; pic.loading = 'lazy'; pic.decoding = 'async';
+        pic.addEventListener('click', () => window.open(pic.src, '_blank', 'noopener'));
+        fig.appendChild(pic);
+        bubble.append(fig);
+        const iActions = document.createElement('div');
+        iActions.className = 'community-msg-actions';
+        const iReply = document.createElement('button');
+        iReply.type = 'button'; iReply.className = 'community-msg-reply'; iReply.textContent = 'Reply';
+        iReply.addEventListener('click', () => startReply(who, '📷 image'));
+        iActions.append(iReply);
+        const iCanDelete = mine || (row.id != null && isMineId(row.id));
+        const iOwner = isOwner();
+        if ((iCanDelete || iOwner) && row.id != null) {
+          const iDel = document.createElement('button');
+          iDel.type = 'button';
+          iDel.className = 'community-msg-del' + (!iCanDelete && iOwner ? ' is-mod' : '');
+          iDel.textContent = (!iCanDelete && iOwner) ? 'Delete (mod)' : 'Delete';
+          iDel.addEventListener('click', () => { if (confirm('Delete this image?')) deleteMessage(wrap.getAttribute('data-mid'), wrap); });
+          iActions.append(iDel);
+        }
+        bubble.append(iActions);
+        wrap.append(av, bubble);
+        feed.appendChild(wrap);
+        lastSender = who; msgCount++;
+        if (msgCountEl) msgCountEl.textContent = msgCount.toLocaleString();
+        if (statsBar) statsBar.hidden = false;
+        if (wasNear || mine || (opts && opts.initial)) { feed.scrollTop = feed.scrollHeight; if (jumpBtn) jumpBtn.hidden = true; }
+        else if (jumpBtn) { jumpBtn.hidden = false; jumpBtn.classList.add('has-new'); jumpBtn.textContent = '↓ New messages'; }
+        return;
       }
 
       // Sticker marker:  🎯{{sticker:ID}}  (built-in animated stickers, never broken)
@@ -3861,6 +3891,168 @@
     });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && gifPanel && !gifPanel.hidden) closeGif(); });
 
+    // ========================================================
+    //  MIC — voice-to-text for the message box
+    // ========================================================
+    (function initMic() {
+      const micBtn = $('#communityMicToggle');
+      if (!micBtn) return;
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) { micBtn.style.display = 'none'; return; }   // unsupported browser
+      let rec = null, listening = false;
+      function stop() {
+        listening = false; micBtn.classList.remove('is-listening');
+        try { rec && rec.stop(); } catch (e) {}
+      }
+      micBtn.addEventListener('click', () => {
+        if (listening) { stop(); return; }
+        try {
+          rec = new SR();
+          rec.lang = 'en-US'; rec.interimResults = true; rec.continuous = false;
+          const base = (msgInput?.value || '');
+          rec.onresult = (ev) => {
+            let txt = '';
+            for (let i = ev.resultIndex; i < ev.results.length; i++) txt += ev.results[i][0].transcript;
+            if (msgInput) { msgInput.value = (base ? base + ' ' : '') + txt; msgInput.dispatchEvent(new Event('input')); }
+          };
+          rec.onerror = () => stop();
+          rec.onend = () => stop();
+          rec.start();
+          listening = true; micBtn.classList.add('is-listening');
+          if (window.__agqToast) window.__agqToast('🎤 Listening…');
+        } catch (e) { stop(); }
+      });
+    })();
+
+    // ========================================================
+    //  IMAGE UPLOAD — with a respectful-content safeguard
+    // ========================================================
+    let pendingImage = null;   // data URL of the attached (approved) image
+    (function initImageUpload() {
+      const imgBtn = $('#communityImgToggle');
+      const fileInput = $('#communityImageInput');
+      const preview = $('#communityImgPreview');
+      const thumb = $('#communityImgThumb');
+      const removeBtn = $('#communityImgRemove');
+      const statusI = $('#communityImgStatus');
+      if (!imgBtn || !fileInput) return;
+
+      function clearImage() {
+        pendingImage = null;
+        if (thumb) thumb.src = '';
+        if (preview) preview.hidden = true;
+        if (statusI) statusI.textContent = '';
+        fileInput.value = '';
+      }
+      removeBtn?.addEventListener('click', clearImage);
+      imgBtn.addEventListener('click', () => fileInput.click());
+
+      // Downscale a data URL to a max dimension, return {dataUrl, canvas, ctx}
+      function loadToCanvas(dataUrl, maxDim) {
+        return new Promise((resolve, reject) => {
+          const im = new Image();
+          im.onload = () => {
+            let { width: w, height: h } = im;
+            const scale = Math.min(1, maxDim / Math.max(w, h));
+            w = Math.round(w * scale); h = Math.round(h * scale);
+            const c = document.createElement('canvas'); c.width = w; c.height = h;
+            const ctx = c.getContext('2d'); ctx.drawImage(im, 0, 0, w, h);
+            resolve({ canvas: c, ctx, w, h });
+          };
+          im.onerror = reject;
+          im.src = dataUrl;
+        });
+      }
+
+      // Heuristic respectful-content check: flags images with a very high ratio of
+      // skin-tone pixels (a rough nudity signal). Not perfect, but blocks the most
+      // obvious cases without any external service. Errs toward allowing normal photos.
+      function skinRatio(ctx, w, h) {
+        try {
+          const { data } = ctx.getImageData(0, 0, w, h);
+          let skin = 0, total = 0;
+          for (let i = 0; i < data.length; i += 4 * 6) { // sample every 6th pixel
+            const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
+            if (a < 120) continue;
+            total++;
+            // common skin-tone rule in RGB
+            const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+            if (r > 95 && g > 40 && b > 20 && (mx - mn) > 15 && Math.abs(r - g) > 15 && r > g && r > b) skin++;
+          }
+          return total ? skin / total : 0;
+        } catch (e) { return 0; }
+      }
+
+      fileInput.addEventListener('change', async () => {
+        const file = fileInput.files && fileInput.files[0];
+        if (!file) return;
+        if (!/^image\/(png|jpe?g|webp|gif)$/i.test(file.type)) {
+          if (window.__agqToast) window.__agqToast('Only image files are allowed.'); clearImage(); return;
+        }
+        if (file.size > 8 * 1024 * 1024) {
+          if (window.__agqToast) window.__agqToast('Image is too large (max 8MB).'); clearImage(); return;
+        }
+        if (statusI) statusI.textContent = 'Checking image…';
+        if (preview) preview.hidden = false;
+        try {
+          const raw = await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = rej; fr.readAsDataURL(file); });
+          // moderation pass on a small copy
+          const modCopy = await loadToCanvas(raw, 200);
+          const ratio = skinRatio(modCopy.ctx, modCopy.w, modCopy.h);
+          if (ratio > 0.62) {
+            if (statusI) statusI.textContent = '';
+            if (window.__agqToast) window.__agqToast('⚠️ That image may be inappropriate and was blocked. Please keep it respectful.');
+            clearImage();
+            return;
+          }
+          // compress for storage (max 900px, JPEG-ish quality)
+          const big = await loadToCanvas(raw, 900);
+          let out;
+          try { out = big.canvas.toDataURL('image/webp', 0.82); }
+          catch (e) { out = big.canvas.toDataURL('image/jpeg', 0.82); }
+          if (!/^data:image\/(webp|jpeg|png|gif)/.test(out)) out = big.canvas.toDataURL('image/jpeg', 0.8);
+          pendingImage = out;
+          if (thumb) thumb.src = out;
+          if (statusI) statusI.textContent = 'Ready to send ✓';
+        } catch (e) {
+          if (window.__agqToast) window.__agqToast('Could not process that image.');
+          clearImage();
+        }
+      });
+
+      // expose helpers so the submit handler can send/clear the image
+      window.__agqPendingImage = () => pendingImage;
+      window.__agqClearImage = clearImage;
+    })();
+
+    async function sendImageMessage() {
+      const dataUrl = window.__agqPendingImage && window.__agqPendingImage();
+      if (!dataUrl) return false;
+      const name = (nameInput?.value || '').trim().slice(0, 40) || 'Anonymous';
+      const now = Date.now();
+      if (now - lastPostAt < COOLDOWN_MS) { if (statusEl) statusEl.textContent = 'Please wait a few seconds before posting again.'; return true; }
+      const message = `{{img:${dataUrl}}}`;
+      const tempId = 'tmp-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+      try { addMessageEl({ id: tempId, name, message, created_at: new Date().toISOString(), _optimistic: true, _mineHint: true }); } catch (e) {}
+      lastPostAt = Date.now();
+      try {
+        const myG = (typeof myGender === 'function') ? myGender() : '';
+        let ins = await sb.from('messages').insert(myG ? { name, message, gender: myG } : { name, message }).select();
+        if (ins.error && myG && /gender/i.test(ins.error.message || '')) ins = await sb.from('messages').insert({ name, message }).select();
+        if (ins.error) throw ins.error;
+        if (ins.data && ins.data[0] && ins.data[0].id != null) {
+          rememberMine(ins.data[0].id);
+          const tempNode = feed && feed.querySelector(`[data-mid="${tempId}"]`);
+          if (tempNode) tempNode.setAttribute('data-mid', ins.data[0].id);
+        }
+      } catch (e) {
+        console.error('[community] image insert failed:', e);
+        if (statusEl) statusEl.textContent = 'Image could not be saved (it may be too large for the database).';
+      }
+      if (window.__agqClearImage) window.__agqClearImage();
+      return true;
+    }
+
     // ---- Basic anti-spam safeguards (front-end) ----
     let lastPostAt = 0;
     let lastPostText = '';
@@ -3936,6 +4128,15 @@
       e.preventDefault();
       const name = (nameInput?.value || '').trim().slice(0, 40);
       let message = (msgInput?.value || '').trim().slice(0, 500);
+
+      // If an image is attached, send it (with or without accompanying text).
+      const hasImage = window.__agqPendingImage && window.__agqPendingImage();
+      if (hasImage) {
+        try { if (name) localStorage.setItem('agq-community-name', name); } catch (err) {}
+        await sendImageMessage();
+        if (!message) { if (msgInput) { msgInput.value = ''; msgInput.dispatchEvent(new Event('input')); } return; }
+      }
+
       if (!message) return;
 
       const reason = spamReason(name, message);
@@ -4105,6 +4306,9 @@
     // sessions reuse the same row instead of creating duplicates.
     let myVisitId = null;
     try { myVisitId = localStorage.getItem('agq-visit-id') || sessionStorage.getItem('agq-visit-id'); } catch (e) {}
+    // Whether this browser has EVER been recorded as a visitor (first visit only).
+    let hasVisited = false;
+    try { hasVisited = localStorage.getItem('agq-visited') === '1' || !!myVisitId; } catch (e) {}
 
     // Gender helper — used to pick a default forum profile avatar.
     function myGender() {
@@ -4183,7 +4387,8 @@
         else window.addEventListener('load', () => setTimeout(cb, 600), { once: true });
       }
       const vname = await new Promise((resolve) => { ready(() => resolve(runWelcomeDialog())); }).then(r => r);
-      if (!myVisitId) {
+      // Record the visit ONLY on the very first visit from this browser.
+      if (!hasVisited && !myVisitId) {
         try {
           const myG = myGender();
           let vins = await sb.from('visitors').insert(myG ? { name: vname || 'Anonymous', gender: myG } : { name: vname || 'Anonymous' }).select();
@@ -4193,7 +4398,8 @@
           const data = vins.data;
           if (data && data[0]) {
             myVisitId = data[0].id;
-            try { localStorage.setItem('agq-visit-id', String(myVisitId)); sessionStorage.setItem('agq-visit-id', String(myVisitId)); } catch (e) {}
+            hasVisited = true;
+            try { localStorage.setItem('agq-visit-id', String(myVisitId)); localStorage.setItem('agq-visited', '1'); sessionStorage.setItem('agq-visit-id', String(myVisitId)); } catch (e) {}
           }
         } catch (e) {}
       }
@@ -4214,22 +4420,12 @@
     async function updateVisitorName(newName) {
       const n = (newName || '').trim();
       if (!n) return;
-      // If we somehow don't have a visit row yet, create one with the name
-      if (!myVisitId) {
+      // Only update the existing first-visit row. Never create additional visitor
+      // rows (a browser is recorded exactly once, on its first visit).
+      if (myVisitId) {
         try {
-          const { data, error } = await sb.from('visitors').insert({ name: n }).select();
-          if (error) console.error('[community] visitor insert failed:', error);
-          if (data && data[0]) { myVisitId = data[0].id; try { localStorage.setItem('agq-visit-id', String(myVisitId)); sessionStorage.setItem('agq-visit-id', String(myVisitId)); } catch (e) {} }
-        } catch (e) { console.error('[community] visitor insert threw:', e); }
-      } else {
-        try {
-          const { data, error } = await sb.from('visitors').update({ name: n }).eq('id', myVisitId).select();
+          const { error } = await sb.from('visitors').update({ name: n }).eq('id', myVisitId).select();
           if (error) console.error('[community] visitor name update failed (check UPDATE policy):', error);
-          // If the update matched no rows (row gone or RLS blocked), create a fresh named row
-          if (!error && (!data || !data.length)) {
-            const ins = await sb.from('visitors').insert({ name: n }).select();
-            if (ins.data && ins.data[0]) { myVisitId = ins.data[0].id; try { localStorage.setItem('agq-visit-id', String(myVisitId)); sessionStorage.setItem('agq-visit-id', String(myVisitId)); } catch (e) {} }
-          }
         } catch (e) { console.error('[community] visitor update threw:', e); }
       }
       refreshVisitors();
@@ -4897,10 +5093,25 @@
       close: () => { blip(460, 0.08, 'sine', 0.1); setTimeout(() => blip(300, 0.1, 'sine', 0.1), 60); },
       success: () => { [523, 659, 784].forEach((f, i) => setTimeout(() => blip(f, 0.14, 'sine', 0.12), i * 90)); },
       achievement: () => { [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => blip(f, 0.16, 'triangle', 0.13), i * 95)); },
-      theme: () => { blip(587, 0.1, 'sine', 0.11); setTimeout(() => blip(880, 0.12, 'sine', 0.1), 80); }
+      theme: () => { blip(587, 0.1, 'sine', 0.11); setTimeout(() => blip(880, 0.12, 'sine', 0.1), 80); },
+      // Warm, welcoming arpeggio played once when the visitor first interacts
+      welcome: () => {
+        const notes = [523.25, 659.25, 783.99, 1046.5, 783.99];  // C E G C G — bright & friendly
+        notes.forEach((f, i) => setTimeout(() => blip(f, 0.5, 'sine', 0.10), i * 130));
+        setTimeout(() => blip(659.25, 0.8, 'triangle', 0.06), notes.length * 130);  // soft sustain
+      }
     };
     return {
       play: (name) => { const fn = sounds[name]; if (fn) fn(); },
+      // Plays the welcome arpeggio once, even if the general sound toggle is off,
+      // as a one-time friendly greeting (still respects reduced-motion).
+      playWelcome: () => {
+        if (prefersReducedMotion) return;
+        const wasEnabled = enabled; enabled = true; ensureCtx();
+        try { sounds.welcome(); } catch (e) {}
+        // restore the user's real preference after the melody finishes
+        setTimeout(() => { enabled = wasEnabled; }, 1200);
+      },
       setEnabled: (on) => { enabled = on; try { localStorage.setItem('agq-sound', on ? '1' : '0'); } catch (e) {} if (on) ensureCtx(); },
       setVolume: (v) => { volume = Math.min(1, Math.max(0, v)); try { localStorage.setItem('agq-sound-vol', String(Math.round(volume * 100))); } catch (e) {} },
       isEnabled: () => enabled,
@@ -4908,6 +5119,32 @@
     };
   })();
   window.__agqSound = AGQSound;
+
+  // ---- Welcoming chime: plays once on the visitor's first interaction ----
+  // (Browsers block autoplay, so we wait for the first gesture. Once per session.)
+  (function initWelcomeSound() {
+    let played = false;
+    try { if (sessionStorage.getItem('agq-welcomed') === '1') played = true; } catch (e) {}
+    function fire() {
+      if (played) { cleanup(); return; }
+      played = true;
+      try { sessionStorage.setItem('agq-welcomed', '1'); } catch (e) {}
+      try { if (window.__agqSound && window.__agqSound.playWelcome) window.__agqSound.playWelcome(); } catch (e) {}
+      cleanup();
+    }
+    function cleanup() {
+      window.removeEventListener('pointerdown', fire);
+      window.removeEventListener('keydown', fire);
+      window.removeEventListener('scroll', fire);
+      window.removeEventListener('touchstart', fire);
+    }
+    if (!played) {
+      window.addEventListener('pointerdown', fire, { once: true, passive: true });
+      window.addEventListener('keydown', fire, { once: true });
+      window.addEventListener('scroll', fire, { once: true, passive: true });
+      window.addEventListener('touchstart', fire, { once: true, passive: true });
+    }
+  })();
 
   function initSound() {
     const toggle = $('#soundToggle');
@@ -5152,6 +5389,7 @@
   document.addEventListener('DOMContentLoaded', () => {
     initFooterYear();
     initPreloader();
+    initHeroIntro();
     initToast();
     initSound();
     initNarrator();
@@ -5188,6 +5426,7 @@
     initScrollProgress();
     initNowCard();
     initHeroPhotoRelocate();
+    initHeroParallax();
     initCommunity();
     initSectionShare();
     initIdleGreeter();
