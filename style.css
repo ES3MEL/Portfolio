@@ -147,7 +147,7 @@ html{ scrollbar-width:thin; scrollbar-color:var(--grad-2) var(--bg); }
 }
 .preloader.is-done{ opacity:0; visibility:hidden; pointer-events:none; }
 .preloader.is-done .preloader-inner{ transform:translateY(-6px); opacity:0; transition:transform .7s var(--ease), opacity .5s var(--ease); }
-.preloader-inner{ position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; gap:24px; transition:transform .7s var(--ease), opacity .7s var(--ease); }
+.preloader-inner{ position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; gap:16px; transition:transform .7s var(--ease), opacity .7s var(--ease); }
 
 /* minimal: no glow */
 .preloader-inner::before{ display:none; }
@@ -167,18 +167,73 @@ html{ scrollbar-width:thin; scrollbar-color:var(--grad-2) var(--bg); }
 
 /* Meta: a thin progress line + tiny percentage */
 .preloader-meta{ display:flex; flex-direction:column; align-items:center; gap:12px; }
-.preloader-bar{ position:relative; width:140px; height:2px; border-radius:2px; background:var(--border); overflow:hidden; }
+.preloader-bar{ position:relative; width:160px; height:3px; border-radius:3px; background:color-mix(in srgb, var(--text-faint) 20%, transparent); overflow:hidden; }
 .preloader-bar::after{
-  content:""; position:absolute; inset:0; width:var(--pl-progress, 0%); border-radius:2px;
-  background:var(--gradient-main); transition:width .35s var(--ease);
+  content:""; position:absolute; inset:0; width:var(--pl-progress, 0%); border-radius:3px;
+  background:var(--gradient-main); transition:width .3s var(--ease);
+  box-shadow:0 0 12px color-mix(in srgb, var(--grad-2) 55%, transparent);
 }
 .preloader-pct{ font-family:var(--font-mono); font-size:.66rem; letter-spacing:.14em; color:var(--text-faint); font-variant-numeric:tabular-nums; }
+/* Phase 1: intro (shown first) */
+.preloader-intro{ display:flex; flex-direction:column; align-items:center; gap:18px; transition:opacity .35s var(--ease), transform .35s var(--ease); }
+.preloader-intro.is-gone{ opacity:0; transform:translateY(-6px); pointer-events:none; height:0; margin:0; overflow:hidden; gap:0; }
+.preloader-intro[hidden]{ display:none; }
+.preloader-tagline{ font-size:.62rem; letter-spacing:.28em; text-transform:uppercase; color:var(--text-faint); }
+/* Phase 2: loading (revealed after Enter) */
+.preloader-meta[hidden]{ display:none; }
+.preloader-meta.is-live{ animation:plLoadIn .5s var(--ease) both; }
+@keyframes plLoadIn{ from{ opacity:0; transform:translateY(8px); } to{ opacity:1; transform:none; } }
+.preloader-pct{ font-family:var(--font-mono); font-size:.66rem; letter-spacing:.14em; color:var(--text-faint); font-variant-numeric:tabular-nums; }
+/* Enter button: shown first; click unlocks audio, starts loading + music */
+.preloader-enter{
+  display:inline-flex; align-items:center; gap:9px; padding:12px 26px 12px 22px;
+  border-radius:100px; border:1px solid var(--border-strong); background:color-mix(in srgb, var(--bg-panel) 80%, transparent);
+  color:var(--text); font-family:var(--font-mono); font-size:.72rem; letter-spacing:.16em; text-transform:uppercase;
+  cursor:pointer; opacity:0; transform:translateY(8px); pointer-events:none;
+  transition:opacity .5s var(--ease), transform .5s var(--ease), border-color .25s var(--ease), background .25s var(--ease), box-shadow .25s var(--ease), color .25s var(--ease);
+}
+.preloader-enter.is-ready{ opacity:1; transform:translateY(0); pointer-events:auto; }
+.preloader-enter:hover{ border-color:transparent; background:var(--gradient-main); color:var(--on-gradient); box-shadow:0 10px 30px -12px color-mix(in srgb, var(--grad-1) 65%, transparent); }
+.preloader-enter-ic{ display:grid; place-items:center; }
+.preloader-enter.is-ready{ animation:enterPulse 2.4s ease-in-out infinite; }
+@keyframes enterPulse{ 0%,100%{ box-shadow:0 0 0 0 color-mix(in srgb, var(--grad-2) 40%, transparent); } 50%{ box-shadow:0 0 0 8px color-mix(in srgb, var(--grad-2) 0%, transparent); } }
+.preloader-enter:hover{ animation:none; }
+@media (prefers-reduced-motion: reduce){ .preloader-enter{ animation:none; } }
 .preloader-pct i{ font-style:normal; }
 .preloader-word{ display:none; }               /* minimal: drop the label */
 
 @media (prefers-reduced-motion: reduce){
   .preloader-mark{ animation:none; }
 }
+
+/* =========================================================
+   PLAIN STYLE — flat, solid colors (no gradients anywhere)
+   Redefining these two variables flattens every gradient on the
+   site, since all gradient fills reference them.
+========================================================= */
+:root[data-style="plain"]{
+  --gradient-main: var(--grad-2);
+  --gradient-text: var(--grad-2);
+}
+/* Kill decorative gradient glows/auroras/orbs for a clean flat look */
+:root[data-style="plain"] .bg-aurora,
+:root[data-style="plain"] .hero-orb,
+:root[data-style="plain"] .hero-bloom,
+:root[data-style="plain"] .hero-aurora,
+:root[data-style="plain"] .hero-grid-layout::after{ display:none !important; }
+/* Gradient text becomes a solid accent color */
+:root[data-style="plain"] .brand-mark,
+:root[data-style="plain"] .hero-title-name--grad,
+:root[data-style="plain"] .preloader-mark,
+:root[data-style="plain"] .section-num,
+:root[data-style="plain"] .stat-num,
+:root[data-style="plain"] .grad-text,
+:root[data-style="plain"] .accent-text{
+  background:none !important; -webkit-text-fill-color:currentColor !important; color:var(--grad-2) !important;
+}
+/* Accent swatches keep showing their gradient (they're the picker), but the
+   active surfaces (buttons, chips, bars) render as solid accent color. */
+:root[data-style="plain"] .preloader-bar::after{ background:var(--grad-2) !important; }
 
 /* =========================================================
    BACKGROUND — AURORA + GRAIN
@@ -1899,7 +1954,8 @@ html{ scrollbar-width:thin; scrollbar-color:var(--grad-2) var(--bg); }
   .theme-panel-close{ display:grid; }
 }
 @keyframes panelIn{ from{ opacity:0; transform:translateY(-6px) scale(.98);} to{ opacity:1; transform:none;} }
-.theme-panel-title{ font-size:.64rem; letter-spacing:.16em; text-transform:uppercase; color:var(--text-faint); margin:20px 0 10px; font-weight:600; }
+.theme-panel-title{ font-size:.64rem; letter-spacing:.16em; text-transform:uppercase; color:var(--text-faint); margin:22px 0 11px; font-weight:600; display:flex; align-items:center; gap:8px; }
+.theme-panel-title::before{ content:""; width:5px; height:5px; border-radius:50%; background:var(--gradient-main); flex-shrink:0; }
 .theme-panel-title:first-of-type{ margin-top:0; }
 .theme-panel-title + .accent-grid{ margin-bottom:2px; }
 .theme-panel-mode{
@@ -2294,14 +2350,18 @@ html{ scrollbar-width:thin; scrollbar-color:var(--grad-2) var(--bg); }
 @media (prefers-reduced-motion: reduce){ :root[data-anim] *{ animation:none !important; } }
 
 /* Motion option buttons */
-.anim-options{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:2px; }
+.anim-options{ display:flex; flex-wrap:wrap; gap:7px; margin-top:2px; }
 .anim-opt{
-  padding:8px 6px; border-radius:9px; cursor:pointer; font-size:.72rem; font-weight:500; color:var(--text-dim);
-  background:var(--bg-panel-2); border:1px solid var(--border); transition:border-color .18s var(--ease), color .18s var(--ease), background .18s var(--ease);
-  -webkit-tap-highlight-color:transparent;
+  flex:1 1 auto; min-width:fit-content; text-align:center;
+  padding:9px 14px; border-radius:10px; cursor:pointer; font-size:.72rem; font-weight:500; color:var(--text-dim);
+  background:var(--bg-panel-2); border:1px solid var(--border);
+  transition:border-color .18s var(--ease), color .18s var(--ease), background .18s var(--ease), transform .18s var(--ease), box-shadow .18s var(--ease);
+  -webkit-tap-highlight-color:transparent; white-space:nowrap;
 }
-.anim-opt:hover{ border-color:color-mix(in srgb, var(--grad-3) 50%, var(--border)); color:var(--text); }
-.anim-opt.is-active{ border-color:transparent; color:var(--on-gradient); background:var(--gradient-main); box-shadow:0 3px 10px -4px color-mix(in srgb, var(--grad-1) 50%, transparent); }
+.anim-opt:hover{ border-color:color-mix(in srgb, var(--grad-3) 50%, var(--border)); color:var(--text); transform:translateY(-1px); }
+.anim-opt.is-active{ border-color:transparent; color:var(--on-gradient); background:var(--gradient-main); box-shadow:0 4px 12px -4px color-mix(in srgb, var(--grad-1) 55%, transparent); }
+/* Two-option toggles (Style) sit as a clean even pair */
+#styleOptions .anim-opt{ flex:1 1 0; }
 
 /* =========================================================
    SELECTABLE ANIMATED BACKGROUND (opt-in) + CONFETTI
@@ -2664,6 +2724,7 @@ html{ scrollbar-width:thin; scrollbar-color:var(--grad-2) var(--bg); }
 /* =========================================================
    DEFAULT PRESET BUTTON
 ========================================================= */
+.theme-panel-intro{ font-size:.82rem; line-height:1.5; color:var(--text-dim); margin:0 0 14px; padding-right:24px; }
 .theme-default-btn{
   display:flex; align-items:center; gap:9px; width:100%; margin-bottom:16px; padding:11px 14px;
   border-radius:12px; cursor:pointer; font-family:var(--font-mono); font-size:.76rem; color:var(--text);

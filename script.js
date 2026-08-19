@@ -33,58 +33,102 @@
     const pre = $('#preloader');
     const bar = $('#preloaderBar');
     const pctEl = $('#preloaderPct');
+    const enterBtn = $('#preloaderEnter');
+    const intro = $('#preloaderIntro');
+    const loadWrap = $('#preloaderLoad');
     if (!pre) return;
 
-    // Start the soft loading music as soon as possible (plays if audio is unlocked;
-    // otherwise it begins on the visitor's first interaction — see initLoadingMusic).
-    try { if (window.__agqStartLoadingMusic) window.__agqStartLoadingMusic(); } catch (e) {}
+    function done() {
+      if (pre.classList.contains('is-done')) return;
+      pre.classList.add('is-done');
+      document.documentElement.classList.add('is-loaded');
+    }
 
+    // Reduced motion: skip the whole show, no audio.
     if (prefersReducedMotion) {
-      window.addEventListener('load', () => setTimeout(() => finishAll(), 300));
-      setTimeout(() => finishAll(), 1200);
-      function finishAll(){ pre.classList.add('is-done'); document.documentElement.classList.add('is-loaded'); try { if (window.__agqStopLoadingMusic) window.__agqStopLoadingMusic(); } catch(e){} }
+      window.addEventListener('load', () => setTimeout(done, 300));
+      setTimeout(done, 1200);
       return;
     }
 
-    let pct = 0, target = 0, finished = false;
+    let pct = 0, revealing = false;
     function paint() {
       const shown = Math.min(Math.round(pct), 100);
       if (pctEl) pctEl.innerHTML = shown + '<i>%</i>';
       if (bar) bar.style.setProperty('--pl-progress', Math.min(pct, 100).toFixed(1) + '%');
     }
-    const timer = setInterval(() => {
-      target = Math.min(target + Math.random() * 16, finished ? 100 : 90);
-      pct += (target - pct) * 0.2;
-      paint();
-      if (finished && pct >= 99.3) { pct = 100; paint(); done(); clearInterval(timer); }
-    }, 90);
 
-    function done() {
-      pre.classList.add('is-done');
-      // Signal the hero to begin its slow reveal once the loader has cleared
-      document.documentElement.classList.add('is-loaded');
-      // The music keeps playing until the hero has fully revealed, then fades out.
-      // The hero reveal transitions run ~1.9s; stop the music after they settle.
-      setTimeout(() => { try { if (window.__agqStopLoadingMusic) window.__agqStopLoadingMusic(); } catch (e) {} }, 2100);
+    // Phase 1: show the intro + Enter button FIRST (before any loading).
+    function showEnter() {
+      if (revealing || pre.classList.contains('is-done')) return;
+      if (enterBtn && !enterBtn.classList.contains('is-ready')) enterBtn.classList.add('is-ready');
+    }
+    // Reveal the Enter button almost immediately (a short beat for a graceful entrance).
+    setTimeout(showEnter, 250);
+
+    // Phase 2: on Enter → hide intro, reveal the loading bar, start the music,
+    //  drive the bar 0→100 over the music's duration, then reveal the hero.
+    function enter() {
+      if (revealing) return;
+      revealing = true;
+      // Swap intro → loading UI
+      if (intro) { intro.classList.add('is-gone'); setTimeout(() => { intro.hidden = true; }, 360); }
+      if (loadWrap) { loadWrap.hidden = false; loadWrap.classList.add('is-live'); }
+      pct = 0; paint();
+
+      // Unlock audio + start the reveal music, get its duration.
+      let dur = (window.__agqRevealDuration || 4.0);
+      try {
+        const S = window.__agqSound;
+        if (S && S.ensureCtx) {
+          const c = S.ensureCtx();
+          const go = () => { try { dur = window.__agqStartLoadingMusic() || dur; } catch (e) {} drive(dur); };
+          if (c && c.state === 'suspended' && c.resume) c.resume().then(go).catch(go);
+          else go();
+        } else { drive(dur); }
+      } catch (e) { drive(dur); }
     }
 
-    window.addEventListener('load', () => {
-      finished = true; target = 100;
-      setTimeout(() => { if (!pre.classList.contains('is-done')) { pct = 100; paint(); done(); clearInterval(timer); } }, 700);
+    function drive(durationSec) {
+      const dur = Math.max(0.6, durationSec) * 1000;
+      const from = pct, t0 = performance.now();
+      (function step(t) {
+        const k = Math.min((t - t0) / dur, 1);
+        const eased = 1 - Math.pow(1 - k, 2.2);   // ease-out into 100 as the music resolves
+        pct = from + (100 - from) * eased;
+        paint();
+        if (k < 1) requestAnimationFrame(step);
+        else { pct = 100; paint(); done(); }   // hero reveals exactly as the music ends
+      })(performance.now());
+    }
+
+    enterBtn?.addEventListener('click', enter);
+    // Also allow Enter key / space to trigger it once the button is ready.
+    window.addEventListener('keydown', (e) => {
+      if ((e.key === 'Enter' || e.key === ' ') && enterBtn && enterBtn.classList.contains('is-ready')) { e.preventDefault(); enter(); }
     });
-    setTimeout(() => { finished = true; }, 3500);
   }
 
   /* ---------- Hero reveal safety trigger ---------- */
   function initHeroIntro() {
-    // The hero reveals when documentElement gets `is-loaded` (set by the preloader).
-    // As a safety net, ensure it's set shortly after load even if the preloader
-    // path was skipped, so the hero never stays hidden.
-    const mark = () => document.documentElement.classList.add('is-loaded');
-    if (document.readyState === 'complete') setTimeout(mark, 400);
-    else window.addEventListener('load', () => setTimeout(mark, 400), { once: true });
-    // hard fallback
-    setTimeout(mark, 2500);
+    // The hero reveals when documentElement gets `is-loaded`. Normally the
+    // preloader's Enter gate sets this (so the reveal plays as the loader clears).
+    // This is ONLY a fallback for when there is no preloader at all — it must NOT
+    // fire while the Enter-gated preloader is still on screen, or the hero would
+    // reveal invisibly behind it and the transition would be lost.
+    const pre = document.getElementById('preloader');
+    const mark = () => {
+      // If a preloader exists and hasn't finished, let it own the reveal.
+      if (pre && !pre.classList.contains('is-done')) return;
+      document.documentElement.classList.add('is-loaded');
+    };
+    if (!pre) {
+      // No preloader → reveal shortly after load.
+      if (document.readyState === 'complete') setTimeout(mark, 400);
+      else window.addEventListener('load', () => setTimeout(mark, 400), { once: true });
+    }
+    // Hard safety: only reveals if the preloader is already done (guarded in mark()).
+    setTimeout(mark, 12000);
   }
 
   /* ---------- Theme toggle (light/dark, saved + system-aware) ---------- */
@@ -2699,6 +2743,26 @@
     });
 
     // font family selector
+    // color-style selector (Gradient vs Plain solid colors)
+    const styleBox = $('#styleOptions');
+    function setStyle(name) {
+      if (name === 'plain') root.setAttribute('data-style', 'plain');
+      else root.removeAttribute('data-style');
+      try { localStorage.setItem('agq-style', name || 'gradient'); } catch (e) {}
+      if (styleBox) $$('.anim-opt', styleBox).forEach(b => {
+        const on = b.dataset.style === (name || 'gradient');
+        b.classList.toggle('is-active', on);
+        b.setAttribute('aria-pressed', String(on));
+      });
+    }
+    let styleName = 'gradient';
+    try { styleName = localStorage.getItem('agq-style') || 'gradient'; } catch (e) {}
+    setStyle(styleName);
+    styleBox?.addEventListener('click', (e) => {
+      const btn = e.target.closest('.anim-opt');
+      if (btn) { setStyle(btn.dataset.style); if (window.__agqSound) window.__agqSound.play('click'); }
+    });
+
     const fontBox = $('#fontOptions');
     function setFont(name) {
       if (name && name !== 'default') root.setAttribute('data-font', name);
@@ -5251,40 +5315,98 @@
       }
     };
 
-    // ---- Ambient loading music: a gentle looping pad that plays while loading ----
+    // ---- Reveal sound: an elegant rising swell that builds and blooms, timed to
+    //  match the loading sequence. Returns its total duration (seconds) so the
+    //  loader can finish exactly when the sound resolves. ----
     let loadNodes = null;
+    const REVEAL_DURATION = 4.0;   // seconds — the loader is synced to this
     function startLoadingMusic() {
-      if (prefersReducedMotion) return;
-      const ac = ensureCtx(); if (!ac || ac.state !== 'running') return;  // needs unlocked audio
-      if (loadNodes) return;  // already playing
+      if (prefersReducedMotion) return REVEAL_DURATION;
+      const ac = ensureCtx(); if (!ac) return REVEAL_DURATION;
+      if (loadNodes) return REVEAL_DURATION;
+      if (ac.state !== 'running') {
+        try { ac.resume(); } catch (e) {}
+        setTimeout(() => { if (!loadNodes && ac.state === 'running') startLoadingMusic(); }, 200);
+        return REVEAL_DURATION;
+      }
+      const now = ac.currentTime;
+      const D = REVEAL_DURATION;
+
+      // master
       const master = ac.createGain();
-      master.gain.setValueAtTime(0.0001, ac.currentTime);
-      master.gain.exponentialRampToValueAtTime(0.06, ac.currentTime + 1.2);  // gentle fade-in
+      master.gain.setValueAtTime(0.12, now);      // present immediately
       master.connect(ac.destination);
-      // a soft chord pad (C major-ish) with slow shimmer
-      const freqs = [261.63, 329.63, 392.0, 523.25];
-      const oscs = freqs.map((f, i) => {
+
+      // filter sweep — opens up as the reveal rises (the "unveiling" motion)
+      const filt = ac.createBiquadFilter();
+      filt.type = 'lowpass'; filt.Q.value = 0.9;
+      filt.frequency.setValueAtTime(700, now);                          // audible from the start
+      filt.frequency.exponentialRampToValueAtTime(7000, now + D * 0.82);  // sweep open
+      filt.connect(master);
+
+      const voices = [];
+
+      // 1) Swelling chord pad (C major) that rises then softly settles — audible
+      //    from the start, then builds for the reveal.
+      const pad = [261.63, 329.63, 392.0, 523.25];  // C4 E4 G4 C5
+      const padBus = ac.createGain();
+      padBus.gain.setValueAtTime(0.10, now);                            // present from the start
+      padBus.gain.exponentialRampToValueAtTime(0.30, now + D * 0.72);   // build
+      padBus.gain.exponentialRampToValueAtTime(0.16, now + D);          // settle
+      padBus.connect(filt);
+      pad.forEach((f) => {
         const o = ac.createOscillator(), g = ac.createGain();
-        o.type = i % 2 ? 'sine' : 'triangle'; o.frequency.value = f;
-        g.gain.value = 0.25 / freqs.length;
-        // slow tremolo for an airy, breathing texture
-        const lfo = ac.createOscillator(), lg = ac.createGain();
-        lfo.frequency.value = 0.15 + i * 0.05; lg.gain.value = 0.12 / freqs.length;
-        lfo.connect(lg); lg.connect(g.gain); lfo.start();
-        o.connect(g); g.connect(master); o.start();
-        return { o, lfo };
+        o.type = 'sawtooth'; o.frequency.value = f; g.gain.value = 1 / pad.length;
+        const o2 = ac.createOscillator();
+        o2.type = 'sine'; o2.frequency.value = f * 1.004;  // gentle detune warmth
+        o.connect(g); o2.connect(g); g.connect(padBus);
+        o.start(now); o2.start(now); o.stop(now + D + 1.2); o2.stop(now + D + 1.2);
+        voices.push(o, o2);
       });
-      loadNodes = { master, oscs };
+
+      // 2) A single rising glide underneath — adds the "lift" of a reveal
+      const glide = ac.createOscillator(), gg = ac.createGain();
+      glide.type = 'triangle';
+      glide.frequency.setValueAtTime(130.81, now);                     // C3
+      glide.frequency.exponentialRampToValueAtTime(523.25, now + D * 0.82);  // up to C5
+      gg.gain.setValueAtTime(0.0001, now);
+      gg.gain.exponentialRampToValueAtTime(0.12, now + D * 0.55);
+      gg.gain.exponentialRampToValueAtTime(0.0001, now + D);
+      glide.connect(gg); gg.connect(filt); glide.start(now); glide.stop(now + D + 0.4);
+      voices.push(glide);
+
+      // 3) Resolving bloom — a bright chord that blooms right at the end (the reveal)
+      const bloomAt = now + D * 0.88;
+      [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {   // C E G C — major bloom
+        const o = ac.createOscillator(), g = ac.createGain();
+        o.type = 'sine'; o.frequency.value = f;
+        g.gain.setValueAtTime(0.0001, bloomAt);
+        g.gain.exponentialRampToValueAtTime(0.12, bloomAt + 0.05);
+        g.gain.exponentialRampToValueAtTime(0.0001, bloomAt + 1.4);   // shimmering tail
+        o.connect(g); g.connect(master); o.start(bloomAt); o.stop(bloomAt + 1.6);
+        voices.push(o);
+      });
+
+      // overall envelope: rise in, hold, gentle fade after the bloom
+      master.gain.exponentialRampToValueAtTime(0.30, now + D * 0.6);
+      master.gain.setValueAtTime(0.30, now + D);
+      master.gain.exponentialRampToValueAtTime(0.0001, now + D + 1.3);
+
+      loadNodes = { master, voices };
+      // auto-clear reference once it's finished
+      setTimeout(() => { if (loadNodes && loadNodes.master === master) loadNodes = null; }, (D + 1.6) * 1000);
+      return D;
     }
     function stopLoadingMusic() {
+      // The reveal sound is self-timed; stopping early just fades it quickly.
       if (!loadNodes) return;
       const ac = ctx; const nodes = loadNodes; loadNodes = null;
       if (!ac) return;
       try {
         nodes.master.gain.cancelScheduledValues(ac.currentTime);
         nodes.master.gain.setValueAtTime(nodes.master.gain.value, ac.currentTime);
-        nodes.master.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 1.0);  // fade out
-        setTimeout(() => { try { nodes.oscs.forEach(n => { n.o.stop(); n.lfo.stop(); }); } catch (e) {} }, 1100);
+        nodes.master.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 0.6);
+        setTimeout(() => { try { nodes.voices.forEach(v => { try { v.stop(); } catch (e) {} }); } catch (e) {} }, 700);
       } catch (e) {}
     }
 
@@ -5306,35 +5428,20 @@
     };
   })();
   window.__agqSound = AGQSound;
-  window.__agqStartLoadingMusic = () => { try { AGQSound.startLoadingMusic(); } catch (e) {} };
+  window.__agqStartLoadingMusic = () => { try { return AGQSound.startLoadingMusic(); } catch (e) { return 0; } };
   window.__agqStopLoadingMusic = () => { try { AGQSound.stopLoadingMusic(); } catch (e) {} };
+  window.__agqRevealDuration = 4.0;   // seconds — loader syncs the hero reveal to this
 
-  // ---- Loading music: unlocks audio on the first gesture, then plays the ambient
-  //  pad until the hero has fully revealed. If the visitor interacts during the
-  //  loading sequence, the music starts immediately; browsers block audio before
-  //  any gesture, so this is the compliant way to have "music while loading". ----
-  (function initLoadingMusic() {
-    function fire() {
-      try {
-        if (window.__agqSound && window.__agqSound.ensureCtx) window.__agqSound.ensureCtx();
-        // Only start the ambient loading pad if the hero hasn't fully loaded yet.
-        if (!document.documentElement.classList.contains('is-loaded')) {
-          if (window.__agqStartLoadingMusic) window.__agqStartLoadingMusic();
-        }
-      } catch (e) {}
-      cleanup();
-    }
-    function cleanup() {
-      window.removeEventListener('pointerdown', fire);
-      window.removeEventListener('keydown', fire);
-      window.removeEventListener('scroll', fire);
-      window.removeEventListener('touchstart', fire);
-    }
-    window.addEventListener('pointerdown', fire, { once: true, passive: true });
-    window.addEventListener('keydown', fire, { once: true });
-    window.addEventListener('scroll', fire, { once: true, passive: true });
-    window.addEventListener('touchstart', fire, { once: true, passive: true });
-  })();
+  // ---- Loading / welcome music -------------------------------------------------
+  //  Browsers block ALL audio until the visitor interacts with the page, so we can
+  //  only start sound on the first gesture. On that first gesture we resume the
+  //  audio context, then play a short ambient pad (a musical "welcome"). If the
+  //  hero hasn't finished revealing yet, the pad plays through the load and fades
+  //  out when the hero is ready; if loading already finished, it plays a brief
+  //  ~3.5s ambient welcome so there's always music on arrival. Once per session.
+  // (The reveal music + synced loader are handled by the Enter button in the
+  //  preloader — see initPreloader. That's the only way to reliably play audio
+  //  during loading, since browsers block sound until a user gesture.)
 
   function initSound() {
     const toggle = $('#soundToggle');

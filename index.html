@@ -110,7 +110,18 @@
     <div class="preloader-ring">
       <div class="preloader-mark mono">AGQ</div>
     </div>
-    <div class="preloader-meta">
+    <!-- Phase 1: intro — shown first, waits for Enter -->
+    <div class="preloader-intro" id="preloaderIntro">
+      <span class="preloader-tagline mono">Allyssa Geanne Quinit · Portfolio</span>
+      <button class="preloader-enter" id="preloaderEnter" type="button">
+        <span class="preloader-enter-ic" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>
+        </span>
+        <span>Enter</span>
+      </button>
+    </div>
+    <!-- Phase 2: loading — revealed after Enter -->
+    <div class="preloader-meta" id="preloaderLoad" hidden>
       <span class="preloader-bar" id="preloaderBar"></span>
       <span class="preloader-pct mono" id="preloaderPct">0<i>%</i></span>
     </div>
@@ -194,6 +205,7 @@
             <button class="theme-panel-close" id="themePanelClose" aria-label="Close design options">
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
             </button>
+            <p class="theme-panel-intro">Customize this portfolio as if it's yours.</p>
             <button class="theme-default-btn" id="themeDefaultBtn" title="Reset to a clean, minimal, professional look">
               <svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true"><path d="M4 12a8 8 0 108-8M4 12V7m0 5h5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
               <span>Default · clean &amp; minimal</span>
@@ -360,10 +372,15 @@
               <button class="accent-swatch" data-accent="flatslate" aria-pressed="false" title="Flat Slate — solid"><span style="background:#64748B"></span><em>Flat Slate</em></button>
               <button class="accent-swatch" data-accent="flatink" aria-pressed="false" title="Flat Ink — solid dark"><span style="background:#334155"></span><em>Flat Ink</em></button>
             </div>
+            <p class="theme-panel-title mono">Style</p>
+            <div class="anim-options" id="styleOptions" role="group" aria-label="Color style">
+              <button class="anim-opt is-active" data-style="gradient" aria-pressed="true">Gradient</button>
+              <button class="anim-opt" data-style="plain" aria-pressed="false">Plain</button>
+            </div>
             <p class="theme-panel-title mono">Gradient motion</p>
             <div class="anim-options" id="animOptions" role="group" aria-label="Gradient animation style">
               <button class="anim-opt is-active" data-anim="off" aria-pressed="true">Default</button>
-              <button class="anim-opt" data-anim="plain" aria-pressed="false">Plain</button>
+              <button class="anim-opt" data-anim="plain" aria-pressed="false">Static</button>
               <button class="anim-opt" data-anim="flow" aria-pressed="false">Flow</button>
               <button class="anim-opt" data-anim="drift" aria-pressed="false">Drift</button>
               <button class="anim-opt" data-anim="shimmer" aria-pressed="false">Shimmer</button>
