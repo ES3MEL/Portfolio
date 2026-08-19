@@ -3022,6 +3022,44 @@
     const msgInput = $('#communityMessage');
     const statusEl = $('#communityStatus');
     const setupEl = $('#communitySetup');
+    // Download a data: URL as a real file. Used by both image and document
+    // attachments. Data URLs can't be navigated to directly (Chrome blocks
+    // top-level data: navigation), so decode to a Blob and download that.
+    function downloadDataUrl(dataUrl, filename) {
+      try {
+        const comma = dataUrl.indexOf(',');
+        const meta = dataUrl.slice(0, comma);
+        const b64 = dataUrl.slice(comma + 1);
+        const mime = (meta.match(/:(.*?);/) || [])[1] || 'application/octet-stream';
+        const bin = atob(b64);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        const url = URL.createObjectURL(new Blob([bytes], { type: mime }));
+        const a = document.createElement('a');
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+        if (window.__agqToast) window.__agqToast('\u2b07\ufe0f Downloading ' + filename);
+        if (window.__agqSound) window.__agqSound.play('pop');
+        return true;
+      } catch (e) {
+        console.error('[community] download failed:', e);
+        if (window.__agqToast) window.__agqToast('Could not download that file.');
+        return false;
+      }
+    }
+    // Build a sensible filename for a shared image, e.g. image-20260820-1435.webp
+    function imageFilename(dataUrl, stamp) {
+      const m = /^data:image\/([a-z0-9+.-]+)/i.exec(dataUrl || '');
+      let ext = (m && m[1] ? m[1] : 'png').toLowerCase();
+      if (ext === 'jpeg') ext = 'jpg';
+      const d = stamp ? new Date(stamp) : new Date();
+      const pad = (n) => String(n).padStart(2, '0');
+      const name = 'image-' + d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) +
+                   '-' + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds());
+      return name + '.' + ext;
+    }
+
     const visitorList = $('#communityVisitorList');
     const visitorCount = $('#communityVisitorCount');
 
@@ -3534,25 +3572,7 @@
         // card did nothing. Convert the data URL to a Blob and download that.
         card.addEventListener('click', function (ev) {
           ev.preventDefault();
-          try {
-            const comma = fdata.indexOf(',');
-            const meta = fdata.slice(0, comma);
-            const b64 = fdata.slice(comma + 1);
-            const mime = (meta.match(/:(.*?);/) || [])[1] || 'application/octet-stream';
-            const bin = atob(b64);
-            const bytes = new Uint8Array(bin.length);
-            for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-            const url = URL.createObjectURL(new Blob([bytes], { type: mime }));
-            const a = document.createElement('a');
-            a.href = url; a.download = fname;
-            document.body.appendChild(a); a.click(); a.remove();
-            setTimeout(() => URL.revokeObjectURL(url), 5000);
-            if (window.__agqToast) window.__agqToast('\u2b07\ufe0f Downloading ' + fname);
-            if (window.__agqSound) window.__agqSound.play('pop');
-          } catch (e) {
-            console.error('[community] download failed:', e);
-            if (window.__agqToast) window.__agqToast('Could not download that file.');
-          }
+          downloadDataUrl(fdata, fname);
         });
         card.innerHTML = `<span class="cmf-icon">${ftype === 'pdf' ? '📕' : '📘'}</span>` +
           `<span class="cmf-meta"><span class="cmf-name"></span><span class="cmf-type mono">${ftype === 'pdf' ? 'PDF document' : 'Word document'} · tap to download</span></span>` +
@@ -3593,7 +3613,22 @@
         const pic = document.createElement('img');
         pic.src = im[1]; pic.alt = 'Shared image'; pic.loading = 'lazy'; pic.decoding = 'async';
         pic.addEventListener('click', () => window.open(pic.src, '_blank', 'noopener'));
+        // Corner download button, layered on the image itself
+        const iName = imageFilename(im[1], row.created_at);
+        const iDlBtn = document.createElement('button');
+        iDlBtn.type = 'button';
+        iDlBtn.className = 'community-img-dl';
+        iDlBtn.title = 'Download image';
+        iDlBtn.setAttribute('aria-label', 'Download this image');
+        iDlBtn.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none">'
+          + '<path d="M12 4v11m0 0l-4-4m4 4l4-4M5 20h14" stroke="currentColor" stroke-width="1.9" '
+          + 'stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        iDlBtn.addEventListener('click', (ev) => {
+          ev.preventDefault(); ev.stopPropagation();
+          downloadDataUrl(im[1], iName);
+        });
         fig.appendChild(pic);
+        fig.appendChild(iDlBtn);
         bubble.append(fig);
         const iActions = document.createElement('div');
         iActions.className = 'community-msg-actions';
@@ -3601,6 +3636,11 @@
         iReply.type = 'button'; iReply.className = 'community-msg-reply'; iReply.textContent = 'Reply';
         iReply.addEventListener('click', () => startReply(who, '📷 image'));
         iActions.append(iReply);
+        const iDl = document.createElement('button');
+        iDl.type = 'button'; iDl.className = 'community-msg-dl'; iDl.textContent = 'Download';
+        iDl.setAttribute('aria-label', 'Download this image');
+        iDl.addEventListener('click', () => downloadDataUrl(im[1], iName));
+        iActions.append(iDl);
         const iCanDelete = mine || (row.id != null && isMineId(row.id));
         const iOwner = isOwner();
         if ((iCanDelete || iOwner) && row.id != null) {

@@ -3639,14 +3639,15 @@ img, svg, video, canvas, iframe, table, pre{ max-width:100%; }
 /* Action buttons (Reply / Delete) under each message */
 .community-msg-actions{ display:flex; gap:12px; margin-top:5px; }
 .community-msg.is-mine .community-msg-actions{ justify-content:flex-end; }
-.community-msg-reply, .community-msg-del, .community-msg-copy{
+.community-msg-reply, .community-msg-del, .community-msg-copy, .community-msg-dl{
   font-size:.66rem; color:var(--text-faint); background:none; border:none; cursor:pointer; padding:2px 0;
   text-decoration:underline; opacity:0; transition:opacity .2s, color .2s;
 }
-.community-msg:hover .community-msg-reply, .community-msg:hover .community-msg-del, .community-msg:hover .community-msg-copy,
-.community-msg.is-mine .community-msg-reply, .community-msg.is-mine .community-msg-del, .community-msg.is-mine .community-msg-copy{ opacity:.7; }
+.community-msg:hover .community-msg-reply, .community-msg:hover .community-msg-del, .community-msg:hover .community-msg-copy, .community-msg:hover .community-msg-dl,
+.community-msg.is-mine .community-msg-reply, .community-msg.is-mine .community-msg-del, .community-msg.is-mine .community-msg-copy, .community-msg.is-mine .community-msg-dl{ opacity:.7; }
 .community-msg-reply:hover{ color:var(--grad-3); opacity:1; }
 .community-msg-copy:hover{ color:var(--grad-3); opacity:1; }
+.community-msg-dl:hover{ color:var(--grad-3); opacity:1; }
 .community-msg-del:hover{ color:#ff5f57; opacity:1; }
 
 /* Touch devices: always show the actions (no hover) */
@@ -4597,7 +4598,7 @@ img, svg, video, canvas, iframe, table, pre{ max-width:100%; }
 .community-img-status{ font-size:.76rem; color:var(--text-dim); }
 
 /* rendered image bubble */
-.community-msg-image{ margin:2px 0 6px; }
+.community-msg-image{ margin:2px 0 6px; position:relative; display:inline-block; }
 .community-msg-image img{
   max-width:min(300px, 100%); max-height:320px; border-radius:12px; border:1px solid var(--border);
   cursor:zoom-in; display:block; transition:transform .2s var(--ease);
@@ -4676,4 +4677,26 @@ img, svg, video, canvas, iframe, table, pre{ max-width:100%; }
 }
 @media (max-width:640px){
   .community-upload-hint{ font-size:.6rem; }
+}
+
+/* ---------- Download button layered on shared images ---------- */
+.community-img-dl{
+  position:absolute; top:8px; right:8px;
+  display:grid; place-items:center;
+  width:30px; height:30px; padding:0;
+  border-radius:9px;
+  border:1px solid rgba(255,255,255,.22);
+  background:rgba(8,10,18,.62);
+  -webkit-backdrop-filter:blur(7px); backdrop-filter:blur(7px);
+  color:#fff; cursor:pointer;
+  opacity:0; transform:translateY(-3px);
+  transition:opacity .18s var(--ease), transform .18s var(--ease), background .18s;
+}
+.community-msg-image:hover .community-img-dl,
+.community-img-dl:focus-visible{ opacity:1; transform:translateY(0); }
+.community-img-dl:hover{ background:rgba(8,10,18,.85); }
+.community-img-dl:focus-visible{ outline:2px solid var(--grad-3); outline-offset:2px; }
+/* Touch devices have no hover, so keep it visible */
+@media (hover:none){
+  .community-img-dl{ opacity:.92; transform:none; }
 }
