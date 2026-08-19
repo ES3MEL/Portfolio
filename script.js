@@ -3025,28 +3025,105 @@
     // Download a data: URL as a real file. Used by both image and document
     // attachments. Data URLs can't be navigated to directly (Chrome blocks
     // top-level data: navigation), so decode to a Blob and download that.
-    function downloadDataUrl(dataUrl, filename) {
-      try {
-        const comma = dataUrl.indexOf(',');
-        const meta = dataUrl.slice(0, comma);
-        const b64 = dataUrl.slice(comma + 1);
-        const mime = (meta.match(/:(.*?);/) || [])[1] || 'application/octet-stream';
-        const bin = atob(b64);
-        const bytes = new Uint8Array(bin.length);
-        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-        const url = URL.createObjectURL(new Blob([bytes], { type: mime }));
-        const a = document.createElement('a');
-        a.href = url; a.download = filename;
-        document.body.appendChild(a); a.click(); a.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 5000);
-        if (window.__agqToast) window.__agqToast('\u2b07\ufe0f Downloading ' + filename);
-        if (window.__agqSound) window.__agqSound.play('pop');
-        return true;
-      } catch (e) {
-        console.error('[community] download failed:', e);
-        if (window.__agqToast) window.__agqToast('Could not download that file.');
-        return false;
+    // Platform probes for download quirks.
+    const IS_IOS = /iP(hone|ad|od)/.test(navigator.platform || '') ||
+      (/Mac/.test(navigator.platform || '') && navigator.maxTouchPoints > 1) ||
+      /iPhone|iPad|iPod/.test(navigator.userAgent || '');
+    const SUPPORTS_DOWNLOAD_ATTR = (function () {
+      try { return 'download' in document.createElement('a'); } catch (e) { return false; }
+    })();
+
+    // Decode a data: URL into a Blob. Returns null if it can't be parsed.
+    function dataUrlToBlob(dataUrl) {
+      const comma = String(dataUrl || '').indexOf(',');
+      if (comma < 0) return null;
+      const meta = dataUrl.slice(0, comma);
+      let payload = dataUrl.slice(comma + 1);
+      const mime = (meta.match(/:(.*?)[;,]/) || [])[1] || 'application/octet-stream';
+      if (!/;base64/i.test(meta)) {
+        try { return new Blob([decodeURIComponent(payload)], { type: mime }); }
+        catch (e) { return null; }
       }
+      // Repair whitespace / URL-safe base64 / missing padding before decoding.
+      payload = payload.replace(/\s/g, '').replace(/-/g, '+').replace(/_/g, '/');
+      while (payload.length % 4) payload += '=';
+      let bin;
+      try { bin = atob(payload); } catch (e) { return null; }
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      return new Blob([bytes], { type: mime });
+    }
+
+    // Download a data: URL as a real file, with fallbacks for every platform
+    // that mishandles blob downloads (notably iOS Safari, which ignores the
+    // download attribute entirely).
+    function downloadDataUrl(dataUrl, filename) {
+      const name = filename || 'download';
+      const blob = dataUrlToBlob(dataUrl);
+
+      // 1. Edge/IE legacy path.
+      if (blob && navigator.msSaveOrOpenBlob) {
+        try {
+          navigator.msSaveOrOpenBlob(blob, name);
+          if (window.__agqToast) window.__agqToast('\u2b07\ufe0f Downloading ' + name);
+          return true;
+        } catch (e) {}
+      }
+
+      // 2. iOS Safari: the download attribute is ignored, so open the file and
+      //    let the visitor save it from the share sheet.
+      if (IS_IOS || !SUPPORTS_DOWNLOAD_ATTR) {
+        try {
+          const u = blob ? URL.createObjectURL(blob) : dataUrl;
+          const w = window.open(u, '_blank');
+          if (!w) { location.href = u; }
+          if (blob) setTimeout(() => URL.revokeObjectURL(u), 30000);
+          if (window.__agqToast) window.__agqToast('Opened \u2014 tap Share \u2192 Save to keep it');
+          return true;
+        } catch (e) {}
+      }
+
+      // 3. Standard blob download.
+      if (blob) {
+        try {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url; a.download = name;
+          a.style.display = 'none'; a.rel = 'noopener';
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => { try { a.remove(); } catch (e) {} }, 0);
+          setTimeout(() => URL.revokeObjectURL(url), 10000);
+          if (window.__agqToast) window.__agqToast('\u2b07\ufe0f Downloading ' + name);
+          if (window.__agqSound) window.__agqSound.play('pop');
+          return true;
+        } catch (e) {
+          console.warn('[community] blob download failed, falling back:', e);
+        }
+      }
+
+      // 4. Direct data: URL on the anchor.
+      try {
+        const a = document.createElement('a');
+        a.href = dataUrl; a.download = name;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => { try { a.remove(); } catch (e) {} }, 0);
+        if (window.__agqToast) window.__agqToast('\u2b07\ufe0f Downloading ' + name);
+        return true;
+      } catch (e) {}
+
+      // 5. Last resort: open it.
+      try {
+        window.open(dataUrl, '_blank', 'noopener');
+        if (window.__agqToast) window.__agqToast('Opened in a new tab \u2014 save it from there');
+        return true;
+      } catch (e) {}
+
+      console.error('[community] every download strategy failed');
+      if (window.__agqToast) window.__agqToast('Could not download that file.');
+      return false;
     }
     // Build a sensible filename for a shared image, e.g. image-20260820-1435.webp
     function imageFilename(dataUrl, stamp) {
@@ -4319,10 +4396,20 @@
           }
           // compress for storage (max 900px, JPEG-ish quality)
           const big = await loadToCanvas(raw, 900);
-          let out;
-          try { out = big.canvas.toDataURL('image/webp', 0.82); }
-          catch (e) { out = big.canvas.toDataURL('image/jpeg', 0.82); }
-          if (!/^data:image\/(webp|jpeg|png|gif)/.test(out)) out = big.canvas.toDataURL('image/jpeg', 0.8);
+          // Safari <16 and older Android WebViews silently return a PNG when
+          // asked for WebP, so verify what actually came back before trusting it.
+          let out = '';
+          try {
+            const webp = big.canvas.toDataURL('image/webp', 0.82);
+            if (/^data:image\/webp/i.test(webp)) out = webp;
+          } catch (e) {}
+          if (!out) {
+            try { out = big.canvas.toDataURL('image/jpeg', 0.82); } catch (e) {}
+          }
+          if (!/^data:image\/(webp|jpeg|png|gif)/i.test(out)) {
+            try { out = big.canvas.toDataURL('image/png'); } catch (e) {}
+          }
+          if (!/^data:image\//i.test(out)) throw new Error('canvas export unsupported');
           pendingImage = out;
           if (thumb) thumb.src = out;
           if (statusI) statusI.textContent = 'Ready to send ✓';

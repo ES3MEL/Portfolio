@@ -3637,11 +3637,30 @@ img, svg, video, canvas, iframe, table, pre{ max-width:100%; }
    COMMUNITY — replies + message actions
 ========================================================= */
 /* Action buttons (Reply / Delete) under each message */
-.community-msg-actions{ display:flex; gap:12px; margin-top:5px; }
+.community-msg-actions{
+  display:flex; align-items:center; flex-wrap:wrap;
+  gap:12px; margin-top:5px; line-height:1;
+}
 .community-msg.is-mine .community-msg-actions{ justify-content:flex-end; }
+/* Buttons don't inherit font-family, so without this the action labels render
+   in the browser's default UI font and sit on a different baseline than the
+   rest of the message. */
 .community-msg-reply, .community-msg-del, .community-msg-copy, .community-msg-dl{
-  font-size:.66rem; color:var(--text-faint); background:none; border:none; cursor:pointer; padding:2px 0;
-  text-decoration:underline; opacity:0; transition:opacity .2s, color .2s;
+  font-family:inherit;
+  font-size:.66rem;
+  font-weight:inherit;
+  line-height:1.2;
+  color:var(--text-faint);
+  background:none; border:none; cursor:pointer;
+  padding:2px 0; margin:0;
+  display:inline-flex; align-items:center;
+  vertical-align:middle;
+  white-space:nowrap;
+  text-decoration:underline;
+  text-underline-offset:2px;
+  -webkit-appearance:none; appearance:none;
+  -webkit-tap-highlight-color:transparent;
+  opacity:0; transition:opacity .2s, color .2s;
 }
 .community-msg:hover .community-msg-reply, .community-msg:hover .community-msg-del, .community-msg:hover .community-msg-copy, .community-msg:hover .community-msg-dl,
 .community-msg.is-mine .community-msg-reply, .community-msg.is-mine .community-msg-del, .community-msg.is-mine .community-msg-copy, .community-msg.is-mine .community-msg-dl{ opacity:.7; }
@@ -4680,23 +4699,71 @@ img, svg, video, canvas, iframe, table, pre{ max-width:100%; }
 }
 
 /* ---------- Download button layered on shared images ---------- */
+/* Always visible: hover-only controls are unreachable on touch devices and
+   easy to miss on desktop. */
+.community-msg-image{ position:relative; display:inline-block; max-width:100%; }
 .community-img-dl{
   position:absolute; top:8px; right:8px;
-  display:grid; place-items:center;
-  width:30px; height:30px; padding:0;
-  border-radius:9px;
-  border:1px solid rgba(255,255,255,.22);
-  background:rgba(8,10,18,.62);
+  display:-webkit-box; display:-ms-flexbox; display:flex;
+  -webkit-box-align:center; -ms-flex-align:center; align-items:center;
+  -webkit-box-pack:center; -ms-flex-pack:center; justify-content:center;
+  width:34px; height:34px; padding:0; margin:0;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,.28);
+  background:rgba(8,10,18,.66);
   -webkit-backdrop-filter:blur(7px); backdrop-filter:blur(7px);
   color:#fff; cursor:pointer;
-  opacity:0; transform:translateY(-3px);
-  transition:opacity .18s var(--ease), transform .18s var(--ease), background .18s;
+  opacity:.94;
+  -webkit-appearance:none; appearance:none;
+  -webkit-tap-highlight-color:transparent;
+  transition:background .18s ease, opacity .18s ease, transform .18s ease;
+  z-index:2;
 }
-.community-msg-image:hover .community-img-dl,
-.community-img-dl:focus-visible{ opacity:1; transform:translateY(0); }
-.community-img-dl:hover{ background:rgba(8,10,18,.85); }
+.community-img-dl:hover{ background:rgba(8,10,18,.9); opacity:1; }
+.community-img-dl:active{ transform:scale(.94); }
 .community-img-dl:focus-visible{ outline:2px solid var(--grad-3); outline-offset:2px; }
-/* Touch devices have no hover, so keep it visible */
-@media (hover:none){
-  .community-img-dl{ opacity:.92; transform:none; }
+.community-img-dl svg{ display:block; pointer-events:none; }
+
+/* Comfortable touch target on phones without making the chip huge */
+@media (max-width:640px){
+  .community-img-dl{ width:38px; height:38px; top:6px; right:6px; border-radius:11px; }
+}
+
+/* Text action buttons: keep them reachable on touch, where :hover never fires */
+@media (hover:none), (pointer:coarse){
+  .community-msg-reply, .community-msg-del,
+  .community-msg-copy, .community-msg-dl{ opacity:.75 !important; }
+  .community-msg-actions{ gap:14px; }
+  .community-msg-reply, .community-msg-del,
+  .community-msg-copy, .community-msg-dl{
+    padding:6px 0; min-height:32px; font-size:.72rem;
+  }
+}
+
+/* Shared images should never overflow a narrow screen */
+.community-msg-image img{ max-width:100%; height:auto; }
+@media (max-width:520px){
+  .community-msg-image img{ max-width:100%; max-height:260px; }
+}
+
+/* ---------- Contact: book-a-call card ---------- */
+/* Highest-intent action, so it carries a little more weight than the
+   other contact rows without breaking the set. */
+.contact-link--book{
+  border-color:rgba(51,229,196,.28);
+  background:
+    linear-gradient(0deg, rgba(51,229,196,.05), rgba(51,229,196,.05)),
+    var(--bg-panel);
+}
+.contact-link--book:hover{ border-color:var(--grad-3); }
+.contact-link--book span:first-child{ white-space:nowrap; min-width:72px; }
+.contact-link--book .contact-link-action{
+  background:rgba(51,229,196,.1);
+  border-color:rgba(51,229,196,.45);
+}
+
+/* Long labels shouldn't crowd the value on small screens */
+@media (max-width:520px){
+  .contact-link--book span:first-child{ min-width:0; }
+  .contact-link--book b{ font-size:.9rem; }
 }
