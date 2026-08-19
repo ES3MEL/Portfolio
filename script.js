@@ -1002,8 +1002,9 @@
     // cross-dissolve via [data-avatar]; the base (day) photo always stays under
     // so the frame can never blank out. We only clear inline opacity so the CSS wins.
     let userPicked = false;   // once the visitor clicks, stop auto-switching by time
+    let idleActive = false;   // true while the idle-drift sequence owns the portrait
     function apply() {
-      if (userPicked) return;
+      if (userPicked || idleActive) return;
       const night = isNightNow();
       const sleepy = !night && isSleepyNow();
       let state = 'day';
@@ -1071,8 +1072,86 @@
       }
     }
     function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
-    // kick off the sequence after the hero has finished its cinematic reveal
-    autoTimers.push(setTimeout(runAutoWake, 2800));
+    // ---- Start the wake sequence only once the hero is actually on screen ----
+    // Previously this ran on a fixed 2.8s timer from init, which usually elapsed
+    // while the preloader was still covering the page — so the sleeping/sleepy
+    // states finished before anyone could see them.
+    function heroIsVisible() {
+      const pre = document.getElementById('preloader');
+      if (!pre) return true;
+      return pre.classList.contains('is-done') ||
+             document.documentElement.classList.contains('is-loaded');
+    }
+    function startWakeWhenVisible() {
+      if (heroIsVisible()) { autoTimers.push(setTimeout(runAutoWake, 900)); return; }
+      const pre = document.getElementById('preloader');
+      const mo = new MutationObserver(() => {
+        if (heroIsVisible()) {
+          mo.disconnect();
+          autoTimers.push(setTimeout(runAutoWake, 900));
+        }
+      });
+      mo.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+      if (pre) mo.observe(pre, { attributes: true, attributeFilter: ['class'] });
+      // Safety net: never wait forever.
+      autoTimers.push(setTimeout(() => { mo.disconnect(); runAutoWake(); }, 15000));
+    }
+    startWakeWhenVisible();
+
+    // ---- Idle drift ----
+    // The time-of-day windows (7pm-6am sleeping, noon-3pm sleepy) only cover part
+    // of the day, so the states were invisible most working hours. Now she also
+    // dozes off after a stretch of inactivity, whatever the clock says.
+    const IDLE_SLEEPY_MS = 45000;   // no activity -> sleepy
+    const IDLE_ASLEEP_MS = 90000;   // still nothing -> sleeping
+    let idleT1 = null, idleT2 = null;
+    function clearIdle() { clearTimeout(idleT1); clearTimeout(idleT2); }
+    function scheduleIdle() {
+      if (prefersReducedMotion) return;
+      clearIdle();
+      idleT1 = setTimeout(() => {
+        if (document.hidden) return;
+        idleActive = true;
+        setState('sleepy');
+        showBubble(pick(sleepyMsgs), 2400);
+      }, IDLE_SLEEPY_MS);
+      idleT2 = setTimeout(() => {
+        if (document.hidden) return;
+        idleActive = true;
+        setState('sleeping');
+        showBubble(pick(sleepingMsgs), 2600);
+      }, IDLE_ASLEEP_MS);
+    }
+    function nudgeAwake() {
+      if (idleActive) {
+        idleActive = false;
+        setState('day');
+        sparkle();
+        showBubble(pick(wakeApology), 2800);
+        if (window.__agqSound) window.__agqSound.play('pop');
+      }
+      scheduleIdle();
+    }
+    let lastNudge = 0;
+    function onUserActivity() {
+      const now = Date.now();
+      if (!idleActive && now - lastNudge < 2000) return;   // throttle mousemove
+      lastNudge = now;
+      nudgeAwake();
+    }
+    ['pointerdown', 'pointermove', 'keydown', 'wheel', 'touchstart', 'scroll']
+      .forEach(evt => window.addEventListener(evt, onUserActivity, { passive: true }));
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) { clearIdle(); } else { nudgeAwake(); }
+    });
+    scheduleIdle();
+
+    // Manual test helper: __agqPreviewSleep('sleeping'|'sleepy'|'day')
+    window.__agqPreviewSleep = function (state) {
+      clearAuto(); clearIdle();
+      idleActive = true;
+      setState(state || 'sleeping');
+    };
 
     // available states, skipping any whose image failed to load
     function cycleOrder() {
@@ -3449,9 +3528,34 @@
         const card = document.createElement('a');
         card.className = 'community-msg-file';
         card.href = fdata; card.download = fname;
-        card.setAttribute('target', '_blank'); card.setAttribute('rel', 'noopener noreferrer');
+        card.setAttribute('rel', 'noopener');
+        // NOTE: 'target=_blank' used to be set here, which cancels the download
+        // attribute — and Chrome blocks top-level navigation to data: URLs, so the
+        // card did nothing. Convert the data URL to a Blob and download that.
+        card.addEventListener('click', function (ev) {
+          ev.preventDefault();
+          try {
+            const comma = fdata.indexOf(',');
+            const meta = fdata.slice(0, comma);
+            const b64 = fdata.slice(comma + 1);
+            const mime = (meta.match(/:(.*?);/) || [])[1] || 'application/octet-stream';
+            const bin = atob(b64);
+            const bytes = new Uint8Array(bin.length);
+            for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+            const url = URL.createObjectURL(new Blob([bytes], { type: mime }));
+            const a = document.createElement('a');
+            a.href = url; a.download = fname;
+            document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 5000);
+            if (window.__agqToast) window.__agqToast('\u2b07\ufe0f Downloading ' + fname);
+            if (window.__agqSound) window.__agqSound.play('pop');
+          } catch (e) {
+            console.error('[community] download failed:', e);
+            if (window.__agqToast) window.__agqToast('Could not download that file.');
+          }
+        });
         card.innerHTML = `<span class="cmf-icon">${ftype === 'pdf' ? '📕' : '📘'}</span>` +
-          `<span class="cmf-meta"><span class="cmf-name"></span><span class="cmf-type mono">${ftype === 'pdf' ? 'PDF document' : 'Word document'} · tap to open</span></span>` +
+          `<span class="cmf-meta"><span class="cmf-name"></span><span class="cmf-type mono">${ftype === 'pdf' ? 'PDF document' : 'Word document'} · tap to download</span></span>` +
           `<span class="cmf-dl" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none"><path d="M12 4v11m0 0l-4-4m4 4l4-4M5 20h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`;
         card.querySelector('.cmf-name').textContent = fname;
         bubble.append(card);
@@ -4065,6 +4169,35 @@
     // ========================================================
     //  IMAGE UPLOAD — with a respectful-content safeguard
     // ========================================================
+    // ---- Upload limits (single source of truth; the UI labels read from these) ----
+    const IMAGE_MAX_BYTES = 5 * 1024 * 1024;    // 5 MB
+    const FILE_MAX_BYTES  = 10 * 1024 * 1024;   // 10 MB
+    function fmtBytes(b) {
+      if (b >= 1024 * 1024) {
+        const mb = b / (1024 * 1024);
+        return (mb >= 10 || mb % 1 === 0 ? Math.round(mb) : mb.toFixed(1)) + ' MB';
+      }
+      return Math.max(1, Math.round(b / 1024)) + ' KB';
+    }
+    // Paint the limits into the composer hint + button tooltips.
+    (function labelUploadLimits() {
+      const hint = document.getElementById('communityUploadHint');
+      if (hint) {
+        hint.textContent = 'Images up to ' + fmtBytes(IMAGE_MAX_BYTES) +
+                           ' \u00b7 PDF/Word up to ' + fmtBytes(FILE_MAX_BYTES);
+      }
+      const ib = document.getElementById('communityImgToggle');
+      if (ib) {
+        const t = 'Attach an image (max ' + fmtBytes(IMAGE_MAX_BYTES) + ')';
+        ib.title = t; ib.setAttribute('aria-label', t);
+      }
+      const fb = document.getElementById('communityFileToggle');
+      if (fb) {
+        const t = 'Attach a PDF or Word document (max ' + fmtBytes(FILE_MAX_BYTES) + ')';
+        fb.title = t; fb.setAttribute('aria-label', t);
+      }
+    })();
+
     let pendingImage = null;   // data URL of the attached (approved) image
     (function initImageUpload() {
       const imgBtn = $('#communityImgToggle');
@@ -4127,8 +4260,9 @@
         if (!/^image\/(png|jpe?g|webp|gif)$/i.test(file.type)) {
           if (window.__agqToast) window.__agqToast('Only image files are allowed.'); clearImage(); return;
         }
-        if (file.size > 8 * 1024 * 1024) {
-          if (window.__agqToast) window.__agqToast('Image is too large (max 8MB).'); clearImage(); return;
+        if (file.size > IMAGE_MAX_BYTES) {
+          if (window.__agqToast) window.__agqToast('That image is ' + fmtBytes(file.size) + ' \u2014 the limit is ' + fmtBytes(IMAGE_MAX_BYTES) + '.');
+          clearImage(); return;
         }
         if (statusI) statusI.textContent = 'Checking image…';
         if (preview) preview.hidden = false;
@@ -4228,7 +4362,10 @@
           if (window.__agqToast) window.__agqToast('⚠️ That file name looks inappropriate and was blocked. Please keep it respectful.');
           clearFile(); return;
         }
-        if (file.size > 6 * 1024 * 1024) { if (window.__agqToast) window.__agqToast('Document is too large (max 6MB).'); clearFile(); return; }
+        if (file.size > FILE_MAX_BYTES) {
+          if (window.__agqToast) window.__agqToast('That document is ' + fmtBytes(file.size) + ' \u2014 the limit is ' + fmtBytes(FILE_MAX_BYTES) + '.');
+          clearFile(); return;
+        }
         if (statusF) statusF.textContent = 'Attaching…';
         if (preview) preview.hidden = false;
         const isPdf = /pdf/i.test(file.type) || /\.pdf$/i.test(file.name);
@@ -4529,11 +4666,32 @@
     // Log this visit ONCE per browser (not per session), so each visitor is
     // counted a single time. The visit id is stored in localStorage so repeat
     // sessions reuse the same row instead of creating duplicates.
+    // Bump this whenever the visitors table is wiped. Every browser then treats
+    // its next visit as a first visit, so returning people are logged again
+    // instead of staying invisible because of a stale localStorage flag.
+    const VISIT_LOG_VERSION = 2;
+    const VISIT_ID_KEY  = 'agq-visit-id-v' + VISIT_LOG_VERSION;
+    const VISITED_KEY   = 'agq-visited-v' + VISIT_LOG_VERSION;
+
+    // Clear keys from earlier versions so they can't leak through.
+    (function pruneOldVisitKeys() {
+      try {
+        localStorage.removeItem('agq-visit-id');
+        localStorage.removeItem('agq-visited');
+        sessionStorage.removeItem('agq-visit-id');
+        for (let v = 1; v < VISIT_LOG_VERSION; v++) {
+          localStorage.removeItem('agq-visit-id-v' + v);
+          localStorage.removeItem('agq-visited-v' + v);
+          sessionStorage.removeItem('agq-visit-id-v' + v);
+        }
+      } catch (e) {}
+    })();
+
     let myVisitId = null;
-    try { myVisitId = localStorage.getItem('agq-visit-id') || sessionStorage.getItem('agq-visit-id'); } catch (e) {}
+    try { myVisitId = localStorage.getItem(VISIT_ID_KEY) || sessionStorage.getItem(VISIT_ID_KEY); } catch (e) {}
     // Whether this browser has EVER been recorded as a visitor (first visit only).
     let hasVisited = false;
-    try { hasVisited = localStorage.getItem('agq-visited') === '1' || !!myVisitId; } catch (e) {}
+    try { hasVisited = localStorage.getItem(VISITED_KEY) === '1' || !!myVisitId; } catch (e) {}
 
     // Gender helper — used to pick a default forum profile avatar.
     function myGender() {
@@ -4624,7 +4782,7 @@
           if (data && data[0]) {
             myVisitId = data[0].id;
             hasVisited = true;
-            try { localStorage.setItem('agq-visit-id', String(myVisitId)); localStorage.setItem('agq-visited', '1'); sessionStorage.setItem('agq-visit-id', String(myVisitId)); } catch (e) {}
+            try { localStorage.setItem(VISIT_ID_KEY, String(myVisitId)); localStorage.setItem(VISITED_KEY, '1'); sessionStorage.setItem(VISIT_ID_KEY, String(myVisitId)); } catch (e) {}
           }
         } catch (e) {}
       }

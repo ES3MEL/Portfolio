@@ -4663,3 +4663,17 @@ img, svg, video, canvas, iframe, table, pre{ max-width:100%; }
   .community-img-toggle, .community-mic-toggle, .community-file-toggle,
   .community-gif-toggle, .community-emoji-toggle{ width:38px; height:38px; }
 }
+
+/* ---------- Upload limit hint (forum composer) ---------- */
+.community-upload-hint{
+  margin:.5rem 0 0;
+  font-family:var(--font-mono);
+  font-size:.66rem;
+  letter-spacing:.03em;
+  color:var(--text-faint);
+  opacity:.85;
+  user-select:none;
+}
+@media (max-width:640px){
+  .community-upload-hint{ font-size:.6rem; }
+}
