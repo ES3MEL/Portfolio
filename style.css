@@ -2874,11 +2874,17 @@ html{ scrollbar-width:thin; scrollbar-color:var(--grad-2) var(--bg); }
   .role-chip--clear{ grid-column:1 / -1; }
 }
 /* Skill-group highlight / dim states */
-.skill-group{ transition:opacity .35s var(--ease), transform .35s var(--ease); }
-.skill-group.role-dim{ opacity:.32; filter:saturate(.5); }
-.skill-group.role-hi{ transform:translateY(-3px); }
+.skill-group{ transition:opacity .35s var(--ease), transform .35s var(--ease), box-shadow .35s var(--ease), border-color .35s var(--ease); }
+/* When a role is picked, force the groups visible (overrides scroll-reveal) */
+.skill-group.role-hi, .skill-group.role-dim{ opacity:1 !important; transform:none !important; filter:none !important; transition:none !important; }
+.skill-group.role-dim{ opacity:.3 !important; }
+.skill-group.role-hi{
+  transform:translateY(-3px);
+  border-color:color-mix(in srgb, var(--grad-3) 45%, var(--border)) !important;
+  box-shadow:0 10px 30px -14px color-mix(in srgb, var(--grad-2) 55%, transparent), 0 0 0 1px color-mix(in srgb, var(--grad-3) 30%, transparent) !important;
+}
 .skill-group.role-hi h3{ color:var(--grad-3); }
-.skill-group.role-hi .chip{ border-color:color-mix(in srgb, var(--grad-3) 45%, var(--border)); box-shadow:0 0 0 1px color-mix(in srgb, var(--grad-3) 22%, transparent); }
+.skill-group.role-hi .chip{ border-color:color-mix(in srgb, var(--grad-3) 50%, var(--border)); box-shadow:0 0 0 1px color-mix(in srgb, var(--grad-3) 25%, transparent); color:var(--text); }
 
 /* =========================================================
    GUIDED TOUR

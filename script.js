@@ -774,14 +774,32 @@
       if (!chip) return;
       const role = chip.dataset.role;
       if (window.__agqSound) window.__agqSound.play('click');
+      // Make sure the skill groups are actually visible (they use scroll-reveal
+      // with staggered transitions, which may leave them stuck at opacity 0 if the
+      // reveal hasn't fired). Cancel any running transitions and force them visible.
+      groups.forEach(g => {
+        g.classList.add('in-view');
+        try { g.getAnimations().forEach(a => a.cancel()); } catch (e) {}
+        g.style.removeProperty('opacity');
+        g.style.removeProperty('transition-delay');
+      });
       if (role === 'clear') { clearHighlight(); return; }
       $$('.role-chip', box).forEach(c => c.classList.toggle('is-active', c === chip));
+      let target = null;
       groups.forEach(g => {
         const match = g.dataset.rolegroup === role;
         g.classList.toggle('role-hi', match);
         g.classList.toggle('role-dim', !match);
+        if (match) target = g;
       });
-      if (skillsSection) skillsSection.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' });
+      // Scroll to the highlighted group itself (centered), not just the section top.
+      if (target) {
+        setTimeout(() => {
+          target.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'center' });
+        }, 80);
+      } else if (skillsSection) {
+        skillsSection.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' });
+      }
       if (window.__agqToast) {
         const names = { uxui: 'UI/UX', qa: 'QA', ba: 'Business Analyst', fe: 'Frontend' };
         window.__agqToast(`🎯 Highlighting skills for ${names[role] || role}`);
