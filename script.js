@@ -6225,15 +6225,110 @@
       setTimeout(() => { step++; renderStep(); }, 180);
     }
 
+    /* ---------- Rating ----------
+       Weighted rather than a flat average:
+
+         "Did you find it?"  is the outcome that matters most  -> weight 2
+         "How did it feel?"  is secondary                      -> weight 1
+         "What almost made you leave?" is a modifier, not a score,
+             so a single complaint can cost at most one star instead
+             of dragging a third of the total. It also avoids
+             double-counting: someone who couldn't find the work
+             already said so in question two.
+
+       The visitor can override the result, so this is a starting
+       point rather than a verdict.                                  */
+    const RATING_WEIGHTS = { q_found: 2, q_feel: 1 };
+    const FRICTION_PENALTY = {
+      'Nothing': 0,
+      'Slow to load': 0.5,
+      'A bit much': 0.5,
+      "Couldn't find the work": 1,
+      'Too much going on': 0.5
+    };
+
     function computeRating() {
-      let total = 0, count = 0;
+      let total = 0, weight = 0;
       QUESTIONS.forEach(q => {
-        if (!q.weight) return;
+        const w = RATING_WEIGHTS[q.key];
+        if (!w) return;
         const a = answers[q.key];
-        if (a && q.score && q.score[a] != null) { total += q.score[a]; count++; }
+        if (a && q.score && q.score[a] != null) {
+          total += q.score[a] * w;
+          weight += w;
+        }
       });
-      if (!count) return 4;
-      return Math.max(1, Math.min(5, Math.round(total / count)));
+      if (!weight) return 4;
+      let score = total / weight;
+      const penalty = FRICTION_PENALTY[answers.q_friction];
+      if (typeof penalty === 'number') score -= penalty;
+      return Math.max(1, Math.min(5, Math.round(score)));
+    }
+
+    /* Plain-English reason, so the number never looks arbitrary. */
+    function ratingReason(n) {
+      const found = answers.q_found;
+      const feel = answers.q_feel;
+      const fr = answers.q_friction;
+      const bits = [];
+      if (found === 'Yes, easily') bits.push('you found what you came for');
+      else if (found === 'Eventually') bits.push('it took a while to find things');
+      else if (found === 'Not really') bits.push('you didn\u2019t find what you needed');
+      if (feel === 'Polished') bits.push('the site felt polished');
+      else if (feel === 'A bit much') bits.push('it felt like a lot');
+      else if (feel === 'Rough') bits.push('it felt rough');
+      if (fr && fr !== 'Nothing') bits.push('and \u201c' + fr.toLowerCase() + '\u201d got in the way');
+      if (!bits.length) return 'Based on your answers.';
+      const joined = bits.length > 1
+        ? bits.slice(0, -1).join(', ') + ' ' + (bits[bits.length - 1].startsWith('and') ? '' : 'and ') + bits[bits.length - 1]
+        : bits[0];
+      return joined.charAt(0).toUpperCase() + joined.slice(1) + '.';
+    }
+
+    let ratingOverridden = false;
+
+    function paintStars() {
+      const st = document.getElementById('fbResultStars');
+      if (!st) return;
+      st.innerHTML = '';
+      for (let i = 1; i <= 5; i++) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'fb-star-btn' + (i <= rating ? ' is-on' : '');
+        b.setAttribute('aria-label', i + (i === 1 ? ' star' : ' stars'));
+        b.setAttribute('aria-pressed', String(i === rating));
+        b.innerHTML = '<svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">' +
+          '<path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9L3.5 9.7l5.9-.8z" ' +
+          'fill="currentColor"/></svg>';
+        b.addEventListener('click', () => {
+          rating = i;
+          ratingOverridden = true;
+          paintStars();
+          updateReason();
+          if (window.__agqSound) window.__agqSound.play('pop');
+        });
+        st.appendChild(b);
+      }
+    }
+
+    function updateReason() {
+      const why = document.getElementById('fbWhy');
+      if (why) {
+        why.textContent = ratingOverridden
+          ? 'Set to ' + rating + ' of 5 by you \u2014 thanks for the correction.'
+          : ratingReason(rating);
+      }
+      const sub = document.getElementById('fbResultSub');
+      if (!sub) return;
+      const fr = answers.q_friction;
+      if (fr && fr !== 'Nothing') {
+        sub.textContent = 'Noted \u2014 \u201c' + fr.toLowerCase() +
+          '\u201d is the kind of thing I can actually fix.';
+      } else if (rating >= 4) {
+        sub.textContent = 'Glad it landed. A note helps more than the score, if you have a moment.';
+      } else {
+        sub.textContent = 'Useful to know \u2014 the specifics below are what I can act on.';
+      }
     }
 
     function showResult() {
@@ -6247,19 +6342,8 @@
       if (progress) setTimeout(() => { progress.hidden = true; }, 420);
       if (resultEl) {
         resultEl.hidden = false;
-        const st = document.getElementById('fbResultStars');
-        if (st) st.innerHTML = starsHTML(rating);
-        const sub = document.getElementById('fbResultSub');
-        if (sub) {
-          const fr = answers.q_friction;
-          if (fr && fr !== 'Nothing') {
-            sub.textContent = 'Noted — “' + fr.toLowerCase() + '” is the kind of thing I can actually fix.';
-          } else if (rating >= 4) {
-            sub.textContent = 'Glad it landed. If you have a moment, a note helps more than the score.';
-          } else {
-            sub.textContent = 'Useful to know — the specifics below are what I can act on.';
-          }
-        }
+        paintStars();
+        updateReason();
       }
     }
 

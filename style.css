@@ -5487,3 +5487,60 @@ img, svg, video, canvas, iframe, table, pre{ max-width:100%; }
 @media (prefers-reduced-motion:reduce){
   .fb-option:hover{ transform:none; }
 }
+
+/* ---------- Rating: tappable stars + explanation ---------- */
+.fb-rate-label{
+  font-size:.64rem; letter-spacing:.05em;
+  color:var(--text-faint);
+  margin:0 0 8px;
+}
+.fb-result-stars{
+  display:flex; gap:4px; margin:0 0 10px;
+}
+.fb-star-btn{
+  display:grid; place-items:center;
+  width:38px; height:38px; padding:0; margin:0;
+  color:var(--border-strong);
+  background:none; border:none; border-radius:9px;
+  cursor:pointer;
+  -webkit-appearance:none; appearance:none;
+  -webkit-tap-highlight-color:transparent;
+  transition:color .18s var(--ease), transform .18s var(--ease-spring);
+}
+.fb-star-btn.is-on{ color:var(--grad-3); }
+.fb-star-btn:hover{ transform:scale(1.14); }
+.fb-star-btn:active{ transform:scale(.94); }
+.fb-star-btn:focus-visible{ outline:2px solid var(--grad-3); outline-offset:1px; }
+.fb-star-btn svg{ display:block; pointer-events:none; }
+/* Hovering a star previews that value */
+.fb-result-stars:hover .fb-star-btn{ color:var(--border-strong); }
+.fb-result-stars .fb-star-btn:hover,
+.fb-result-stars .fb-star-btn:hover ~ .fb-star-btn{ color:var(--border-strong); }
+.fb-result-stars:hover .fb-star-btn:first-child,
+.fb-result-stars .fb-star-btn:hover{ color:var(--grad-3); }
+
+.fb-why{
+  font-size:.8rem; line-height:1.5;
+  color:var(--text-dim);
+  margin:0 0 16px;
+  padding-left:11px;
+  border-left:2px solid color-mix(in srgb, var(--grad-3) 45%, transparent);
+}
+@supports not (background: color-mix(in srgb, red 10%, blue)){
+  .fb-why{ border-left-color:var(--grad-3); }
+}
+
+@media (hover:none), (pointer:coarse){
+  .fb-star-btn{ width:44px; height:44px; }
+  .fb-star-btn:hover{ transform:none; }
+  .fb-result-stars:hover .fb-star-btn{ color:var(--border-strong); }
+  .fb-result-stars .fb-star-btn.is-on{ color:var(--grad-3); }
+}
+@media (max-width:380px){
+  .fb-star-btn{ width:40px; height:40px; }
+  .fb-star-btn svg{ width:23px; height:23px; }
+}
+@media (prefers-reduced-motion:reduce){
+  .fb-star-btn{ transition:none; }
+  .fb-star-btn:hover{ transform:none; }
+}

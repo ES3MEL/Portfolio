@@ -1223,13 +1223,15 @@
 
           <!-- Result + optional review -->
           <div class="fb-result" id="fbResult" hidden>
-            <span class="fb-result-stars" id="fbResultStars" aria-hidden="true"></span>
+            <p class="fb-rate-label mono">Your rating &mdash; tap a star to change it</p>
+            <div class="fb-result-stars" id="fbResultStars" role="group" aria-label="Your rating, tap a star to change it"></div>
+            <p class="fb-why" id="fbWhy"></p>
             <h3 class="fb-result-title" id="fbResultTitle">Thanks &mdash; that helps.</h3>
             <p class="fb-result-sub" id="fbResultSub"></p>
 
             <div class="fb-review">
-              <p class="fb-review-label mono">Want to leave a note? Entirely optional.</p>
-              <textarea class="fb-textarea" id="fbComment" rows="3" maxlength="600" placeholder="Anything you'd tell me about this site&hellip;"></textarea>
+              <p class="fb-review-label mono">Add a note &mdash; optional, but the most useful part</p>
+              <textarea class="fb-textarea" id="fbComment" rows="3" maxlength="600" placeholder="What worked, what didn't, what you'd change&hellip;"></textarea>
               <div class="fb-review-row">
                 <input class="fb-input" id="fbName" type="text" maxlength="60" placeholder="Your name (optional)" autocomplete="name">
                 <label class="fb-photo-btn" for="fbPhoto" id="fbPhotoLabel">
@@ -1241,8 +1243,8 @@
               <p class="fb-hint mono">Max 2 MB &middot; JPG, PNG or WebP &middot; Reviews appear only after I approve them</p>
               <p class="fb-error" id="fbError" hidden></p>
               <div class="fb-actions">
-                <button class="btn btn-ghost" id="fbSkip" type="button"><span>No thanks</span></button>
-                <button class="btn btn-primary" id="fbSubmit" type="button"><span>Send it</span></button>
+                <button class="btn btn-ghost" id="fbSkip" type="button"><span>Skip the note</span></button>
+                <button class="btn btn-primary" id="fbSubmit" type="button"><span>Send feedback</span></button>
               </div>
             </div>
           </div>
