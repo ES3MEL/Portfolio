@@ -6361,7 +6361,11 @@
         if (window.__agqSound) window.__agqSound.play('success');
       } catch (e) {
         console.error('[feedback] submit failed:', e);
-        showError('That didn\u2019t send — please try again in a moment.');
+        // Surface the real reason instead of a generic message, so a failure
+        // can be diagnosed without opening DevTools.
+        const detail = (e && (e.message || e.error_description || e.hint)) || '';
+        const code = (e && e.code) ? ' [' + e.code + ']' : '';
+        showError(detail ? ('Couldn’t send: ' + detail + code) : 'That didn’t send — please try again in a moment.');
         if (submitBtn) { submitBtn.disabled = false; submitBtn.classList.remove('is-busy'); }
       }
     }
