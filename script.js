@@ -1273,102 +1273,6 @@
   ========================================================= */
   const PROJECTS = [
     {
-      id: 'doxu-qa',
-      title: 'Doxu.AI \u2014 Mobile QA',
-      category: 'Quality Assurance',
-      role: 'QA Engineer',
-      year: '2026',
-      status: 'Internship \u00b7 Twala (Ohelio, Inc.)',
-      featured: true,
-      tagline: 'Manual testing of Doxu.AI\u2019s mobile responsiveness \u2014 finding, documenting, and tracking layout and functionality defects.',
-      desc: 'Ran structured manual test passes across web and mobile, filing detailed bug tickets and tracking them to resolution.',
-      accent: ['#4FA0FF', '#33E5C4'],
-      tech: ['Manual Testing', 'Bug Reporting', 'ClickUp', 'Cross-Device Testing'],
-      problem: 'Doxu.AI rendered inconsistently across mobile screen sizes, and issues were being reported informally without enough detail to reproduce them reliably.',
-      overview: 'As part of a cross-functional internship at Twala, I ran manual test passes over Doxu.AI\u2019s mobile experience and the product landing pages, checking functionality and layout consistency across breakpoints. Each defect was written up as a reproducible ticket with steps, expected versus actual behavior, environment, and evidence.',
-      features: [
-        'Structured manual test passes across mobile breakpoints and device widths.',
-        'Bug tickets written to be reproducible: steps, expected vs actual, environment, screenshots.',
-        'Landing page verification across web and mobile for functionality and layout consistency.',
-        'Progress and status tracking for mobile-responsiveness work on Twala v2.'
-      ],
-      process: [
-        { title: 'Plan', body: 'Identified the screens and breakpoints most likely to break, and worked through them systematically rather than ad hoc.' },
-        { title: 'Test', body: 'Ran manual passes across device widths, recording each deviation from expected behavior.' },
-        { title: 'Report', body: 'Filed detailed tickets and tracked them through to resolution.' }
-      ],
-      outcome: 'TODO \u2014 add the concrete result here: roughly how many defects you filed, which areas were worst affected, and what changed after the fixes shipped. Even approximate numbers are far stronger than none.',
-      learnings: [
-        'TODO \u2014 one honest thing you would approach differently, e.g. building a reusable test checklist earlier instead of retesting from memory each pass.'
-      ],
-      gallery: [],
-      links: []
-    },
-    {
-      id: 'twalasign-ba',
-      title: 'TwalaSign \u2014 Business Analysis',
-      category: 'Business Analysis',
-      role: 'Business Analyst',
-      year: '2026',
-      status: 'Internship \u00b7 Twala (Ohelio, Inc.)',
-      featured: true,
-      tagline: 'Competitive analysis and feature backlogs for an e-signature platform \u2014 turning market research into prioritized product decisions.',
-      desc: 'Built competitive comparison matrices for TwalaSign and developed feature backlogs for TwalaSign and Doxu.AI.',
-      accent: ['#7C5CFC', '#4FA0FF'],
-      tech: ['Competitive Analysis', 'Backlog Creation', 'Product Documentation', 'Requirements Gathering'],
-      problem: 'TwalaSign needed a clear picture of where it stood against competing e-signature products, and a prioritized view of which features to build next.',
-      overview: 'I built competitive comparison matrices mapping TwalaSign against other e-signature platforms across features, and developed feature backlogs for both TwalaSign and Doxu.AI. Alongside the work I completed a Udemy Business Analysis Fundamentals course (IIBA-endorsed) and applied the framing directly to how requirements were captured.',
-      features: [
-        'Competitive comparison matrices benchmarking TwalaSign against rival e-signature platforms.',
-        'Feature backlogs for TwalaSign and Doxu.AI, framed as actionable items.',
-        'Product documentation drafted for internal and user-facing use.',
-        'Requirements captured using IIBA-endorsed BA practice from concurrent coursework.'
-      ],
-      process: [
-        { title: 'Research', body: 'Surveyed competing products and identified the feature dimensions that actually mattered to buyers.' },
-        { title: 'Compare', body: 'Built structured matrices so gaps and strengths could be read at a glance.' },
-        { title: 'Prioritize', body: 'Translated the findings into backlog items the team could act on.' }
-      ],
-      outcome: 'TODO \u2014 what did the analysis actually change? Which gaps did it surface, and did any backlog item you wrote get built? This is the strongest sentence on the page if you can fill it in.',
-      learnings: [
-        'TODO \u2014 one thing you would do differently, e.g. validating the comparison dimensions with the sales team before building the matrix.'
-      ],
-      gallery: [],
-      links: []
-    },
-    {
-      id: 'twala-landing',
-      title: 'Twala \u2014 Landing Page Redesign',
-      category: 'Website',
-      role: 'UI/UX Designer',
-      year: '2025',
-      status: 'Internship \u00b7 Twala (Ohelio, Inc.)',
-      featured: true,
-      tagline: 'Redesigned Twala\u2019s landing pages for clarity and layout \u2014 designed and shipped directly in Webflow.',
-      desc: 'Redesigned selected landing pages and implemented the changes in Webflow, including the client and partner carousel.',
-      accent: ['#7C5CFC', '#FF6FB5'],
-      tech: ['Webflow', 'UI/UX Design', 'Responsive Design', 'Intercom'],
-      problem: 'TODO \u2014 describe what was wrong with the original pages. Was the layout unclear, the hierarchy weak, the mobile experience broken? Be specific; this sets up everything that follows.',
-      overview: 'During my first internship at Twala I redesigned selected landing pages for clarity and layout, implementing the updates directly in Webflow rather than handing designs off. That included rebuilding the client and partner carousel. I also helped restructure Twala\u2019s help center articles in Intercom so users could find what they needed.',
-      features: [
-        'Landing page redesigns focused on clarity of layout and visual hierarchy.',
-        'Client and partner carousel rebuilt in Webflow.',
-        'Changes implemented directly in production rather than handed off as static mockups.',
-        'Help center articles restructured in Intercom for findability.'
-      ],
-      process: [
-        { title: 'Audit', body: 'Reviewed the existing pages to identify what was working against clarity.' },
-        { title: 'Design', body: 'Reworked layout and hierarchy with the existing brand system.' },
-        { title: 'Implement', body: 'Built the changes directly in Webflow and checked them across breakpoints.' }
-      ],
-      outcome: 'TODO \u2014 what changed after launch? Even qualitative feedback from the team counts.',
-      learnings: [
-        'TODO \u2014 one honest reflection on the redesign.'
-      ],
-      gallery: [],
-      links: []
-    },
-    {
       id: 'portfolio',
       title: 'Personal Portfolio',
       category: 'Website',
@@ -4719,6 +4623,10 @@
       return false;
     }
 
+    // Shared so other modules (feedback quiz) filter with the same rules
+    // rather than silently skipping the check.
+    window.__agqHasProfanity = hasProfanity;
+
     function spamReason(name, message) {
       const now = Date.now();
       if (now - lastPostAt < COOLDOWN_MS) {
@@ -6118,6 +6026,8 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     initFooterYear();
+    try { initFeedback(); } catch (e) { console.error('[feedback]', e); }
+    try { initFeedbackModeration(); } catch (e) { console.error('[fbmod]', e); }
     initPreloader();
     initHeroIntro();
     initToast();
@@ -6173,4 +6083,629 @@
     initCopyEmail();
     initEasterEgg();
   });
+
+  /* =========================================================
+     FEEDBACK QUIZ + REVIEW CAROUSEL
+     Four questions -> a derived 1-5 rating -> an optional public
+     review. Nothing appears on the site until it is approved;
+     that rule is enforced by Postgres RLS, not by this file.
+  ========================================================= */
+  function initFeedback() {
+    const quizEl = document.getElementById('fbQuiz');
+    if (!quizEl) return;
+
+    // Same credentials the forum uses (declared at module scope above).
+    let sb = null;
+    if (window.supabase && SUPABASE_URL && SUPABASE_ANON_KEY) {
+      try { sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); }
+      catch (e) { console.warn('[feedback] no Supabase client:', e); }
+    }
+
+    const DONE_KEY = 'agq-feedback-done';
+    let alreadyDone = false;
+    try { alreadyDone = localStorage.getItem(DONE_KEY) === '1'; } catch (e) {}
+
+    /* ---------- Questions ----------
+       `weight` marks the questions that feed the star rating.
+       The hiring question is captured but deliberately unscored:
+       a happy non-recruiter should not lower the average.        */
+    const QUESTIONS = [
+      {
+        key: 'q_goal',
+        text: 'What did you come here to find out?',
+        options: ['Design skill', 'QA skill', 'Business analysis', 'Just browsing'],
+        weight: false
+      },
+      {
+        key: 'q_found',
+        text: 'Did you find it?',
+        options: ['Yes, easily', 'Eventually', 'Not really'],
+        weight: true,
+        score: { 'Yes, easily': 5, 'Eventually': 3, 'Not really': 1 }
+      },
+      {
+        key: 'q_friction',
+        text: 'What almost made you leave?',
+        options: ['Too much going on', "Couldn't find the work", 'Slow to load', 'Nothing'],
+        weight: true,
+        score: { 'Nothing': 5, 'Slow to load': 3, 'Too much going on': 2, "Couldn't find the work": 2 }
+      },
+      {
+        key: 'q_hire',
+        text: 'If you were hiring — would you reach out?',
+        options: ['Yes', 'Maybe', 'Not for this role', "I'm not hiring"],
+        weight: false
+      }
+    ];
+
+    const answers = {};
+    let step = 0;
+    let photoFile = null;
+    let rating = 0;
+
+    const stage      = document.getElementById('fbStage');
+    const stepCount  = document.getElementById('fbStepCount');
+    const questionEl = document.getElementById('fbQuestion');
+    const optionsEl  = document.getElementById('fbOptions');
+    const progress   = document.getElementById('fbProgress');
+    const resultEl   = document.getElementById('fbResult');
+    const doneEl     = document.getElementById('fbDone');
+    const errEl      = document.getElementById('fbError');
+
+    function starsHTML(n, filledClass) {
+      let out = '';
+      for (let i = 1; i <= 5; i++) {
+        out += '<svg viewBox="0 0 24 24" width="16" height="16" class="' +
+          (i <= n ? (filledClass || 'is-on') : 'is-off') + '" aria-hidden="true">' +
+          '<path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9L3.5 9.7l5.9-.8z" ' +
+          'fill="currentColor"/></svg>';
+      }
+      return out;
+    }
+
+    function buildProgress() {
+      if (!progress) return;
+      progress.innerHTML = QUESTIONS.map((_, i) =>
+        '<span class="fb-dot' + (i === step ? ' is-current' : (i < step ? ' is-done' : '')) + '"></span>'
+      ).join('');
+    }
+
+    function renderStep() {
+      const q = QUESTIONS[step];
+      if (!q) return showResult();
+      if (stepCount) stepCount.textContent = 'Question ' + (step + 1) + ' of ' + QUESTIONS.length;
+      if (questionEl) questionEl.textContent = q.text;
+      if (optionsEl) {
+        optionsEl.innerHTML = '';
+        q.options.forEach(opt => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'fb-option';
+          b.textContent = opt;
+          b.addEventListener('click', () => choose(q, opt, b));
+          optionsEl.appendChild(b);
+        });
+      }
+      buildProgress();
+      if (stage) {
+        stage.classList.remove('fb-in');
+        void stage.offsetWidth;
+        stage.classList.add('fb-in');
+      }
+    }
+
+    function choose(q, opt, btn) {
+      answers[q.key] = opt;
+      if (btn) btn.classList.add('is-picked');
+      if (window.__agqSound) window.__agqSound.play('pop');
+      setTimeout(() => { step++; renderStep(); }, 180);
+    }
+
+    function computeRating() {
+      let total = 0, count = 0;
+      QUESTIONS.forEach(q => {
+        if (!q.weight) return;
+        const a = answers[q.key];
+        if (a && q.score && q.score[a] != null) { total += q.score[a]; count++; }
+      });
+      if (!count) return 4;
+      return Math.max(1, Math.min(5, Math.round(total / count)));
+    }
+
+    function showResult() {
+      rating = computeRating();
+      if (stage) stage.hidden = true;
+      if (progress) progress.hidden = true;
+      if (resultEl) {
+        resultEl.hidden = false;
+        const st = document.getElementById('fbResultStars');
+        if (st) st.innerHTML = starsHTML(rating);
+        const sub = document.getElementById('fbResultSub');
+        if (sub) {
+          sub.textContent = rating >= 4
+            ? 'Glad it landed. If you have a moment, a note helps more than the score.'
+            : 'Useful to know — the specifics below are what I can actually act on.';
+        }
+      }
+    }
+
+    /* ---------- Photo selection: validate before anything else ---------- */
+    const MAX_PHOTO = 2 * 1024 * 1024;
+    const photoInput = document.getElementById('fbPhoto');
+    const photoText  = document.getElementById('fbPhotoText');
+
+    function showError(msg) {
+      if (!errEl) return;
+      errEl.textContent = msg;
+      errEl.hidden = false;
+    }
+    function clearError() { if (errEl) errEl.hidden = true; }
+
+    // Re-encode the image through a canvas before upload. This strips EXIF
+    // (which can carry GPS coordinates) and guarantees the bytes really are an
+    // image rather than something renamed to .jpg.
+    function sanitizeImage(file) {
+      return new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = function () {
+          URL.revokeObjectURL(url);
+          if (!img.naturalWidth || !img.naturalHeight) return reject(new Error('not an image'));
+          const MAX = 800;
+          let w = img.naturalWidth, h = img.naturalHeight;
+          if (w > MAX || h > MAX) {
+            const k = Math.min(MAX / w, MAX / h);
+            w = Math.round(w * k); h = Math.round(h * k);
+          }
+          const cv = document.createElement('canvas');
+          cv.width = w; cv.height = h;
+          const ctx = cv.getContext('2d');
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(img, 0, 0, w, h);
+          cv.toBlob(function (blob) {
+            if (!blob) return reject(new Error('encode failed'));
+            resolve(new File([blob], 'review.jpg', { type: 'image/jpeg', lastModified: Date.now() }));
+          }, 'image/jpeg', 0.86);
+        };
+        img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('not an image')); };
+        img.src = url;
+      });
+    }
+
+    photoInput?.addEventListener('change', async () => {
+      clearError();
+      const f = photoInput.files && photoInput.files[0];
+      if (!f) { photoFile = null; if (photoText) photoText.textContent = 'Add a photo'; return; }
+      if (!/^image\/(jpeg|png|webp)$/i.test(f.type)) {
+        showError('Please choose a JPG, PNG or WebP image.');
+        photoInput.value = ''; photoFile = null; return;
+      }
+      if (f.size > MAX_PHOTO) {
+        const mb = (f.size / (1024 * 1024)).toFixed(1);
+        showError('That image is ' + mb + ' MB — the limit is 2 MB.');
+        photoInput.value = ''; photoFile = null; return;
+      }
+      if (photoText) photoText.textContent = 'Checking…';
+      try {
+        photoFile = await sanitizeImage(f);
+        if (photoText) photoText.textContent = 'Photo ready';
+      } catch (e) {
+        showError('That file could not be read as an image.');
+        photoInput.value = ''; photoFile = null;
+        if (photoText) photoText.textContent = 'Add a photo';
+      }
+    });
+
+    /* ---------- Submit ---------- */
+    async function submitFeedback(withReview) {
+      clearError();
+      const submitBtn = document.getElementById('fbSubmit');
+      const comment = (document.getElementById('fbComment')?.value || '').trim().slice(0, 600);
+      const name    = (document.getElementById('fbName')?.value || '').trim().slice(0, 60);
+
+      // Same profanity rules the forum uses. hasProfanity lives inside
+      // initCommunity(), so it's reached via a shared global — and if that
+      // isn't loaded, the review is blocked rather than passed through unchecked.
+      if (withReview && (comment || name)) {
+        const filter = window.__agqHasProfanity;
+        if (typeof filter !== 'function') {
+          showError('Reviews are unavailable right now — please try again later.');
+          return;
+        }
+        if ((comment && filter(comment)) || (name && filter(name))) {
+          showError('Please reword that — let’s keep it friendly.');
+          return;
+        }
+        if (/(https?:\/\/|www\.|\b[a-z0-9-]+\.(com|net|org|io|ru|xyz|top|shop)\b)/i.test(comment)) {
+          showError('Please leave links out of the note.');
+          return;
+        }
+      }
+
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.classList.add('is-busy'); }
+
+      const payload = {
+        q_goal: answers.q_goal || null,
+        q_found: answers.q_found || null,
+        q_friction: answers.q_friction || null,
+        q_hire: answers.q_hire || null,
+        rating: rating,
+        approved: false
+      };
+      if (withReview) {
+        if (comment) payload.comment = comment;
+        if (name) payload.display_name = name;
+      }
+
+      try {
+        if (withReview && photoFile && sb) {
+          const ext = (photoFile.name.split('.').pop() || 'jpg').toLowerCase();
+          const path = 'r_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8) + '.' + ext;
+          const up = await sb.storage.from('feedback-photos')
+            .upload(path, photoFile, { cacheControl: '3600', upsert: false });
+          if (!up.error) payload.photo_path = path;
+        }
+
+        if (sb) {
+          const { error } = await sb.from('feedback').insert(payload);
+          if (error) throw error;
+        }
+
+        try { localStorage.setItem(DONE_KEY, '1'); } catch (e) {}
+        if (resultEl) resultEl.hidden = true;
+        if (doneEl) {
+          doneEl.hidden = false;
+          const sub = document.getElementById('fbDoneSub');
+          if (sub && !withReview) sub.textContent = 'Your answers are in. Thanks for the twenty seconds.';
+        }
+        if (window.__agqSound) window.__agqSound.play('success');
+      } catch (e) {
+        console.error('[feedback] submit failed:', e);
+        showError('That didn\u2019t send — please try again in a moment.');
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.classList.remove('is-busy'); }
+      }
+    }
+
+    document.getElementById('fbSubmit')?.addEventListener('click', () => submitFeedback(true));
+    document.getElementById('fbSkip')?.addEventListener('click', () => submitFeedback(false));
+
+    /* ---------- Carousel of approved reviews ---------- */
+    const carousel = document.getElementById('fbCarousel');
+    const track    = document.getElementById('fbTrack');
+    const dotsEl   = document.getElementById('fbDots');
+    let slides = [], index = 0, autoTimer = null;
+
+    function publicPhotoUrl(path) {
+      if (!path || !sb) return null;
+      try { return sb.storage.from('feedback-photos').getPublicUrl(path).data.publicUrl; }
+      catch (e) { return null; }
+    }
+
+    function goTo(i) {
+      if (!slides.length) return;
+      index = (i + slides.length) % slides.length;
+      if (track) track.style.transform = 'translateX(' + (-index * 100) + '%)';
+      Array.from(dotsEl?.children || []).forEach((d, k) =>
+        d.classList.toggle('is-on', k === index));
+    }
+
+    function startAuto() {
+      if (prefersReducedMotion || slides.length < 2) return;
+      clearInterval(autoTimer);
+      autoTimer = setInterval(() => goTo(index + 1), 7000);
+    }
+
+    async function loadReviews() {
+      if (!sb || !carousel) return;
+      try {
+        const { data, error } = await sb
+          .from('feedback')
+          .select('rating, comment, display_name, photo_path, created_at')
+          .eq('approved', true)
+          .not('comment', 'is', null)
+          .order('created_at', { ascending: false })
+          .limit(12);
+        if (error) throw error;
+        slides = data || [];
+        if (!slides.length) { carousel.hidden = true; return; }
+
+        track.innerHTML = '';
+        slides.forEach(r => {
+          const li = document.createElement('li');
+          li.className = 'fb-slide';
+          const photo = publicPhotoUrl(r.photo_path);
+          const who = (r.display_name || 'Anonymous visitor');
+          li.innerHTML =
+            '<div class="fb-slide-stars">' + starsHTML(r.rating) + '</div>' +
+            '<blockquote class="fb-slide-quote"></blockquote>' +
+            '<div class="fb-slide-who">' +
+              (photo
+                ? '<img class="fb-slide-photo" src="' + photo + '" alt="" loading="lazy">'
+                : '<span class="fb-slide-initial" aria-hidden="true"></span>') +
+              '<span class="fb-slide-name"></span>' +
+            '</div>';
+          li.querySelector('.fb-slide-quote').textContent = r.comment || '';
+          li.querySelector('.fb-slide-name').textContent = who;
+          const ini = li.querySelector('.fb-slide-initial');
+          if (ini) ini.textContent = who.charAt(0).toUpperCase();
+          track.appendChild(li);
+        });
+
+        dotsEl.innerHTML = slides.map((_, i) =>
+          '<button class="fb-dot-btn' + (i === 0 ? ' is-on' : '') +
+          '" type="button" aria-label="Review ' + (i + 1) + '"></button>').join('');
+        Array.from(dotsEl.children).forEach((d, i) =>
+          d.addEventListener('click', () => { goTo(i); startAuto(); }));
+
+        // Average across every approved response, not just ones with comments
+        const { data: all } = await sb.from('feedback').select('rating').eq('approved', true);
+        if (all && all.length) {
+          const avg = all.reduce((a, r) => a + (r.rating || 0), 0) / all.length;
+          const avgStars = document.getElementById('fbAvgStars');
+          const avgLabel = document.getElementById('fbAvgLabel');
+          if (avgStars) avgStars.innerHTML = starsHTML(Math.round(avg));
+          if (avgLabel) avgLabel.textContent = avg.toFixed(1) + ' · ' + all.length +
+            (all.length === 1 ? ' response' : ' responses');
+        }
+
+        carousel.hidden = false;
+        goTo(0);
+        startAuto();
+      } catch (e) {
+        console.warn('[feedback] could not load reviews:', e);
+        carousel.hidden = true;
+      }
+    }
+
+    document.getElementById('fbPrev')?.addEventListener('click', () => { goTo(index - 1); startAuto(); });
+    document.getElementById('fbNext')?.addEventListener('click', () => { goTo(index + 1); startAuto(); });
+
+    // Swipe on touch
+    let tx = 0;
+    track?.addEventListener('touchstart', e => { tx = e.changedTouches[0].clientX; }, { passive: true });
+    track?.addEventListener('touchend', e => {
+      const dx = e.changedTouches[0].clientX - tx;
+      if (Math.abs(dx) > 45) { goTo(index + (dx < 0 ? 1 : -1)); startAuto(); }
+    }, { passive: true });
+
+    /* ---------- Boot ---------- */
+    if (alreadyDone) {
+      if (stage) stage.hidden = true;
+      if (progress) progress.hidden = true;
+      if (doneEl) {
+        doneEl.hidden = false;
+        const t = document.getElementById('fbDoneTitle');
+        const sb2 = document.getElementById('fbDoneSub');
+        if (t) t.textContent = 'You already weighed in — thank you.';
+        if (sb2) sb2.textContent = 'Once is plenty. Your answers are safely recorded.';
+      }
+    } else {
+      renderStep();
+    }
+    loadReviews();
+  }
+
+  /* =========================================================
+     OWNER MODERATION PANEL
+     Signs in through Supabase Auth (a real session, not the
+     localStorage owner flag), lists pending feedback, and
+     approves or deletes it. RLS is what actually authorises
+     the write — this is just the interface to it.
+  ========================================================= */
+  function initFeedbackModeration() {
+    if (!window.supabase || !SUPABASE_URL || !SUPABASE_ANON_KEY) return;
+
+    let sb;
+    try { sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); }
+    catch (e) { return; }
+
+    let panel = null, listEl = null, badgeEl = null;
+    let session = null;
+
+    /* ---------- Build the UI once, lazily ---------- */
+    function buildPanel() {
+      if (panel) return panel;
+      panel = document.createElement('div');
+      panel.className = 'fbmod';
+      panel.hidden = true;
+      panel.setAttribute('role', 'dialog');
+      panel.setAttribute('aria-label', 'Pending feedback');
+      panel.innerHTML =
+        '<div class="fbmod-card">' +
+          '<button class="fbmod-x" id="fbmodClose" aria-label="Close">' +
+            '<svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>' +
+          '</button>' +
+          '<h3 class="fbmod-title">Pending feedback</h3>' +
+          '<div class="fbmod-auth" id="fbmodAuth">' +
+            '<p class="fbmod-sub">Sign in to approve reviews.</p>' +
+            '<input class="fbmod-input" id="fbmodEmail" type="email" placeholder="Email" autocomplete="username">' +
+            '<input class="fbmod-input" id="fbmodPass" type="password" placeholder="Password" autocomplete="current-password">' +
+            '<p class="fbmod-err" id="fbmodErr" hidden></p>' +
+            '<button class="btn btn-primary fbmod-signin" id="fbmodSignin"><span>Sign in</span></button>' +
+          '</div>' +
+          '<div class="fbmod-body" id="fbmodBody" hidden>' +
+            '<ul class="fbmod-list" id="fbmodList"></ul>' +
+            '<button class="fbmod-signout" id="fbmodSignout">Sign out</button>' +
+          '</div>' +
+        '</div>';
+      document.body.appendChild(panel);
+
+      panel.addEventListener('click', (e) => { if (e.target === panel) hide(); });
+      panel.querySelector('#fbmodClose').addEventListener('click', hide);
+      panel.querySelector('#fbmodSignin').addEventListener('click', signIn);
+      panel.querySelector('#fbmodSignout').addEventListener('click', signOut);
+      panel.querySelector('#fbmodPass').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') signIn();
+      });
+      listEl = panel.querySelector('#fbmodList');
+      return panel;
+    }
+
+    function show() { buildPanel(); panel.hidden = false; document.body.style.overflow = 'hidden'; refresh(); }
+    function hide() { if (panel) panel.hidden = true; document.body.style.overflow = ''; }
+
+    function setErr(msg) {
+      const el = panel && panel.querySelector('#fbmodErr');
+      if (!el) return;
+      if (!msg) { el.hidden = true; return; }
+      el.textContent = msg; el.hidden = false;
+    }
+
+    async function signIn() {
+      setErr('');
+      const email = panel.querySelector('#fbmodEmail').value.trim();
+      const password = panel.querySelector('#fbmodPass').value;
+      if (!email || !password) { setErr('Enter your email and password.'); return; }
+      const { data, error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) { setErr(error.message || 'Sign-in failed.'); return; }
+      session = data.session;
+      panel.querySelector('#fbmodPass').value = '';
+      refresh();
+    }
+
+    async function signOut() {
+      await sb.auth.signOut();
+      session = null;
+      refresh();
+    }
+
+    function timeAgo(ts) {
+      const d = (Date.now() - new Date(ts).getTime()) / 1000;
+      if (d < 3600) return Math.max(1, Math.round(d / 60)) + 'm ago';
+      if (d < 86400) return Math.round(d / 3600) + 'h ago';
+      return Math.round(d / 86400) + 'd ago';
+    }
+
+    async function refresh() {
+      buildPanel();
+      const auth = panel.querySelector('#fbmodAuth');
+      const body = panel.querySelector('#fbmodBody');
+      if (!session) {
+        const { data } = await sb.auth.getSession();
+        session = data && data.session;
+      }
+      if (!session) { auth.hidden = false; body.hidden = true; return; }
+      auth.hidden = true; body.hidden = false;
+
+      const { data, error } = await sb
+        .from('feedback')
+        .select('*')
+        .eq('approved', false)
+        .order('created_at', { ascending: false });
+
+      listEl.innerHTML = '';
+      if (error) {
+        listEl.innerHTML = '<li class="fbmod-empty">Could not load: ' + escapeHtml(error.message) + '</li>';
+        return;
+      }
+      if (!data || !data.length) {
+        listEl.innerHTML = '<li class="fbmod-empty">Nothing waiting. All caught up.</li>';
+        updateBadge(0);
+        return;
+      }
+      updateBadge(data.length);
+
+      data.forEach(row => {
+        const li = document.createElement('li');
+        li.className = 'fbmod-item';
+        const stars = '★'.repeat(row.rating || 0) + '☆'.repeat(5 - (row.rating || 0));
+        li.innerHTML =
+          '<div class="fbmod-meta">' +
+            '<span class="fbmod-stars">' + stars + '</span>' +
+            '<span class="fbmod-time mono">' + timeAgo(row.created_at) + '</span>' +
+          '</div>' +
+          (row.comment ? '<p class="fbmod-comment"></p>' : '') +
+          '<p class="fbmod-answers mono"></p>' +
+          '<div class="fbmod-actions">' +
+            '<button class="fbmod-reject" type="button">Delete</button>' +
+            '<button class="fbmod-approve" type="button">Approve</button>' +
+          '</div>';
+        if (row.comment) li.querySelector('.fbmod-comment').textContent = row.comment;
+        li.querySelector('.fbmod-answers').textContent =
+          [row.display_name ? '— ' + row.display_name : '— Anonymous',
+           row.q_goal, row.q_found, row.q_friction, row.q_hire]
+          .filter(Boolean).join('  ·  ');
+
+        if (row.photo_path) {
+          try {
+            const url = sb.storage.from('feedback-photos').getPublicUrl(row.photo_path).data.publicUrl;
+            const img = document.createElement('img');
+            img.className = 'fbmod-photo'; img.src = url; img.alt = 'Submitted photo'; img.loading = 'lazy';
+            li.insertBefore(img, li.querySelector('.fbmod-actions'));
+          } catch (e) {}
+        }
+
+        li.querySelector('.fbmod-approve').addEventListener('click', async () => {
+          const { error: e2 } = await sb.from('feedback')
+            .update({ approved: true, reviewed_at: new Date().toISOString() })
+            .eq('id', row.id);
+          if (e2) { if (window.__agqToast) window.__agqToast('Approve failed: ' + e2.message); return; }
+          li.remove(); bumpBadge(-1);
+          if (window.__agqToast) window.__agqToast('Approved — it\u2019s live now');
+          if (!listEl.children.length) {
+            listEl.innerHTML = '<li class="fbmod-empty">Nothing waiting. All caught up.</li>';
+          }
+        });
+
+        li.querySelector('.fbmod-reject').addEventListener('click', async () => {
+          if (!confirm('Delete this feedback permanently?')) return;
+          const { error: e3 } = await sb.from('feedback').delete().eq('id', row.id);
+          if (e3) { if (window.__agqToast) window.__agqToast('Delete failed: ' + e3.message); return; }
+          li.remove(); bumpBadge(-1);
+          if (!listEl.children.length) {
+            listEl.innerHTML = '<li class="fbmod-empty">Nothing waiting. All caught up.</li>';
+          }
+        });
+
+        listEl.appendChild(li);
+      });
+    }
+
+    /* ---------- Floating badge ---------- */
+    let pendingCount = 0;
+    function updateBadge(n) {
+      pendingCount = n;
+      if (!badgeEl) return;
+      badgeEl.hidden = n <= 0;
+      const c = badgeEl.querySelector('.fbmod-badge-count');
+      if (c) c.textContent = n;
+    }
+    function bumpBadge(delta) { updateBadge(Math.max(0, pendingCount + delta)); }
+
+    function buildBadge() {
+      if (badgeEl) return;
+      badgeEl = document.createElement('button');
+      badgeEl.className = 'fbmod-badge';
+      badgeEl.type = 'button';
+      badgeEl.hidden = true;
+      badgeEl.setAttribute('aria-label', 'Review pending feedback');
+      badgeEl.innerHTML =
+        '<svg viewBox="0 0 24 24" width="16" height="16" fill="none"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9L3.5 9.7l5.9-.8z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>' +
+        '<span class="fbmod-badge-count">0</span>' +
+        '<span class="fbmod-badge-label">pending</span>';
+      badgeEl.addEventListener('click', show);
+      document.body.appendChild(badgeEl);
+    }
+
+    /* Only owners see the badge, and only when signed in. */
+    (async function boot() {
+      const { data } = await sb.auth.getSession();
+      session = data && data.session;
+      if (!session) return;          // not signed in: no badge, no panel
+      buildBadge();
+      const { count } = await sb.from('feedback')
+        .select('*', { count: 'exact', head: true })
+        .eq('approved', false);
+      updateBadge(typeof count === 'number' ? count : 0);
+    })();
+
+    // Open with the keyboard, or from the console, even when signed out.
+    window.__agqModeration = show;
+    document.addEventListener('keydown', (e) => {
+      if (e.shiftKey && (e.metaKey || e.ctrlKey) && (e.key === 'F' || e.key === 'f')) {
+        e.preventDefault(); show();
+      }
+    });
+  }
+
 })();
