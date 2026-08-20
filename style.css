@@ -4767,3 +4767,50 @@ img, svg, video, canvas, iframe, table, pre{ max-width:100%; }
   .contact-link--book span:first-child{ min-width:0; }
   .contact-link--book b{ font-size:.9rem; }
 }
+
+/* ---------- Project modal: problem / outcome emphasis ---------- */
+/* These two blocks carry the hiring signal, so they read differently
+   from the neutral descriptive sections around them. */
+.pmodal-block--problem,
+.pmodal-block--outcome{
+  position:relative;
+  padding-left:16px;
+}
+.pmodal-block--problem::before,
+.pmodal-block--outcome::before{
+  content:"";
+  position:absolute; left:0; top:2px; bottom:2px;
+  width:2px; border-radius:2px;
+}
+.pmodal-block--problem::before{ background:var(--grad-accent); opacity:.55; }
+.pmodal-block--outcome::before{ background:var(--grad-3); opacity:.7; }
+.pmodal-block--outcome p{ color:var(--text); }
+
+@media (max-width:520px){
+  .pmodal-block--problem,
+  .pmodal-block--outcome{ padding-left:13px; }
+}
+
+/* ---------- Profile avatar: mobile rendering safeguards ---------- */
+/* Inline SVGs with gradient fills can collapse or blur on Android WebView
+   and older iOS Safari unless the box is explicitly sized and the SVG is
+   given its own layer. */
+.community-msg-av.is-profile,
+.community-visitor-av.is-profile{
+  flex-shrink:0;
+  aspect-ratio:1 / 1;
+  border-radius:50%;
+  -webkit-mask-image:-webkit-radial-gradient(circle, #fff 100%, #000 100%);
+  transform:translateZ(0);
+}
+.community-msg-av.is-profile > svg,
+.community-visitor-av.is-profile > svg{
+  width:100% !important;
+  height:100% !important;
+  display:block;
+  border-radius:50%;
+  pointer-events:none;
+}
+/* Some Android builds ignore width/height on an SVG without a set viewBox box */
+.community-msg-av.is-profile > svg rect,
+.community-visitor-av.is-profile > svg rect{ shape-rendering:geometricPrecision; }

@@ -197,27 +197,27 @@
         </button>
 
         <div class="theme-panel-wrap">
-          <button class="theme-toggle accent-trigger" id="themePanelToggle" aria-label="Customize accent colors" aria-expanded="false" aria-controls="themePanel" title="Accent colors">
+          <button class="theme-toggle accent-trigger" id="themePanelToggle" aria-label="Open design preferences" aria-expanded="false" aria-controls="themePanel" title="Design preferences">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/><path d="M12 3a9 9 0 000 18c1.4 0 2-1 2-2 0-1.3-1-1.5-1-2.5 0-.8.7-1.5 1.5-1.5H17a4 4 0 004-4c0-4.4-4-8-9-8z" fill="currentColor" opacity=".18"/><circle cx="8.5" cy="10" r="1.1" fill="currentColor"/><circle cx="12" cy="8" r="1.1" fill="currentColor"/><circle cx="15.5" cy="10" r="1.1" fill="currentColor"/></svg>
           </button>
 
-          <div class="theme-panel" id="themePanel" role="dialog" aria-label="Theme customization" hidden>
-            <button class="theme-panel-close" id="themePanelClose" aria-label="Close design options">
+          <div class="theme-panel" id="themePanel" role="dialog" aria-label="Design preferences" hidden>
+            <button class="theme-panel-close" id="themePanelClose" aria-label="Close design preferences">
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
             </button>
-            <p class="theme-panel-intro">Customize this portfolio as if it's yours.</p>
-            <button class="theme-default-btn" id="themeDefaultBtn" title="Reset to a clean, minimal, professional look">
+            <p class="theme-panel-intro">Make it yours — every choice here is one I’d make myself.</p>
+            <button class="theme-default-btn" id="themeDefaultBtn" title="Back to my default — calm, minimal, and let the work speak">
               <svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true"><path d="M4 12a8 8 0 108-8M4 12V7m0 5h5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              <span>Default · clean &amp; minimal</span>
+              <span>My default · calm &amp; minimal</span>
             </button>
-            <p class="theme-panel-title mono">Theme</p>
+            <p class="theme-panel-title mono">Light or dark</p>
             <button class="theme-panel-mode" id="panelThemeToggle">
               <span class="mono">Light / Dark</span>
               <span class="theme-panel-mode-hint mono">press T</span>
             </button>
-            <p class="theme-panel-title mono">Accent gradient</p>
+            <p class="theme-panel-title mono">Palette</p>
             <div class="custom-accent" id="customAccent">
-              <label class="custom-accent-swatch" title="Pick your own color">
+              <label class="custom-accent-swatch" title="Mix your own">
                 <input type="color" id="customColorInput" value="#7C5CFC" aria-label="Custom accent color">
                 <span class="custom-accent-preview" id="customColorPreview"></span>
               </label>
@@ -372,12 +372,12 @@
               <button class="accent-swatch" data-accent="flatslate" aria-pressed="false" title="Flat Slate — solid"><span style="background:#64748B"></span><em>Flat Slate</em></button>
               <button class="accent-swatch" data-accent="flatink" aria-pressed="false" title="Flat Ink — solid dark"><span style="background:#334155"></span><em>Flat Ink</em></button>
             </div>
-            <p class="theme-panel-title mono">Style</p>
+            <p class="theme-panel-title mono">Color treatment</p>
             <div class="anim-options" id="styleOptions" role="group" aria-label="Color style">
               <button class="anim-opt is-active" data-style="gradient" aria-pressed="true">Gradient</button>
               <button class="anim-opt" data-style="plain" aria-pressed="false">Plain</button>
             </div>
-            <p class="theme-panel-title mono">Gradient motion</p>
+            <p class="theme-panel-title mono">Movement</p>
             <div class="anim-options" id="animOptions" role="group" aria-label="Gradient animation style">
               <button class="anim-opt is-active" data-anim="off" aria-pressed="true">Default</button>
               <button class="anim-opt" data-anim="plain" aria-pressed="false">Static</button>
@@ -393,7 +393,7 @@
               <button class="anim-opt is-active" data-speed="medium" aria-pressed="true">Medium</button>
               <button class="anim-opt" data-speed="fast" aria-pressed="false">Fast</button>
             </div>
-            <p class="theme-panel-title mono">Font</p>
+            <p class="theme-panel-title mono">Typeface</p>
             <div class="anim-options" id="fontOptions" role="group" aria-label="Font style">
               <button class="anim-opt is-active" data-font="default" aria-pressed="true">Default</button>
               <button class="anim-opt" data-font="classic" aria-pressed="false">Classic</button>
@@ -405,7 +405,7 @@
               <button class="anim-opt" data-font="warm" aria-pressed="false">Warm</button>
               <button class="anim-opt" data-font="mono" aria-pressed="false">Mono</button>
             </div>
-            <p class="theme-panel-title mono">Corners</p>
+            <p class="theme-panel-title mono">Edges</p>
             <div class="anim-options" id="radiusOptions" role="group" aria-label="Corner radius style">
               <button class="anim-opt" data-radius="sharp" aria-pressed="false">Sharp</button>
               <button class="anim-opt is-active" data-radius="default" aria-pressed="true">Default</button>
@@ -413,7 +413,7 @@
               <button class="anim-opt" data-radius="pill" aria-pressed="false">Pill</button>
               <button class="anim-opt" data-radius="squircle" aria-pressed="false">Squircle</button>
             </div>
-            <p class="theme-panel-title mono">Cursor</p>
+            <p class="theme-panel-title mono">Pointer</p>
             <div class="anim-options" id="cursorOptions" role="group" aria-label="Cursor style">
               <button class="anim-opt is-active" data-cursor="default" aria-pressed="true">Default</button>
               <button class="anim-opt" data-cursor="arrow" aria-pressed="false">Arrow</button>
@@ -424,7 +424,7 @@
               <button class="anim-opt" data-cursor="pointer" aria-pressed="false">Retro</button>
               <button class="anim-opt" data-cursor="cross" aria-pressed="false">Cross</button>
             </div>
-            <p class="theme-panel-title mono">Background</p>
+            <p class="theme-panel-title mono">Canvas</p>
             <div class="anim-options anim-options--bg" id="bgOptions" role="group" aria-label="Background animation style">
               <button class="anim-opt is-active" data-bg="none" aria-pressed="true">Default</button>
               <button class="anim-opt" data-bg="code" aria-pressed="false">Code</button>
@@ -435,7 +435,7 @@
               <button class="anim-opt" data-bg="grid" aria-pressed="false">Grid</button>
               <button class="anim-opt" data-bg="mesh" aria-pressed="false">Mesh</button>
             </div>
-            <p class="theme-panel-title mono">Background themes</p>
+            <p class="theme-panel-title mono">Atmosphere</p>
             <div class="anim-options anim-options--bg" id="bgThemeOptions" role="group" aria-label="Themed animated backgrounds">
               <button class="anim-opt is-active" data-bg="none" aria-pressed="true">Default</button>
               <button class="anim-opt" data-bg="ninja" aria-pressed="false">Ninja</button>
@@ -449,7 +449,7 @@
               <button class="anim-opt" data-bg="bubbles" aria-pressed="false">Bubbles</button>
               <button class="anim-opt" data-bg="doodle" aria-pressed="false">Doodle</button>
             </div>
-            <p class="theme-panel-title mono">Sound</p>
+            <p class="theme-panel-title mono">Audio</p>
             <button class="theme-panel-mode" id="soundToggle" role="switch" aria-checked="false">
               <span class="mono">Sound effects</span>
               <span class="sound-switch" aria-hidden="true"><span class="sound-switch-knob"></span></span>
@@ -458,7 +458,7 @@
               <span class="mono sound-vol-label">Volume</span>
               <input type="range" id="soundVolume" min="0" max="100" value="50" aria-label="Sound volume">
             </div>
-            <p class="theme-panel-title mono">Accessibility</p>
+            <p class="theme-panel-title mono">Comfort</p>
             <button class="theme-panel-mode" id="contrastToggle" role="switch" aria-checked="false">
               <span class="mono">High contrast</span>
               <span class="sound-switch" aria-hidden="true"><span class="sound-switch-knob"></span></span>
@@ -765,6 +765,8 @@
         <div class="filter-row" id="projectFilters" role="tablist" aria-label="Filter projects by category">
           <button class="filter-btn is-active" data-filter="all" role="tab" aria-selected="true">All</button>
           <button class="filter-btn" data-filter="UI/UX Design" role="tab" aria-selected="false">UI/UX Design</button>
+              <button class="filter-btn" data-filter="Quality Assurance" role="tab" aria-selected="false">Quality Assurance</button>
+              <button class="filter-btn" data-filter="Business Analysis" role="tab" aria-selected="false">Business Analysis</button>
           <button class="filter-btn" data-filter="Web App" role="tab" aria-selected="false">Web App</button>
           <button class="filter-btn" data-filter="Website" role="tab" aria-selected="false">Website</button>
           <button class="filter-btn" data-filter="Mobile" role="tab" aria-selected="false">Mobile</button>

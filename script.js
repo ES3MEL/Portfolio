@@ -941,7 +941,23 @@
       setTimeout(() => input && input.focus(), 60);
     }
     function close() { overlay.hidden = true; document.body.style.overflow = ''; if (input) input.value = ''; }
-    function openCv() { window.open(CV_URL, '_blank', 'noopener'); }
+    // Check the file is actually reachable before opening a tab, so a missing
+    // or misnamed PDF surfaces as a clear message instead of a blank 404.
+    function openCv() {
+      const win = window.open('', '_blank', 'noopener');
+      fetch(CV_URL, { method: 'HEAD' })
+        .then(res => {
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          if (win) { win.location.href = CV_URL; } else { window.open(CV_URL, '_blank', 'noopener'); }
+        })
+        .catch(err => {
+          if (win) { try { win.close(); } catch (e) {} }
+          console.error('[cv] could not load ' + CV_URL + ':', err);
+          if (window.__agqToast) {
+            window.__agqToast('The CV file could not be found \u2014 please email allyssageannequinit@gmail.com');
+          }
+        });
+    }
 
     // Intercept every CV trigger
     document.addEventListener('click', (e) => {
@@ -1256,6 +1272,102 @@
      PROJECTS DATA + RENDER + FILTER/SEARCH + MODAL
   ========================================================= */
   const PROJECTS = [
+    {
+      id: 'doxu-qa',
+      title: 'Doxu.AI \u2014 Mobile QA',
+      category: 'Quality Assurance',
+      role: 'QA Engineer',
+      year: '2026',
+      status: 'Internship \u00b7 Twala (Ohelio, Inc.)',
+      featured: true,
+      tagline: 'Manual testing of Doxu.AI\u2019s mobile responsiveness \u2014 finding, documenting, and tracking layout and functionality defects.',
+      desc: 'Ran structured manual test passes across web and mobile, filing detailed bug tickets and tracking them to resolution.',
+      accent: ['#4FA0FF', '#33E5C4'],
+      tech: ['Manual Testing', 'Bug Reporting', 'ClickUp', 'Cross-Device Testing'],
+      problem: 'Doxu.AI rendered inconsistently across mobile screen sizes, and issues were being reported informally without enough detail to reproduce them reliably.',
+      overview: 'As part of a cross-functional internship at Twala, I ran manual test passes over Doxu.AI\u2019s mobile experience and the product landing pages, checking functionality and layout consistency across breakpoints. Each defect was written up as a reproducible ticket with steps, expected versus actual behavior, environment, and evidence.',
+      features: [
+        'Structured manual test passes across mobile breakpoints and device widths.',
+        'Bug tickets written to be reproducible: steps, expected vs actual, environment, screenshots.',
+        'Landing page verification across web and mobile for functionality and layout consistency.',
+        'Progress and status tracking for mobile-responsiveness work on Twala v2.'
+      ],
+      process: [
+        { title: 'Plan', body: 'Identified the screens and breakpoints most likely to break, and worked through them systematically rather than ad hoc.' },
+        { title: 'Test', body: 'Ran manual passes across device widths, recording each deviation from expected behavior.' },
+        { title: 'Report', body: 'Filed detailed tickets and tracked them through to resolution.' }
+      ],
+      outcome: 'TODO \u2014 add the concrete result here: roughly how many defects you filed, which areas were worst affected, and what changed after the fixes shipped. Even approximate numbers are far stronger than none.',
+      learnings: [
+        'TODO \u2014 one honest thing you would approach differently, e.g. building a reusable test checklist earlier instead of retesting from memory each pass.'
+      ],
+      gallery: [],
+      links: []
+    },
+    {
+      id: 'twalasign-ba',
+      title: 'TwalaSign \u2014 Business Analysis',
+      category: 'Business Analysis',
+      role: 'Business Analyst',
+      year: '2026',
+      status: 'Internship \u00b7 Twala (Ohelio, Inc.)',
+      featured: true,
+      tagline: 'Competitive analysis and feature backlogs for an e-signature platform \u2014 turning market research into prioritized product decisions.',
+      desc: 'Built competitive comparison matrices for TwalaSign and developed feature backlogs for TwalaSign and Doxu.AI.',
+      accent: ['#7C5CFC', '#4FA0FF'],
+      tech: ['Competitive Analysis', 'Backlog Creation', 'Product Documentation', 'Requirements Gathering'],
+      problem: 'TwalaSign needed a clear picture of where it stood against competing e-signature products, and a prioritized view of which features to build next.',
+      overview: 'I built competitive comparison matrices mapping TwalaSign against other e-signature platforms across features, and developed feature backlogs for both TwalaSign and Doxu.AI. Alongside the work I completed a Udemy Business Analysis Fundamentals course (IIBA-endorsed) and applied the framing directly to how requirements were captured.',
+      features: [
+        'Competitive comparison matrices benchmarking TwalaSign against rival e-signature platforms.',
+        'Feature backlogs for TwalaSign and Doxu.AI, framed as actionable items.',
+        'Product documentation drafted for internal and user-facing use.',
+        'Requirements captured using IIBA-endorsed BA practice from concurrent coursework.'
+      ],
+      process: [
+        { title: 'Research', body: 'Surveyed competing products and identified the feature dimensions that actually mattered to buyers.' },
+        { title: 'Compare', body: 'Built structured matrices so gaps and strengths could be read at a glance.' },
+        { title: 'Prioritize', body: 'Translated the findings into backlog items the team could act on.' }
+      ],
+      outcome: 'TODO \u2014 what did the analysis actually change? Which gaps did it surface, and did any backlog item you wrote get built? This is the strongest sentence on the page if you can fill it in.',
+      learnings: [
+        'TODO \u2014 one thing you would do differently, e.g. validating the comparison dimensions with the sales team before building the matrix.'
+      ],
+      gallery: [],
+      links: []
+    },
+    {
+      id: 'twala-landing',
+      title: 'Twala \u2014 Landing Page Redesign',
+      category: 'Website',
+      role: 'UI/UX Designer',
+      year: '2025',
+      status: 'Internship \u00b7 Twala (Ohelio, Inc.)',
+      featured: true,
+      tagline: 'Redesigned Twala\u2019s landing pages for clarity and layout \u2014 designed and shipped directly in Webflow.',
+      desc: 'Redesigned selected landing pages and implemented the changes in Webflow, including the client and partner carousel.',
+      accent: ['#7C5CFC', '#FF6FB5'],
+      tech: ['Webflow', 'UI/UX Design', 'Responsive Design', 'Intercom'],
+      problem: 'TODO \u2014 describe what was wrong with the original pages. Was the layout unclear, the hierarchy weak, the mobile experience broken? Be specific; this sets up everything that follows.',
+      overview: 'During my first internship at Twala I redesigned selected landing pages for clarity and layout, implementing the updates directly in Webflow rather than handing designs off. That included rebuilding the client and partner carousel. I also helped restructure Twala\u2019s help center articles in Intercom so users could find what they needed.',
+      features: [
+        'Landing page redesigns focused on clarity of layout and visual hierarchy.',
+        'Client and partner carousel rebuilt in Webflow.',
+        'Changes implemented directly in production rather than handed off as static mockups.',
+        'Help center articles restructured in Intercom for findability.'
+      ],
+      process: [
+        { title: 'Audit', body: 'Reviewed the existing pages to identify what was working against clarity.' },
+        { title: 'Design', body: 'Reworked layout and hierarchy with the existing brand system.' },
+        { title: 'Implement', body: 'Built the changes directly in Webflow and checked them across breakpoints.' }
+      ],
+      outcome: 'TODO \u2014 what changed after launch? Even qualitative feedback from the team counts.',
+      learnings: [
+        'TODO \u2014 one honest reflection on the redesign.'
+      ],
+      gallery: [],
+      links: []
+    },
     {
       id: 'portfolio',
       title: 'Personal Portfolio',
@@ -1652,6 +1764,10 @@
           </div>
         </div>
         <div class="pmodal-content">
+          ${p.problem ? `<div class="pmodal-block pmodal-block--problem">
+            <h3>The problem</h3>
+            <p>${escapeHtml(p.problem)}</p>
+          </div>` : ''}
           <div class="pmodal-block">
             <h3>Overview</h3>
             <p>${escapeHtml(p.overview)}</p>
@@ -1665,6 +1781,14 @@
             <div class="pmodal-tech-row">${tech}</div>
           </div>
           ${processBlock}
+          ${p.outcome ? `<div class="pmodal-block pmodal-block--outcome">
+            <h3>Outcome</h3>
+            <p>${escapeHtml(p.outcome)}</p>
+          </div>` : ''}
+          ${(p.learnings && p.learnings.length) ? `<div class="pmodal-block">
+            <h3>What I'd do differently</h3>
+            <ul>${p.learnings.map(l => `<li>${escapeHtml(l)}</li>`).join('')}</ul>
+          </div>` : ''}
         </div>`;
     }
 
@@ -3234,8 +3358,13 @@
         // minimal: head + shoulders + subtle hair framing, all in soft white
         return `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">${bg}<g fill="#fff"><path d="M13.5 18.5c0-4.6 2.7-7.5 6.5-7.5s6.5 2.9 6.5 7.5c0 1.2-.2 2-.5 3 .8.3 1.3.9 1.3 1.9v.6h-2.4c-.1-.5-.3-1-.6-1.4.7-1 1.2-2.3 1.2-3.9 0-3.4-2.3-5.2-5.5-5.2s-5.5 1.8-5.5 5.2c0 1.6.5 2.9 1.2 3.9-.3.4-.5.9-.6 1.4H12.7v-.6c0-1 .5-1.6 1.3-1.9-.3-1-.5-1.8-.5-3z" opacity=".9"/><circle cx="20" cy="18.5" r="4.6"/><path d="M29.5 30.5c0-4.2-4.3-6.2-9.5-6.2s-9.5 2-9.5 6.2V31h19z"/></g></svg>`;
       }
-      // male: minimal head + shoulders
-      return `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">${bg}<g fill="#fff"><circle cx="20" cy="17" r="5.2"/><path d="M29.5 30.5c0-4.4-4.3-6.6-9.5-6.6s-9.5 2.2-9.5 6.6V31h19z"/></g></svg>`;
+      if (gender === 'male') {
+        // male: minimal head + shoulders
+        return `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">${bg}<g fill="#fff"><circle cx="20" cy="17" r="5.2"/><path d="M29.5 30.5c0-4.4-4.3-6.6-9.5-6.6s-9.5 2.2-9.5 6.6V31h19z"/></g></svg>`;
+      }
+      // neutral default: used whenever no gender was chosen, so everyone gets a
+      // proper profile picture instead of falling back to bare initials.
+      return `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">${bg}<g fill="#fff"><circle cx="20" cy="17.2" r="4.9"/><path d="M29.5 30.5c0-4.3-4.3-6.4-9.5-6.4s-9.5 2.1-9.5 6.4V31h19z"/></g></svg>`;
     }
     function setGenderAvatar(el, gender) {
       el.classList.add('is-profile');
@@ -3609,7 +3738,7 @@
       const avGender = (mine ? myGender() : (row._gender || row.gender || '')) || '';
       if (avGender === 'female') { setGenderAvatar(av, 'female'); }
       else if (avGender === 'male') { setGenderAvatar(av, 'male'); }
-      else { av.textContent = initials(who); av.style.background = colorFor(who); }
+      else { setGenderAvatar(av, 'neutral'); }
       if (grouped) av.style.visibility = 'hidden';
       const bubble = document.createElement('div'); bubble.className = 'community-msg-bubble';
       if (!grouped) {
@@ -4694,7 +4823,7 @@
           dl.addEventListener('click', () => { if (confirm('Delete this message?')) deleteMessage(w.getAttribute('data-mid'), w); });
           acts.append(dl); b.append(acts);
           const avs = document.createElement('span'); avs.className = 'community-msg-av';
-          avs.textContent = initials(name || 'Anonymous'); avs.style.background = colorFor(name || 'Anonymous');
+          setGenderAvatar(avs, 'neutral');
           w.append(avs, b);
           feed.appendChild(w);
           justSent = w;
@@ -4780,7 +4909,7 @@
         const g = (v.gender || '').toLowerCase();
         if (g === 'female') { setGenderAvatar(av, 'female'); }
         else if (g === 'male') { setGenderAvatar(av, 'male'); }
-        else { av.textContent = initials(nm); av.style.background = colorFor(nm); }
+        else { setGenderAvatar(av, 'neutral'); }
         const info = document.createElement('div'); info.className = 'community-visitor-info';
         const name = document.createElement('span'); name.className = 'community-visitor-name'; name.textContent = nm;
         const t = document.createElement('span'); t.className = 'community-visitor-time mono'; t.textContent = relTime(v.created_at);
@@ -5408,6 +5537,7 @@
     function buildScript(p) {
       const s = [];
       s.push(`Hi, I'm Allyssa. Let me walk you through ${p.title}.`);
+      if (p.problem) s.push('The problem. ' + p.problem);
       if (p.overview) s.push(p.overview);
       s.push(`My role here was ${p.role}, and this was a ${(p.status || p.category)} from ${p.year}.`);
       if (p.features && p.features.length) {
