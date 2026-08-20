@@ -929,7 +929,29 @@
     const errEl = $('#cvlockError');
     if (!overlay || !form) return;
 
-    const CV_URL = 'assets/Allyssa-Geanne-Quinit-CV.pdf';
+    // Where the CV lives. Candidates are tried in order and the first one
+    // that responds is used, so a Vercel assets-folder problem doesn't take
+    // the whole feature down. To host it on Supabase Storage instead, put
+    // the public URL first in this list.
+    const CV_SOURCES = [
+      'assets/Allyssa-Geanne-Quinit-CV.pdf',
+      '/assets/Allyssa-Geanne-Quinit-CV.pdf',
+      'assets/allyssa-geanne-quinit-cv.pdf',
+      'Allyssa-Geanne-Quinit-CV.pdf'
+    ];
+    let CV_URL = CV_SOURCES[0];
+    let cvResolved = null;   // cached once we know which one works
+
+    async function resolveCvUrl() {
+      if (cvResolved) return cvResolved;
+      for (const url of CV_SOURCES) {
+        try {
+          const res = await fetch(url, { method: 'HEAD' });
+          if (res.ok) { cvResolved = url; return url; }
+        } catch (e) { /* try the next one */ }
+      }
+      return null;
+    }
     const CODE = 'AGQ2026';                     // ← change this to your chosen code
     let unlocked = false;
     try { unlocked = sessionStorage.getItem('agq-cv-ok') === '1'; } catch (e) {}
@@ -944,19 +966,22 @@
     // Check the file is actually reachable before opening a tab, so a missing
     // or misnamed PDF surfaces as a clear message instead of a blank 404.
     function openCv() {
+      // Open the tab synchronously so it isn't caught by the popup blocker,
+      // then point it at whichever source actually resolves.
       const win = window.open('', '_blank', 'noopener');
-      fetch(CV_URL, { method: 'HEAD' })
-        .then(res => {
-          if (!res.ok) throw new Error('HTTP ' + res.status);
-          if (win) { win.location.href = CV_URL; } else { window.open(CV_URL, '_blank', 'noopener'); }
-        })
-        .catch(err => {
-          if (win) { try { win.close(); } catch (e) {} }
-          console.error('[cv] could not load ' + CV_URL + ':', err);
-          if (window.__agqToast) {
-            window.__agqToast('The CV file could not be found \u2014 please email allyssageannequinit@gmail.com');
-          }
-        });
+      resolveCvUrl().then(url => {
+        if (url) {
+          CV_URL = url;
+          if (win) { win.location.href = url; }
+          else { window.open(url, '_blank', 'noopener'); }
+          return;
+        }
+        if (win) { try { win.close(); } catch (e) {} }
+        console.error('[cv] none of the candidate paths resolved:', CV_SOURCES);
+        if (window.__agqToast) {
+          window.__agqToast('The CV file isn\u2019t reachable \u2014 email allyssageannequinit@gmail.com and I\u2019ll send it over.');
+        }
+      });
     }
 
     // Intercept every CV trigger
@@ -1814,7 +1839,12 @@
       { label: 'Toggle light / dark mode', hint: 'T', group: 'Actions', icon: I.theme, run: () => window.__agqToggleTheme && window.__agqToggleTheme() },
       { label: 'Cycle accent gradient', hint: 'Next color theme', group: 'Actions', icon: I.paint, run: () => window.__agqCycleAccent && window.__agqCycleAccent() },
       { label: 'Keyboard shortcuts', hint: '?', group: 'Actions', icon: I.key, run: () => window.__agqShortcuts && window.__agqShortcuts() },
-      { label: 'Preview CV (PDF)', hint: 'New tab', group: 'Actions', icon: I.doc, run: () => { if (window.__agqOpenCv) window.__agqOpenCv(); else window.open('assets/Allyssa-Geanne-Quinit-CV.pdf', '_blank', 'noopener'); } },
+      { label: 'Preview CV (PDF)', hint: 'New tab', group: 'Actions', icon: I.doc, run: () => {
+          // Always go through the gate — never open the file directly, or the
+          // access code could be skipped from the palette.
+          if (window.__agqOpenCv) window.__agqOpenCv();
+          else if (window.__agqToast) window.__agqToast('CV preview is unavailable right now.');
+        } },
       { label: 'Open LinkedIn', hint: 'Professional profile', group: 'Actions', icon: I.link, run: () => { window.open('https://www.linkedin.com/in/allyssa-geanne-quinit-a01793378', '_blank', 'noopener'); } },
       { label: 'Copy email address', hint: 'allyssageannequinit@gmail.com', group: 'Actions', icon: I.mail, run: () => $('#copyEmailBtn')?.click() },
       { label: 'Call phone number', hint: '+63 966-136-6539', group: 'Actions', icon: I.phone, run: () => { window.location.href = 'tel:+639661366539'; } },
@@ -6350,7 +6380,6 @@
     /* ---------- Photo selection: validate before anything else ---------- */
     const MAX_PHOTO = 2 * 1024 * 1024;
     const photoInput = document.getElementById('fbPhoto');
-    const photoText  = document.getElementById('fbPhotoText');
 
     function showError(msg) {
       if (!errEl) return;
@@ -6390,27 +6419,65 @@
       });
     }
 
+    const avatarPrev = document.getElementById('fbAvatarPreview');
+    const clearBtn = document.getElementById('fbPhotoClear');
+    let previewUrl = null;
+
+    function resetPhoto() {
+      photoFile = null;
+      if (photoInput) photoInput.value = '';
+      if (previewUrl) { URL.revokeObjectURL(previewUrl); previewUrl = null; }
+      if (avatarPrev) {
+        avatarPrev.classList.remove('has-photo');
+        avatarPrev.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none">' +
+          '<circle cx="12" cy="9" r="3.4" stroke="currentColor" stroke-width="1.7"/>' +
+          '<path d="M5 20c0-3.3 3.1-5 7-5s7 1.7 7 5" stroke="currentColor" stroke-width="1.7" ' +
+          'stroke-linecap="round"/></svg>';
+      }
+      if (clearBtn) clearBtn.hidden = true;
+    }
+
+    clearBtn?.addEventListener('click', () => { resetPhoto(); clearError(); });
+
     photoInput?.addEventListener('change', async () => {
       clearError();
       const f = photoInput.files && photoInput.files[0];
-      if (!f) { photoFile = null; if (photoText) photoText.textContent = 'Add a photo'; return; }
+      if (!f) { resetPhoto(); return; }
       if (!/^image\/(jpeg|png|webp)$/i.test(f.type)) {
         showError('Please choose a JPG, PNG or WebP image.');
-        photoInput.value = ''; photoFile = null; return;
+        resetPhoto(); return;
       }
       if (f.size > MAX_PHOTO) {
         const mb = (f.size / (1024 * 1024)).toFixed(1);
-        showError('That image is ' + mb + ' MB — the limit is 2 MB.');
-        photoInput.value = ''; photoFile = null; return;
+        showError('That image is ' + mb + ' MB \u2014 the limit is 2 MB.');
+        resetPhoto(); return;
       }
-      if (photoText) photoText.textContent = 'Checking…';
+      if (avatarPrev) avatarPrev.classList.add('is-loading');
       try {
         photoFile = await sanitizeImage(f);
-        if (photoText) photoText.textContent = 'Photo ready';
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
+        previewUrl = URL.createObjectURL(photoFile);
+        if (avatarPrev) {
+          avatarPrev.classList.remove('is-loading');
+          avatarPrev.classList.add('has-photo');
+          avatarPrev.innerHTML = '<img src="' + previewUrl + '" alt="">';
+        }
+        if (clearBtn) clearBtn.hidden = false;
       } catch (e) {
+        if (avatarPrev) avatarPrev.classList.remove('is-loading');
         showError('That file could not be read as an image.');
-        photoInput.value = ''; photoFile = null;
-        if (photoText) photoText.textContent = 'Add a photo';
+        resetPhoto();
+      }
+    });
+
+    /* Live character count on the note */
+    const commentEl = document.getElementById('fbComment');
+    const countEl = document.getElementById('fbCount');
+    commentEl?.addEventListener('input', () => {
+      const n = commentEl.value.length;
+      if (countEl) {
+        countEl.textContent = n + ' / 600';
+        countEl.classList.toggle('is-near', n > 520);
       }
     });
 
@@ -6538,14 +6605,23 @@
           li.className = 'fb-slide';
           const photo = publicPhotoUrl(r.photo_path);
           const who = (r.display_name || 'Anonymous visitor');
+          const when = r.created_at
+            ? new Date(r.created_at).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })
+            : '';
           li.innerHTML =
+            '<span class="fb-slide-mark" aria-hidden="true">\u201c</span>' +
             '<div class="fb-slide-stars">' + starsHTML(r.rating) + '</div>' +
             '<blockquote class="fb-slide-quote"></blockquote>' +
-            '<div class="fb-slide-who">' +
-              (photo
-                ? '<img class="fb-slide-photo" src="' + photo + '" alt="" loading="lazy">'
-                : '<span class="fb-slide-initial" aria-hidden="true"></span>') +
-              '<span class="fb-slide-name"></span>' +
+            '<div class="fb-slide-foot">' +
+              '<div class="fb-slide-who">' +
+                (photo
+                  ? '<img class="fb-slide-photo" src="' + photo + '" alt="" loading="lazy">'
+                  : '<span class="fb-slide-initial" aria-hidden="true"></span>') +
+                '<span class="fb-slide-id">' +
+                  '<span class="fb-slide-name"></span>' +
+                  '<span class="fb-slide-date mono">' + when + '</span>' +
+                '</span>' +
+              '</div>' +
             '</div>';
           li.querySelector('.fb-slide-quote').textContent = r.comment || '';
           li.querySelector('.fb-slide-name').textContent = who;
@@ -6566,8 +6642,10 @@
           const avg = all.reduce((a, r) => a + (r.rating || 0), 0) / all.length;
           const avgStars = document.getElementById('fbAvgStars');
           const avgLabel = document.getElementById('fbAvgLabel');
+          const avgNum = document.getElementById('fbAvgNum');
+          if (avgNum) avgNum.textContent = avg.toFixed(1);
           if (avgStars) avgStars.innerHTML = starsHTML(Math.round(avg));
-          if (avgLabel) avgLabel.textContent = avg.toFixed(1) + ' · ' + all.length +
+          if (avgLabel) avgLabel.textContent = all.length +
             (all.length === 1 ? ' response' : ' responses');
         }
 
