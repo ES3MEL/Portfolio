@@ -5208,3 +5208,31 @@ img, svg, video, canvas, iframe, table, pre{ max-width:100%; }
   .pcard:hover{ transform:none; }
   .pcard:active{ transform:scale(.99); }
 }
+
+/* ---------- Moderation panel tabs ---------- */
+.fbmod-tabs{
+  display:flex; gap:6px; margin:0 0 16px;
+  padding:4px;
+  background:var(--bg-panel-2);
+  border:1px solid var(--border);
+  border-radius:100px;
+}
+.fbmod-tab{
+  flex:1;
+  font-family:var(--font-mono); font-size:.7rem;
+  padding:8px 12px; min-height:36px;
+  color:var(--text-faint);
+  background:none; border:none; border-radius:100px;
+  cursor:pointer; white-space:nowrap;
+  transition:background .2s var(--ease), color .2s var(--ease);
+}
+.fbmod-tab:hover{ color:var(--text); }
+.fbmod-tab.is-on{
+  color:var(--on-gradient);
+  background:var(--gradient-main);
+}
+.fbmod-tab:focus-visible{ outline:2px solid var(--grad-3); outline-offset:2px; }
+
+@media (hover:none), (pointer:coarse){
+  .fbmod-tab{ min-height:42px; }
+}

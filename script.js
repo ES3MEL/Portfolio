@@ -6504,6 +6504,7 @@
     catch (e) { return; }
 
     let panel = null, listEl = null, badgeEl = null;
+    let currentTab = 'pending';
     let session = null;
 
     /* ---------- Build the UI once, lazily ---------- */
@@ -6519,7 +6520,11 @@
           '<button class="fbmod-x" id="fbmodClose" aria-label="Close">' +
             '<svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>' +
           '</button>' +
-          '<h3 class="fbmod-title">Pending feedback</h3>' +
+          '<h3 class="fbmod-title">Feedback</h3>' +
+          '<div class="fbmod-tabs" id="fbmodTabs" role="tablist">' +
+            '<button class="fbmod-tab is-on" data-tab="pending" role="tab">Pending</button>' +
+            '<button class="fbmod-tab" data-tab="approved" role="tab">Approved</button>' +
+          '</div>' +
           '<div class="fbmod-auth" id="fbmodAuth">' +
             '<p class="fbmod-sub">Sign in to approve reviews.</p>' +
             '<input class="fbmod-input" id="fbmodEmail" type="email" placeholder="Email" autocomplete="username">' +
@@ -6542,6 +6547,14 @@
         if (e.key === 'Enter') signIn();
       });
       listEl = panel.querySelector('#fbmodList');
+      panel.querySelector('#fbmodTabs')?.addEventListener('click', (e) => {
+        const t = e.target.closest('.fbmod-tab');
+        if (!t) return;
+        currentTab = t.dataset.tab;
+        panel.querySelectorAll('.fbmod-tab').forEach(b =>
+          b.classList.toggle('is-on', b === t));
+        refresh();
+      });
       return panel;
     }
 
@@ -6591,10 +6604,11 @@
       if (!session) { auth.hidden = false; body.hidden = true; return; }
       auth.hidden = true; body.hidden = false;
 
+      const wantApproved = currentTab === 'approved';
       const { data, error } = await sb
         .from('feedback')
         .select('*')
-        .eq('approved', false)
+        .eq('approved', wantApproved)
         .order('created_at', { ascending: false });
 
       listEl.innerHTML = '';
@@ -6603,11 +6617,13 @@
         return;
       }
       if (!data || !data.length) {
-        listEl.innerHTML = '<li class="fbmod-empty">Nothing waiting. All caught up.</li>';
-        updateBadge(0);
+        listEl.innerHTML = '<li class="fbmod-empty">' + (wantApproved
+          ? 'No approved reviews yet.'
+          : 'Nothing waiting. All caught up.') + '</li>';
+        if (!wantApproved) updateBadge(0);
         return;
       }
-      updateBadge(data.length);
+      if (!wantApproved) updateBadge(data.length);
 
       data.forEach(row => {
         const li = document.createElement('li');
@@ -6622,7 +6638,8 @@
           '<p class="fbmod-answers mono"></p>' +
           '<div class="fbmod-actions">' +
             '<button class="fbmod-reject" type="button">Delete</button>' +
-            '<button class="fbmod-approve" type="button">Approve</button>' +
+            '<button class="fbmod-approve" type="button">' +
+              (wantApproved ? 'Unapprove' : 'Approve') + '</button>' +
           '</div>';
         if (row.comment) li.querySelector('.fbmod-comment').textContent = row.comment;
         li.querySelector('.fbmod-answers').textContent =
@@ -6640,14 +6657,20 @@
         }
 
         li.querySelector('.fbmod-approve').addEventListener('click', async () => {
+          // One button, both directions: approve from Pending, take down from Approved.
+          const nextApproved = !wantApproved;
           const { error: e2 } = await sb.from('feedback')
-            .update({ approved: true, reviewed_at: new Date().toISOString() })
+            .update({ approved: nextApproved, reviewed_at: new Date().toISOString() })
             .eq('id', row.id);
-          if (e2) { if (window.__agqToast) window.__agqToast('Approve failed: ' + e2.message); return; }
-          li.remove(); bumpBadge(-1);
-          if (window.__agqToast) window.__agqToast('Approved — it\u2019s live now');
+          if (e2) { if (window.__agqToast) window.__agqToast('Update failed: ' + e2.message); return; }
+          li.remove();
+          bumpBadge(nextApproved ? -1 : 1);
+          if (window.__agqToast) window.__agqToast(nextApproved
+            ? 'Approved — it’s live now'
+            : 'Taken down — back in Pending');
           if (!listEl.children.length) {
-            listEl.innerHTML = '<li class="fbmod-empty">Nothing waiting. All caught up.</li>';
+            listEl.innerHTML = '<li class="fbmod-empty">' + (wantApproved
+              ? 'No approved reviews yet.' : 'Nothing waiting. All caught up.') + '</li>';
           }
         });
 
@@ -6655,9 +6678,12 @@
           if (!confirm('Delete this feedback permanently?')) return;
           const { error: e3 } = await sb.from('feedback').delete().eq('id', row.id);
           if (e3) { if (window.__agqToast) window.__agqToast('Delete failed: ' + e3.message); return; }
-          li.remove(); bumpBadge(-1);
+          li.remove();
+          if (!wantApproved) bumpBadge(-1);
+          if (window.__agqToast) window.__agqToast('Deleted');
           if (!listEl.children.length) {
-            listEl.innerHTML = '<li class="fbmod-empty">Nothing waiting. All caught up.</li>';
+            listEl.innerHTML = '<li class="fbmod-empty">' + (wantApproved
+              ? 'No approved reviews yet.' : 'Nothing waiting. All caught up.') + '</li>';
           }
         });
 
