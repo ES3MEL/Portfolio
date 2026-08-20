@@ -6225,16 +6225,20 @@
       if (questionEl) questionEl.textContent = q.text;
       if (optionsEl) {
         optionsEl.innerHTML = '';
-        q.options.forEach(opt => {
+        q.options.forEach((opt, oi) => {
           const b = document.createElement('button');
           b.type = 'button';
           b.className = 'fb-option';
-          b.textContent = opt;
+          // Number hint doubles as the keyboard shortcut
+          b.innerHTML = '<span class="fb-option-key mono" aria-hidden="true">' +
+            (oi + 1) + '</span><span class="fb-option-text"></span>';
+          b.querySelector('.fb-option-text').textContent = opt;
           b.addEventListener('click', () => choose(q, opt, b));
           optionsEl.appendChild(b);
         });
       }
       buildProgress();
+      if (typeof hoverIndex !== 'undefined') hoverIndex = -1;
       if (stage) {
         stage.classList.remove('fb-in');
         void stage.offsetWidth;
@@ -6662,6 +6666,87 @@
       const dx = e.changedTouches[0].clientX - tx;
       if (Math.abs(dx) > 45) { goTo(index + (dx < 0 ? 1 : -1)); startAuto(); }
     }, { passive: true });
+
+    /* ---------- Keyboard ----------
+       The quiz is a sequence of choices, so it should be usable without a
+       mouse: number keys pick an option, Enter takes the highlighted one,
+       arrows move through them, Backspace goes back a question, and
+       Ctrl/Cmd+Enter submits the review from inside the textarea.        */
+    let hoverIndex = -1;
+
+    function optionButtons() {
+      return Array.from(optionsEl ? optionsEl.querySelectorAll('.fb-option') : []);
+    }
+
+    function highlight(i) {
+      const btns = optionButtons();
+      if (!btns.length) return;
+      hoverIndex = Math.max(0, Math.min(btns.length - 1, i));
+      btns.forEach((b, k) => b.classList.toggle('is-focus', k === hoverIndex));
+      btns[hoverIndex].focus({ preventScroll: true });
+    }
+
+    function quizVisible() {
+      return stage && !stage.hidden && resultEl && resultEl.hidden;
+    }
+
+    document.addEventListener('keydown', (e) => {
+      const inField = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target.tagName || ''));
+
+      // Ctrl/Cmd + Enter submits the review from the note field
+      if (inField && e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+        const submitBtn = document.getElementById('fbSubmit');
+        if (resultEl && !resultEl.hidden && submitBtn && !submitBtn.disabled) {
+          e.preventDefault();
+          submitBtn.click();
+        }
+        return;
+      }
+
+      // Enter in the name field submits too
+      if (e.key === 'Enter' && e.target && e.target.id === 'fbName') {
+        const submitBtn = document.getElementById('fbSubmit');
+        if (submitBtn && !submitBtn.disabled) { e.preventDefault(); submitBtn.click(); }
+        return;
+      }
+
+      if (inField || !quizVisible()) return;
+
+      // Only act when the quiz is actually on screen
+      const rect = quizEl.getBoundingClientRect();
+      const onScreen = rect.top < window.innerHeight && rect.bottom > 0;
+      if (!onScreen) return;
+
+      const btns = optionButtons();
+
+      // 1-9 picks an option directly
+      if (/^[1-9]$/.test(e.key)) {
+        const idx = parseInt(e.key, 10) - 1;
+        if (btns[idx]) { e.preventDefault(); btns[idx].click(); }
+        return;
+      }
+
+      if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+        e.preventDefault(); highlight(hoverIndex + 1); return;
+      }
+      if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+        e.preventDefault(); highlight(hoverIndex <= 0 ? btns.length - 1 : hoverIndex - 1); return;
+      }
+      if (e.key === 'Enter' || e.key === ' ') {
+        if (hoverIndex >= 0 && btns[hoverIndex]) { e.preventDefault(); btns[hoverIndex].click(); }
+        else if (btns[0]) { e.preventDefault(); highlight(0); }
+        return;
+      }
+      // Backspace steps back a question
+      if (e.key === 'Backspace' && step > 0) {
+        e.preventDefault();
+        step--;
+        delete answers[QUESTIONS[step].key];
+        hoverIndex = -1;
+        renderStep();
+      }
+    });
+
 
     /* ---------- Boot ---------- */
     if (alreadyDone) {
