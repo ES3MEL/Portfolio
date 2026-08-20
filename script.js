@@ -973,8 +973,16 @@
       const url = cvResolved || CV_SOURCES[0];
       const win = window.open(url, '_blank', 'noopener');
       if (!win) {
-        // Popup blocked (common on mobile Safari) — navigate instead.
-        window.location.href = url;
+        // Popup blocked. Never navigate the current tab away from the
+        // portfolio — click a real link instead, which browsers allow.
+        const a = document.createElement('a');
+        a.href = url;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => { try { a.remove(); } catch (e) {} }, 0);
       }
     }
 
