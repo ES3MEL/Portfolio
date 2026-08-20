@@ -966,22 +966,16 @@
     // Check the file is actually reachable before opening a tab, so a missing
     // or misnamed PDF surfaces as a clear message instead of a blank 404.
     function openCv() {
-      // Open the tab synchronously so it isn't caught by the popup blocker,
-      // then point it at whichever source actually resolves.
-      const win = window.open('', '_blank', 'noopener');
-      resolveCvUrl().then(url => {
-        if (url) {
-          CV_URL = url;
-          if (win) { win.location.href = url; }
-          else { window.open(url, '_blank', 'noopener'); }
-          return;
-        }
-        if (win) { try { win.close(); } catch (e) {} }
-        console.error('[cv] none of the candidate paths resolved:', CV_SOURCES);
-        if (window.__agqToast) {
-          window.__agqToast('The CV file isn\u2019t reachable \u2014 email allyssageannequinit@gmail.com and I\u2019ll send it over.');
-        }
-      });
+      // Just open it. The previous version ran a HEAD request first to check
+      // the file existed, but Vercel's CDN doesn't reliably answer HEAD on
+      // static assets — so the check failed even though the PDF was fine.
+      // The browser handles a genuine 404 perfectly well on its own.
+      const url = cvResolved || CV_SOURCES[0];
+      const win = window.open(url, '_blank', 'noopener');
+      if (!win) {
+        // Popup blocked (common on mobile Safari) — navigate instead.
+        window.location.href = url;
+      }
     }
 
     // Intercept every CV trigger
