@@ -4840,14 +4840,37 @@ img, svg, video, canvas, iframe, table, pre{ max-width:100%; }
 }
 .fb-quiz-inner{ padding:32px 30px 28px; }
 
-.fb-progress{ display:flex; gap:7px; margin-bottom:22px; }
-.fb-progress .fb-dot{
-  height:3px; flex:1; border-radius:3px;
+/* ---------- Quiz progress ---------- */
+.fb-progress{ margin-bottom:22px; }
+.fb-bar{
+  height:5px;
+  border-radius:99px;
   background:var(--border-strong);
-  transition:background .35s var(--ease);
+  overflow:hidden;
 }
-.fb-progress .fb-dot.is-done{ background:var(--grad-2); }
-.fb-progress .fb-dot.is-current{ background:var(--grad-3); }
+.fb-bar-fill{
+  height:100%;
+  width:0;
+  border-radius:99px;
+  background:var(--gradient-main);
+  transition:width .45s var(--ease-out);
+}
+.fb-bar-meta{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:12px; margin-top:9px;
+}
+.fb-bar-steps{ display:flex; gap:6px; align-items:center; }
+.fb-pip{
+  width:6px; height:6px; border-radius:50%;
+  background:var(--border-strong);
+  transition:background .3s var(--ease), transform .3s var(--ease);
+}
+.fb-pip.is-done{ background:var(--grad-2); }
+.fb-pip.is-current{ background:var(--grad-3); transform:scale(1.45); }
+.fb-bar-pct{ font-size:.64rem; color:var(--text-faint); letter-spacing:.04em; }
+@media (prefers-reduced-motion:reduce){
+  .fb-bar-fill, .fb-pip{ transition:none; }
+}
 
 .fb-step-count{ font-size:.68rem; color:var(--text-faint); letter-spacing:.05em; margin:0 0 8px; }
 .fb-question{ font-size:1.32rem; line-height:1.3; margin:0 0 20px; font-family:var(--font-display); }
@@ -5235,4 +5258,232 @@ img, svg, video, canvas, iframe, table, pre{ max-width:100%; }
 
 @media (hover:none), (pointer:coarse){
   .fbmod-tab{ min-height:42px; }
+}
+
+/* =========================================================
+   FEEDBACK — GLASS TREATMENT
+   Translucent surfaces over the aurora background, with the
+   accent gradient used as an edge rather than a fill.
+========================================================= */
+
+/* ---- Quiz shell ---- */
+.fb-quiz{
+  position:relative;
+  background:linear-gradient(150deg,
+    rgba(255,255,255,.055) 0%,
+    rgba(255,255,255,.018) 45%,
+    rgba(255,255,255,.045) 100%);
+  border:1px solid rgba(255,255,255,.10);
+  -webkit-backdrop-filter:blur(22px) saturate(150%);
+  backdrop-filter:blur(22px) saturate(150%);
+  box-shadow:
+    0 20px 60px -28px rgba(0,0,0,.55),
+    inset 0 1px 0 rgba(255,255,255,.10);
+  overflow:visible;
+}
+/* Gradient hairline along the top edge */
+.fb-quiz::before{
+  content:"";
+  position:absolute; inset:0;
+  border-radius:inherit;
+  padding:1px;
+  background:linear-gradient(135deg,
+    var(--grad-1), var(--grad-2) 45%, var(--grad-3) 75%, transparent);
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite:exclude;
+  opacity:.4;
+  pointer-events:none;
+}
+/* Soft accent bloom behind the card */
+.fb-quiz::after{
+  content:"";
+  position:absolute; z-index:-1;
+  inset:-30px -20px 20px;
+  background:radial-gradient(60% 55% at 30% 0%,
+    color-mix(in srgb, var(--grad-1) 22%, transparent), transparent 70%);
+  filter:blur(28px);
+  opacity:.55;
+  pointer-events:none;
+}
+@supports not (background: color-mix(in srgb, red 10%, blue)){
+  .fb-quiz::after{ display:none; }
+}
+
+/* ---- Options as glass chips ---- */
+.fb-options{ flex-direction:row; flex-wrap:wrap; gap:9px; }
+.fb-option{
+  flex:0 1 auto;
+  min-height:46px;
+  padding:12px 20px;
+  border-radius:99px;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.12);
+  -webkit-backdrop-filter:blur(8px);
+  backdrop-filter:blur(8px);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.07);
+  transition:
+    background .22s var(--ease),
+    border-color .22s var(--ease),
+    transform .22s var(--ease-spring),
+    box-shadow .22s var(--ease);
+}
+.fb-option:hover{
+  transform:translateY(-2px);
+  border-color:color-mix(in srgb, var(--grad-3) 60%, transparent);
+  background:rgba(255,255,255,.09);
+  box-shadow:
+    0 8px 22px -12px color-mix(in srgb, var(--grad-2) 60%, transparent),
+    inset 0 1px 0 rgba(255,255,255,.10);
+}
+.fb-option:active{ transform:translateY(0) scale(.98); }
+.fb-option.is-picked{
+  background:linear-gradient(120deg,
+    color-mix(in srgb, var(--grad-1) 26%, transparent),
+    color-mix(in srgb, var(--grad-3) 26%, transparent));
+  border-color:color-mix(in srgb, var(--grad-3) 75%, transparent);
+  color:var(--text);
+}
+@supports not (background: color-mix(in srgb, red 10%, blue)){
+  .fb-option:hover{ border-color:var(--grad-3); }
+  .fb-option.is-picked{ background:rgba(51,229,196,.16); border-color:var(--grad-3); }
+}
+
+/* ---- Progress ---- */
+.fb-bar{
+  background:rgba(255,255,255,.09);
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.25);
+}
+.fb-bar-fill{
+  box-shadow:0 0 12px -2px color-mix(in srgb, var(--grad-3) 70%, transparent);
+}
+
+/* ---- Inputs ---- */
+.fb-textarea, .fb-input{
+  background:rgba(255,255,255,.045);
+  border:1px solid rgba(255,255,255,.11);
+  -webkit-backdrop-filter:blur(8px);
+  backdrop-filter:blur(8px);
+}
+.fb-textarea:focus, .fb-input:focus{
+  background:rgba(255,255,255,.07);
+  border-color:color-mix(in srgb, var(--grad-3) 70%, transparent);
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--grad-3) 14%, transparent);
+}
+.fb-photo-btn{
+  background:rgba(255,255,255,.035);
+  border:1px dashed rgba(255,255,255,.18);
+}
+.fb-photo-btn:hover{
+  background:rgba(255,255,255,.07);
+  border-color:color-mix(in srgb, var(--grad-3) 60%, transparent);
+}
+
+/* ---- Result ---- */
+.fb-result-stars svg.is-on, .fb-result-stars svg:not(.is-off){
+  filter:drop-shadow(0 0 6px color-mix(in srgb, var(--grad-3) 55%, transparent));
+}
+.fb-done-icon{
+  background:linear-gradient(140deg,
+    color-mix(in srgb, var(--grad-3) 22%, transparent),
+    color-mix(in srgb, var(--grad-2) 14%, transparent));
+  border:1px solid color-mix(in srgb, var(--grad-3) 40%, transparent);
+  -webkit-backdrop-filter:blur(8px);
+  backdrop-filter:blur(8px);
+}
+
+/* ---- Carousel slides ---- */
+.fb-slide{
+  background:linear-gradient(150deg,
+    rgba(255,255,255,.055), rgba(255,255,255,.02));
+  border:1px solid rgba(255,255,255,.10);
+  -webkit-backdrop-filter:blur(18px) saturate(140%);
+  backdrop-filter:blur(18px) saturate(140%);
+  box-shadow:
+    0 16px 44px -26px rgba(0,0,0,.5),
+    inset 0 1px 0 rgba(255,255,255,.08);
+}
+.fb-nav-btn{
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.12);
+  -webkit-backdrop-filter:blur(8px);
+  backdrop-filter:blur(8px);
+}
+.fb-nav-btn:hover{
+  background:rgba(255,255,255,.10);
+  border-color:color-mix(in srgb, var(--grad-3) 60%, transparent);
+}
+.fb-slide-photo{ border:1px solid rgba(255,255,255,.18); }
+
+/* ---- Moderation panel ---- */
+.fbmod-card{
+  background:linear-gradient(150deg,
+    rgba(255,255,255,.07), rgba(255,255,255,.025));
+  border:1px solid rgba(255,255,255,.12);
+  -webkit-backdrop-filter:blur(26px) saturate(150%);
+  backdrop-filter:blur(26px) saturate(150%);
+}
+.fbmod-item{
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.09);
+}
+.fbmod-tabs{
+  background:rgba(255,255,255,.045);
+  border:1px solid rgba(255,255,255,.10);
+}
+.fbmod-input{
+  background:rgba(255,255,255,.045);
+  border:1px solid rgba(255,255,255,.11);
+}
+
+/* ---------------------------------------------------------
+   LIGHT THEME — glass needs dark tint over pale backgrounds
+--------------------------------------------------------- */
+:root[data-theme="light"] .fb-quiz{
+  background:linear-gradient(150deg, rgba(255,255,255,.78), rgba(255,255,255,.58));
+  border-color:rgba(16,19,29,.08);
+  box-shadow:0 20px 55px -30px rgba(16,19,29,.28), inset 0 1px 0 rgba(255,255,255,.9);
+}
+:root[data-theme="light"] .fb-option,
+:root[data-theme="light"] .fb-textarea,
+:root[data-theme="light"] .fb-input,
+:root[data-theme="light"] .fbmod-input{
+  background:rgba(255,255,255,.72);
+  border-color:rgba(16,19,29,.10);
+}
+:root[data-theme="light"] .fb-option:hover{ background:rgba(255,255,255,.95); }
+:root[data-theme="light"] .fb-photo-btn{
+  background:rgba(255,255,255,.6); border-color:rgba(16,19,29,.16);
+}
+:root[data-theme="light"] .fb-bar{ background:rgba(16,19,29,.10); }
+:root[data-theme="light"] .fb-slide,
+:root[data-theme="light"] .fbmod-card{
+  background:linear-gradient(150deg, rgba(255,255,255,.86), rgba(255,255,255,.66));
+  border-color:rgba(16,19,29,.09);
+}
+:root[data-theme="light"] .fbmod-item,
+:root[data-theme="light"] .fbmod-tabs,
+:root[data-theme="light"] .fb-nav-btn{
+  background:rgba(255,255,255,.7); border-color:rgba(16,19,29,.09);
+}
+
+/* ---------------------------------------------------------
+   FALLBACK — backdrop-filter unsupported (older Firefox etc.)
+   Without this the panels would be near-transparent.
+--------------------------------------------------------- */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))){
+  .fb-quiz, .fb-slide, .fbmod-card{ background:var(--bg-panel); }
+  .fb-option, .fb-textarea, .fb-input,
+  .fbmod-item, .fbmod-input, .fb-nav-btn{ background:var(--bg-panel-2); }
+}
+
+/* Blur is expensive on low-end phones — soften it there */
+@media (max-width:640px){
+  .fb-quiz{ -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px); }
+  .fb-slide{ -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); }
+  .fb-option{ padding:11px 16px; }
+}
+@media (prefers-reduced-motion:reduce){
+  .fb-option:hover{ transform:none; }
 }

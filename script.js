@@ -6124,6 +6124,13 @@
         score: { 'Yes, easily': 5, 'Eventually': 3, 'Not really': 1 }
       },
       {
+        key: 'q_feel',
+        text: 'How did it feel to use?',
+        options: ['Polished', 'Fine', 'A bit much', 'Rough'],
+        weight: true,
+        score: { 'Polished': 5, 'Fine': 4, 'A bit much': 2, 'Rough': 1 }
+      },
+      {
         key: 'q_friction',
         text: 'What almost made you leave?',
         options: ['Too much going on', "Couldn't find the work", 'Slow to load', 'Nothing'],
@@ -6165,9 +6172,26 @@
 
     function buildProgress() {
       if (!progress) return;
-      progress.innerHTML = QUESTIONS.map((_, i) =>
-        '<span class="fb-dot' + (i === step ? ' is-current' : (i < step ? ' is-done' : '')) + '"></span>'
-      ).join('');
+      const pct = Math.round((step / QUESTIONS.length) * 100);
+      if (!progress.dataset.built) {
+        progress.innerHTML =
+          '<div class="fb-bar"><div class="fb-bar-fill" id="fbBarFill"></div></div>' +
+          '<div class="fb-bar-meta">' +
+            '<span class="fb-bar-steps" id="fbBarSteps"></span>' +
+            '<span class="fb-bar-pct mono" id="fbBarPct"></span>' +
+          '</div>';
+        progress.dataset.built = '1';
+      }
+      const fill = document.getElementById('fbBarFill');
+      if (fill) fill.style.width = pct + '%';
+      const pctEl = document.getElementById('fbBarPct');
+      if (pctEl) pctEl.textContent = pct + '%';
+      const stepsEl = document.getElementById('fbBarSteps');
+      if (stepsEl) {
+        stepsEl.innerHTML = QUESTIONS.map((_, i) =>
+          '<span class="fb-pip' + (i < step ? ' is-done' : (i === step ? ' is-current' : '')) + '"></span>'
+        ).join('');
+      }
     }
 
     function renderStep() {
@@ -6214,17 +6238,27 @@
 
     function showResult() {
       rating = computeRating();
+      // Let the bar visibly complete before the card swaps in.
+      const fill = document.getElementById('fbBarFill');
+      const pctEl = document.getElementById('fbBarPct');
+      if (fill) fill.style.width = '100%';
+      if (pctEl) pctEl.textContent = '100%';
       if (stage) stage.hidden = true;
-      if (progress) progress.hidden = true;
+      if (progress) setTimeout(() => { progress.hidden = true; }, 420);
       if (resultEl) {
         resultEl.hidden = false;
         const st = document.getElementById('fbResultStars');
         if (st) st.innerHTML = starsHTML(rating);
         const sub = document.getElementById('fbResultSub');
         if (sub) {
-          sub.textContent = rating >= 4
-            ? 'Glad it landed. If you have a moment, a note helps more than the score.'
-            : 'Useful to know — the specifics below are what I can actually act on.';
+          const fr = answers.q_friction;
+          if (fr && fr !== 'Nothing') {
+            sub.textContent = 'Noted — “' + fr.toLowerCase() + '” is the kind of thing I can actually fix.';
+          } else if (rating >= 4) {
+            sub.textContent = 'Glad it landed. If you have a moment, a note helps more than the score.';
+          } else {
+            sub.textContent = 'Useful to know — the specifics below are what I can act on.';
+          }
         }
       }
     }
@@ -6327,6 +6361,7 @@
       const payload = {
         q_goal: answers.q_goal || null,
         q_found: answers.q_found || null,
+        q_feel: answers.q_feel || null,
         q_friction: answers.q_friction || null,
         q_hire: answers.q_hire || null,
         rating: rating,
@@ -6676,8 +6711,23 @@
 
         li.querySelector('.fbmod-reject').addEventListener('click', async () => {
           if (!confirm('Delete this feedback permanently?')) return;
-          const { error: e3 } = await sb.from('feedback').delete().eq('id', row.id);
-          if (e3) { if (window.__agqToast) window.__agqToast('Delete failed: ' + e3.message); return; }
+          // .select() makes the response return the deleted rows. If RLS blocks
+          // the delete, Postgres reports success with zero rows rather than an
+          // error — so an empty array is the real failure signal here.
+          const { data: gone, error: e3 } = await sb
+            .from('feedback')
+            .delete()
+            .eq('id', row.id)
+            .select();
+          if (e3) {
+            if (window.__agqToast) window.__agqToast('Delete failed: ' + e3.message);
+            return;
+          }
+          if (!gone || !gone.length) {
+            if (window.__agqToast) window.__agqToast('Delete blocked — the DELETE policy is missing. Run feedback-fixes.sql.');
+            console.warn('[fbmod] delete matched 0 rows — RLS has no DELETE policy for authenticated.');
+            return;
+          }
           li.remove();
           if (!wantApproved) bumpBadge(-1);
           if (window.__agqToast) window.__agqToast('Deleted');
