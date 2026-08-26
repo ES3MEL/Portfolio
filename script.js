@@ -1145,8 +1145,8 @@
     // The time-of-day windows (7pm-6am sleeping, noon-3pm sleepy) only cover part
     // of the day, so the states were invisible most working hours. Now she also
     // dozes off after a stretch of inactivity, whatever the clock says.
-    const IDLE_SLEEPY_MS = 45000;   // no activity -> sleepy
-    const IDLE_ASLEEP_MS = 90000;   // still nothing -> sleeping
+    const IDLE_SLEEPY_MS = 18000;   // no activity -> sleepy
+    const IDLE_ASLEEP_MS = 38000;   // still nothing -> sleeping
     let idleT1 = null, idleT2 = null;
     function clearIdle() { clearTimeout(idleT1); clearTimeout(idleT2); }
     function scheduleIdle() {
@@ -6655,7 +6655,14 @@
             (all.length === 1 ? ' response' : ' responses');
         }
 
+        // With a single review there is nothing to page through, so hide the
+        // controls rather than leaving arrows that appear broken.
+        const nav = document.querySelector('.fb-carousel-nav');
+        if (nav) nav.style.display = slides.length > 1 ? '' : 'none';
+        if (dotsEl) dotsEl.style.display = slides.length > 1 ? '' : 'none';
+
         carousel.hidden = false;
+        index = 0;
         goTo(0);
         startAuto();
       } catch (e) {
@@ -6665,6 +6672,16 @@
     }
 
     document.getElementById('fbPrev')?.addEventListener('click', () => { goTo(index - 1); startAuto(); });
+    // Arrow keys page the carousel when it's the thing on screen
+    document.addEventListener('keydown', (e) => {
+      if (!slides.length || slides.length < 2) return;
+      if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName || '')) return;
+      if (!carousel || carousel.hidden) return;
+      const r = carousel.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > window.innerHeight) return;
+      if (e.key === 'ArrowRight') { e.preventDefault(); goTo(index + 1); startAuto(); }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); goTo(index - 1); startAuto(); }
+    });
     document.getElementById('fbNext')?.addEventListener('click', () => { goTo(index + 1); startAuto(); });
 
     // Swipe on touch

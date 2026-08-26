@@ -4466,7 +4466,7 @@ img, svg, video, canvas, iframe, table, pre{ max-width:100%; }
   display:block; border-radius:0; background:transparent; z-index:1;
   filter:drop-shadow(0 12px 24px rgba(0,0,0,.16));
   /* modern switch: fade + gentle rise + subtle blur, smooth and contemporary */
-  transition:opacity .9s cubic-bezier(.4,0,.2,1), transform 1.1s cubic-bezier(.34,1.2,.44,1), filter .9s cubic-bezier(.4,0,.2,1);
+  transition:opacity .5s cubic-bezier(.4,0,.2,1), transform .6s cubic-bezier(.34,1.2,.44,1), filter .5s cubic-bezier(.4,0,.2,1);
 }
 .hero-photo-col.hero-photo-inline .photo-cutout .avatar-day{ opacity:1; transform:translateY(0) scale(1); }
 .hero-photo-col.hero-photo-inline .photo-cutout .avatar-sleep,
@@ -5717,6 +5717,14 @@ img, svg, video, canvas, iframe, table, pre{ max-width:100%; }
 .fb-track-wrap{ overflow:hidden; border-radius:var(--radius-lg); }
 .fb-slide{
   position:relative;
+  /* CRITICAL: each slide must fill the track exactly, or translateX(-100%)
+     skips past several at once and the arrows look broken. Declaring
+     display:flex here previously reset the flex shorthand from the earlier
+     rule, so it is restated explicitly. */
+  flex:0 0 100%;
+  width:100%;
+  max-width:100%;
+  box-sizing:border-box;
   padding:30px 30px 24px;
   border-radius:var(--radius-lg);
   display:flex; flex-direction:column;
@@ -5921,3 +5929,26 @@ img, svg, video, canvas, iframe, table, pre{ max-width:100%; }
 @supports not (background: color-mix(in srgb, red 10%, blue)){
   .fb-option.is-focus{ border-color:var(--grad-3); }
 }
+
+/* ---------- Carousel track: hard guarantees ---------- */
+/* One slide per view, no shrinking, no wrapping. These are restated with
+   the track selector so a later .fb-slide rule can't undo them again. */
+.fb-track{
+  display:flex;
+  flex-wrap:nowrap;
+  align-items:stretch;
+  width:100%;
+  margin:0; padding:0;
+  list-style:none;
+}
+.fb-track > .fb-slide{
+  flex:0 0 100% !important;
+  width:100% !important;
+  min-width:100%;
+  box-sizing:border-box;
+}
+.fb-track-wrap{ width:100%; overflow:hidden; }
+
+/* Nav buttons stay usable even when there's only one review */
+.fb-nav-btn{ cursor:pointer; }
+.fb-nav-btn:disabled{ opacity:.35; cursor:default; }
