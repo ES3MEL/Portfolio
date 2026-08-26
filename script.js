@@ -6,6 +6,20 @@
   const clamp = (v, min, max) => Math.min(Math.max(v, min), max);
 
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* Snapshot of saved preferences taken BEFORE any module runs. Several
+     inits write their own defaults to localStorage during boot, so checking
+     later always looks like a returning visitor. This is the only reliable
+     read of what the visitor actually had. */
+  const HAD_SAVED_PREFS = (function () {
+    try {
+      return !!(localStorage.getItem('agq-accent') ||
+                localStorage.getItem('agq-theme') ||
+                localStorage.getItem('agq-clean') ||
+                localStorage.getItem('agq-bg') ||
+                localStorage.getItem('agq-default-applied'));
+    } catch (e) { return true; }   // storage blocked: leave things alone
+  })();
   const supportsFinePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
   function debounce(fn, wait) {
@@ -58,19 +72,40 @@
       if (bar) bar.style.setProperty('--pl-progress', Math.min(pct, 100).toFixed(1) + '%');
     }
 
+    // The intro + Enter button is a first-impression moment, not something to
+    // sit through on every refresh. sessionStorage means a new visitor (or a
+    // new tab) gets the full sequence, while a refresh goes straight to the
+    // loading bar. Swap to localStorage here to show it only once per device.
+    const INTRO_KEY = 'agq-intro-seen';
+    let introSeen = false;
+    try { introSeen = sessionStorage.getItem(INTRO_KEY) === '1'; } catch (e) {}
+
     // Phase 1: show the intro + Enter button FIRST (before any loading).
     function showEnter() {
       if (revealing || pre.classList.contains('is-done')) return;
       if (enterBtn && !enterBtn.classList.contains('is-ready')) enterBtn.classList.add('is-ready');
     }
-    // Reveal the Enter button almost immediately (a short beat for a graceful entrance).
-    setTimeout(showEnter, 250);
+
+    if (introSeen) {
+      // Returning within the same session: no intro, no Enter button.
+      pre.classList.add('is-repeat');
+      if (enterBtn) { enterBtn.hidden = true; enterBtn.classList.remove('is-ready'); }
+      if (intro) { intro.hidden = true; intro.classList.add('is-gone'); }
+      // Straight into the loading bar. Audio stays silent because there's no
+      // user gesture to unlock it, which is the correct behaviour anyway.
+      setTimeout(() => { try { enter(); } catch (e) { done(); } }, 60);
+    } else {
+      // Reveal the Enter button almost immediately (a short beat for a graceful entrance).
+      setTimeout(showEnter, 250);
+    }
 
     // Phase 2: on Enter → hide intro, reveal the loading bar, start the music,
     //  drive the bar 0→100 over the music's duration, then reveal the hero.
     function enter() {
       if (revealing) return;
       revealing = true;
+      // Remember it for this session so a refresh skips straight to loading.
+      try { sessionStorage.setItem(INTRO_KEY, '1'); } catch (e) {}
       // Swap intro → loading UI
       if (intro) { intro.classList.add('is-gone'); setTimeout(() => { intro.hidden = true; }, 360); }
       if (loadWrap) { loadWrap.hidden = false; loadWrap.classList.add('is-live'); }
@@ -103,10 +138,29 @@
     }
 
     enterBtn?.addEventListener('click', enter);
-    // Also allow Enter key / space to trigger it once the button is ready.
-    window.addEventListener('keydown', (e) => {
-      if ((e.key === 'Enter' || e.key === ' ') && enterBtn && enterBtn.classList.contains('is-ready')) { e.preventDefault(); enter(); }
-    });
+    // Also allow Enter / Space to trigger it once the button is ready.
+    // This listener used to live on window forever with no guards, so after
+    // the preloader was dismissed every spacebar press on the page — including
+    // inside a textarea — was swallowed by preventDefault(). It now ignores
+    // typing, only fires while the preloader is actually on screen, and
+    // detaches itself once dismissed.
+    function preloaderKeys(e) {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      // Never intercept keys aimed at a form field or editable region.
+      const t = e.target;
+      if (t && (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.isContentEditable)) return;
+      // Preloader already gone? Stop listening.
+      if (!pre || pre.classList.contains('is-done')) {
+        window.removeEventListener('keydown', preloaderKeys);
+        return;
+      }
+      if (enterBtn && enterBtn.classList.contains('is-ready')) {
+        e.preventDefault();
+        enter();
+        window.removeEventListener('keydown', preloaderKeys);
+      }
+    }
+    window.addEventListener('keydown', preloaderKeys);
   }
 
   /* ---------- Hero reveal safety trigger ---------- */
@@ -3046,6 +3100,28 @@
       if (window.__agqToast) window.__agqToast('✨ Reset to clean white default');
       if (window.__agqSound) window.__agqSound.play('theme');
     });
+    /* ---------- First-visit default ----------
+       A brand-new visitor should land on the calm, white, minimal look
+       rather than the saturated aurora one. Applied only when nothing has
+       been saved yet, so anyone who has customised the site keeps their
+       choices untouched. A single flag records that the default was set,
+       so it never overrides someone who deliberately picked otherwise. */
+    (function applyFirstVisitDefault() {
+      if (HAD_SAVED_PREFS) return;   // returning visitor: respect their choices
+
+      try {
+        if (window.__agqSetTheme) window.__agqSetTheme('light', true);
+        root.setAttribute('data-clean', 'on');
+        localStorage.setItem('agq-clean', '1');
+        setAccent('mono');
+        setAnim('off');
+        setRadius('default');
+        setSpeed('medium');
+        document.dispatchEvent(new CustomEvent('agq:set-bg', { detail: 'none' }));
+        localStorage.setItem('agq-default-applied', '1');
+      } catch (e) { console.error('[theme] first-visit default failed:', e && e.message); }
+    })();
+
     // restore clean flag; clear it if the user picks another accent
     try { if (localStorage.getItem('agq-clean') === '1') root.setAttribute('data-clean', 'on'); } catch (e) {}
   }
@@ -6651,8 +6727,16 @@
           const avgNum = document.getElementById('fbAvgNum');
           if (avgNum) avgNum.textContent = avg.toFixed(1);
           if (avgStars) avgStars.innerHTML = starsHTML(Math.round(avg));
-          if (avgLabel) avgLabel.textContent = all.length +
-            (all.length === 1 ? ' response' : ' responses');
+          // Count what's actually on screen, not every approved row. The
+          // carousel only holds reviews that have a written note, so
+          // reporting all responses here contradicted the single slide.
+          if (avgLabel) {
+            const shown = slides.length;
+            const label = shown + (shown === 1 ? ' review' : ' reviews');
+            avgLabel.textContent = (all.length > shown)
+              ? label + ' \u00b7 ' + all.length + ' responses'
+              : label;
+          }
         }
 
         // With a single review there is nothing to page through, so hide the
@@ -6677,6 +6761,10 @@
       if (!slides.length || slides.length < 2) return;
       if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName || '')) return;
       if (!carousel || carousel.hidden) return;
+      // The quiz sits directly below and also binds arrow keys. While it's
+      // still being answered it owns them, or one press would page the
+      // carousel and move the quiz highlight at the same time.
+      if (stage && !stage.hidden && resultEl && resultEl.hidden) return;
       const r = carousel.getBoundingClientRect();
       if (r.bottom < 0 || r.top > window.innerHeight) return;
       if (e.key === 'ArrowRight') { e.preventDefault(); goTo(index + 1); startAuto(); }
@@ -6716,7 +6804,12 @@
     }
 
     document.addEventListener('keydown', (e) => {
-      const inField = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target.tagName || ''));
+      // Check both the event target and the focused element: some browsers
+      // report the target as <body> for keys pressed in a focused field.
+      const t = e.target;
+      const ae = document.activeElement;
+      const isField = (el) => !!el && (/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName || '') || el.isContentEditable);
+      const inField = isField(t) || isField(ae);
 
       // Ctrl/Cmd + Enter submits the review from the note field
       if (inField && e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
@@ -6739,7 +6832,11 @@
 
       // Only act when the quiz is actually on screen
       const rect = quizEl.getBoundingClientRect();
-      const onScreen = rect.top < window.innerHeight && rect.bottom > 0;
+      // A zero-size rect means no layout information is available; treat that
+      // as visible rather than silently swallowing every shortcut.
+      const hasLayout = rect.width > 0 || rect.height > 0;
+      const onScreen = !hasLayout ||
+        (rect.top < window.innerHeight && rect.bottom > 0);
       if (!onScreen) return;
 
       const btns = optionButtons();

@@ -5952,3 +5952,18 @@ img, svg, video, canvas, iframe, table, pre{ max-width:100%; }
 /* Nav buttons stay usable even when there's only one review */
 .fb-nav-btn{ cursor:pointer; }
 .fb-nav-btn:disabled{ opacity:.35; cursor:default; }
+
+/* ---------- Preloader: repeat visits skip the intro ---------- */
+/* Set on the preloader when the intro has already been seen this session.
+   Hides the intro copy and Enter button outright so there's no flash of
+   them before the loading bar takes over. */
+#preloader.is-repeat .preloader-intro,
+#preloader.is-repeat #preloaderIntro,
+#preloader.is-repeat #preloaderEnter{
+  display:none !important;
+  opacity:0 !important;
+  pointer-events:none;
+}
+#preloader.is-repeat #preloaderLoad{
+  opacity:1;
+}
