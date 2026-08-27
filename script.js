@@ -58,6 +58,16 @@
       document.documentElement.classList.add('is-loaded');
     }
 
+    // Hard failsafe: whatever happens above — stalled audio, a thrown error,
+    // a blocked promise — the preloader must never trap the visitor behind a
+    // frozen bar. After 8 seconds it lets go regardless.
+    setTimeout(() => {
+      if (!pre.classList.contains('is-done')) {
+        console.warn('[preloader] failsafe fired — revealing page');
+        done();
+      }
+    }, 8000);
+
     // Reduced motion: skip the whole show, no audio.
     if (prefersReducedMotion) {
       window.addEventListener('load', () => setTimeout(done, 300));
@@ -93,7 +103,9 @@
       if (intro) { intro.hidden = true; intro.classList.add('is-gone'); }
       // Straight into the loading bar. Audio stays silent because there's no
       // user gesture to unlock it, which is the correct behaviour anyway.
-      setTimeout(() => { try { enter(); } catch (e) { done(); } }, 60);
+      // Pass auto=true: without a user gesture the browser will never resume
+      // the AudioContext, and awaiting it would stall the loading bar at 0%.
+      setTimeout(() => { try { enter(true); } catch (e) { done(); } }, 60);
     } else {
       // Reveal the Enter button almost immediately (a short beat for a graceful entrance).
       setTimeout(showEnter, 250);
@@ -101,7 +113,7 @@
 
     // Phase 2: on Enter → hide intro, reveal the loading bar, start the music,
     //  drive the bar 0→100 over the music's duration, then reveal the hero.
-    function enter() {
+    function enter(auto) {
       if (revealing) return;
       revealing = true;
       // Remember it for this session so a refresh skips straight to loading.
@@ -113,15 +125,35 @@
 
       // Unlock audio + start the reveal music, get its duration.
       let dur = (window.__agqRevealDuration || 4.0);
+
+      // drive() must run exactly once, no matter which path gets there first.
+      let driveStarted = false;
+      const startDrive = (d) => {
+        if (driveStarted) return;
+        driveStarted = true;
+        drive(d || dur);
+      };
+
+      // No user gesture on an auto-start, so audio can't be unlocked. Skip it
+      // and go straight to the bar rather than waiting on a promise that will
+      // never settle.
+      if (auto) { startDrive(dur); return; }
+
+      // Safety net: if the audio path stalls for any reason, start anyway.
+      setTimeout(() => startDrive(dur), 900);
+
       try {
         const S = window.__agqSound;
         if (S && S.ensureCtx) {
           const c = S.ensureCtx();
-          const go = () => { try { dur = window.__agqStartLoadingMusic() || dur; } catch (e) {} drive(dur); };
+          const go = () => {
+            try { dur = window.__agqStartLoadingMusic() || dur; } catch (e) {}
+            startDrive(dur);
+          };
           if (c && c.state === 'suspended' && c.resume) c.resume().then(go).catch(go);
           else go();
-        } else { drive(dur); }
-      } catch (e) { drive(dur); }
+        } else { startDrive(dur); }
+      } catch (e) { startDrive(dur); }
     }
 
     function drive(durationSec) {
