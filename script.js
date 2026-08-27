@@ -1160,12 +1160,12 @@
       if (startNight) {
         // sleeping -> sleepy -> awake, then apology
         setState('sleeping'); showBubble(pick(sleepingMsgs), 1800);
-        autoTimers.push(setTimeout(() => { if (userPicked) return; setState('sleepy'); showBubble('*yawn* waking up\u2026 \ud83d\ude2a', 1800); }, 2200));
-        autoTimers.push(setTimeout(() => { if (userPicked) return; setState('day'); userPicked = true; sparkle(); showBubble(pick(wakeApology), 3200); }, 4400));
+        autoTimers.push(setTimeout(() => { if (userPicked) return; setState('sleepy'); showBubble('*yawn* waking up\u2026 \ud83d\ude2a', 1400); }, 1200));
+        autoTimers.push(setTimeout(() => { if (userPicked) return; setState('day'); userPicked = true; sparkle(); showBubble(pick(wakeApology), 3000); }, 2400));
       } else if (startSleepy) {
         // sleepy -> awake, then a light note
         setState('sleepy'); showBubble(pick(sleepyMsgs), 1800);
-        autoTimers.push(setTimeout(() => { if (userPicked) return; setState('day'); userPicked = true; sparkle(); showBubble(pick(sleepyNote), 3200); }, 2400));
+        autoTimers.push(setTimeout(() => { if (userPicked) return; setState('day'); userPicked = true; sparkle(); showBubble(pick(sleepyNote), 3000); }, 1400));
       }
     }
     function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
