@@ -4466,7 +4466,7 @@ img, svg, video, canvas, iframe, table, pre{ max-width:100%; }
   display:block; border-radius:0; background:transparent; z-index:1;
   filter:drop-shadow(0 12px 24px rgba(0,0,0,.16));
   /* modern switch: fade + gentle rise + subtle blur, smooth and contemporary */
-  transition:opacity .32s cubic-bezier(.4,0,.2,1), transform .4s cubic-bezier(.34,1.2,.44,1), filter .32s cubic-bezier(.4,0,.2,1);
+  transition:opacity .24s cubic-bezier(.4,0,.2,1), transform .3s cubic-bezier(.34,1.2,.44,1), filter .24s cubic-bezier(.4,0,.2,1);
 }
 .hero-photo-col.hero-photo-inline .photo-cutout .avatar-day{ opacity:1; transform:translateY(0) scale(1); }
 .hero-photo-col.hero-photo-inline .photo-cutout .avatar-sleep,
@@ -5966,4 +5966,68 @@ img, svg, video, canvas, iframe, table, pre{ max-width:100%; }
 }
 #preloader.is-repeat #preloaderLoad{
   opacity:1;
+}
+
+/* =========================================================
+   PERFORMANCE
+   ~90 infinite animations and ~95 blur filters is a lot of
+   continuous compositing. These rules cut the cost without
+   changing how the site looks on a capable machine.
+========================================================= */
+
+/* 1. Backgrounded tab: stop everything. Safari in particular keeps
+      compositing hidden tabs and comes back janky. */
+html.is-bg *,
+html.is-bg *::before,
+html.is-bg *::after{
+  animation-play-state:paused !important;
+  transition:none !important;
+}
+
+/* 2. Skip rendering work for sections not near the viewport. The
+      intrinsic size keeps the scrollbar honest. */
+#experience, #projects, #skills, #highlights,
+#community, #feedback, #contact{
+  content-visibility:auto;
+  contain-intrinsic-size:auto 900px;
+}
+
+/* 3. Lower-powered devices: cheaper blur, fewer layers. Halving the
+      blur radius is roughly a quarter of the work. */
+html.perf-lite .fb-quiz,
+html.perf-lite .fb-slide,
+html.perf-lite .fbmod-card{
+  -webkit-backdrop-filter:blur(10px);
+  backdrop-filter:blur(10px);
+}
+html.perf-lite .fb-option,
+html.perf-lite .fb-textarea,
+html.perf-lite .fb-input,
+html.perf-lite .fb-photo-btn,
+html.perf-lite .fb-nav-btn{
+  -webkit-backdrop-filter:none;
+  backdrop-filter:none;
+}
+/* The decorative bloom behind the quiz is pure cost on a weak GPU */
+html.perf-lite .fb-quiz::after{ display:none; }
+
+/* 4. Safari repaints backdrop-filter far more eagerly than Chrome when
+      an element is also transformed. Giving these their own layer stops
+      the repaint cascading into siblings. */
+.fb-quiz, .fb-slide, .fbmod-card{
+  transform:translateZ(0);
+  -webkit-transform:translateZ(0);
+}
+
+/* 5. The portrait crossfade runs often, so promote it once rather than
+      letting the browser guess on every switch. */
+.avatar-img{ will-change:opacity; }
+
+/* 6. Respect the user's own preference above all of this. */
+@media (prefers-reduced-motion:reduce){
+  *, *::before, *::after{
+    animation-duration:.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.01ms !important;
+  }
 }

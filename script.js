@@ -58,6 +58,27 @@
       document.documentElement.classList.add('is-loaded');
     }
 
+    // On a refresh there's no Enter click, so the AudioContext stays locked and
+    // every later sound effect would be silent too. Unlock on the visitor's
+    // first real interaction instead — one shot, then the listeners detach.
+    (function unlockAudioOnFirstGesture() {
+      let unlocked = false;
+      const events = ['pointerdown', 'keydown', 'touchstart'];
+      function unlock() {
+        if (unlocked) return;
+        unlocked = true;
+        events.forEach(ev => window.removeEventListener(ev, unlock));
+        try {
+          const S = window.__agqSound;
+          if (S && S.ensureCtx) {
+            const c = S.ensureCtx();
+            if (c && c.state === 'suspended' && c.resume) c.resume().catch(() => {});
+          }
+        } catch (e) {}
+      }
+      events.forEach(ev => window.addEventListener(ev, unlock, { passive: true }));
+    })();
+
     // Hard failsafe: whatever happens above — stalled audio, a thrown error,
     // a blocked promise — the preloader must never trap the visitor behind a
     // frozen bar. After 8 seconds it lets go regardless.
@@ -134,10 +155,28 @@
         drive(d || dur);
       };
 
-      // No user gesture on an auto-start, so audio can't be unlocked. Skip it
-      // and go straight to the bar rather than waiting on a promise that will
-      // never settle.
-      if (auto) { startDrive(dur); return; }
+      if (auto) {
+        // No click to unlock audio, so never AWAIT the context here — that's
+        // what stalled the bar at 0%. Still try to start the music though:
+        // browsers that already trust this origin (Chrome's media engagement
+        // score, or a tab where audio was unlocked earlier) will allow it.
+        try {
+          const S = window.__agqSound;
+          if (S && S.ensureCtx) {
+            const c = S.ensureCtx();
+            if (c && c.state === 'suspended' && c.resume) {
+              c.resume().then(() => {
+                try { window.__agqStartLoadingMusic(); } catch (e) {}
+              }).catch(() => {});
+            } else {
+              try { window.__agqStartLoadingMusic(); } catch (e) {}
+            }
+          }
+        } catch (e) {}
+        // Bar starts immediately regardless of what audio does.
+        startDrive(dur);
+        return;
+      }
 
       // Safety net: if the audio path stalls for any reason, start anyway.
       setTimeout(() => startDrive(dur), 900);
@@ -309,7 +348,7 @@
       const isOpen = navMenu.classList.toggle('is-open');
       navToggle.setAttribute('aria-expanded', String(isOpen));
       document.body.style.overflow = isOpen ? 'hidden' : '';
-    });
+    }, { passive: true });
 
     $$('.nav-link, .nav-cta', navMenu).forEach(link => link.addEventListener('click', closeMenu));
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMenu(); });
@@ -841,7 +880,7 @@
       $$('.view-toggle-btn', toggle).forEach(b => b.classList.toggle('is-active', b === btn));
       groups.classList.toggle('is-list', view === 'list');
       if (window.__agqSound) window.__agqSound.play('click');
-    });
+    }, { passive: true });
   }
 
   /* ---------- Role-match highlighter ---------- */
@@ -1192,12 +1231,12 @@
       if (startNight) {
         // sleeping -> sleepy -> awake, then apology
         setState('sleeping'); showBubble(pick(sleepingMsgs), 1800);
-        autoTimers.push(setTimeout(() => { if (userPicked) return; setState('sleepy'); showBubble('*yawn* waking up\u2026 \ud83d\ude2a', 1400); }, 1200));
-        autoTimers.push(setTimeout(() => { if (userPicked) return; setState('day'); userPicked = true; sparkle(); showBubble(pick(wakeApology), 3000); }, 2400));
+        autoTimers.push(setTimeout(() => { if (userPicked) return; setState('sleepy'); showBubble('*yawn* waking up\u2026 \ud83d\ude2a', 1400); }, 800));
+        autoTimers.push(setTimeout(() => { if (userPicked) return; setState('day'); userPicked = true; sparkle(); showBubble(pick(wakeApology), 2800); }, 1600));
       } else if (startSleepy) {
         // sleepy -> awake, then a light note
         setState('sleepy'); showBubble(pick(sleepyMsgs), 1800);
-        autoTimers.push(setTimeout(() => { if (userPicked) return; setState('day'); userPicked = true; sparkle(); showBubble(pick(sleepyNote), 3000); }, 1400));
+        autoTimers.push(setTimeout(() => { if (userPicked) return; setState('day'); userPicked = true; sparkle(); showBubble(pick(sleepyNote), 2800); }, 900));
       }
     }
     function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
@@ -2702,6 +2741,31 @@
     } catch (e) {}
   }
 
+  /* ---------- Performance guards ---------- */
+  // With ~90 infinite CSS animations running, a backgrounded tab still burns
+  // battery and leaves the page janky when refocused. Pausing them while the
+  // tab is hidden costs nothing visually and helps a lot on Safari.
+  (function pauseWhenHidden() {
+    function sync() {
+      document.documentElement.classList.toggle('is-bg', document.hidden);
+    }
+    document.addEventListener('visibilitychange', sync);
+    sync();
+  })();
+
+  // Very cheap device check. Low-core machines and phones get the heavy
+  // blur/backdrop effects dialled down via CSS rather than dropped outright.
+  (function tagDeviceTier() {
+    try {
+      const cores = navigator.hardwareConcurrency || 4;
+      const mem = navigator.deviceMemory || 4;
+      const coarse = window.matchMedia('(pointer: coarse)').matches;
+      if (cores <= 4 || mem <= 4 || coarse) {
+        document.documentElement.classList.add('perf-lite');
+      }
+    } catch (e) {}
+  })();
+
   /* ---------- Init ---------- */
   /* ---------- Accent / gradient selector ---------- */
   function initAccentSelector() {
@@ -4131,7 +4195,7 @@
         jumpBtn.hidden = false;
         jumpBtn.textContent = '↓ Latest';
       }
-    });
+    }, { passive: true });
 
     // ---- Message search / filter ----
     const searchToggle = $('#communitySearchToggle');
