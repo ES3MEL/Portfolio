@@ -3505,6 +3505,8 @@
         const next = (current === g) ? '' : g;
         try { if (next) localStorage.setItem('agq-gender', next); else localStorage.removeItem('agq-gender'); } catch (err) {}
         reflect();
+        // Let the presence list pick up the new avatar straight away.
+        try { window.dispatchEvent(new Event('agq:gender-changed')); } catch (err) {}
         if (window.__agqToast) window.__agqToast(next ? 'Profile updated ✓' : 'Profile cleared');
         if (window.__agqSound) window.__agqSound.play('click');
       });
@@ -3741,14 +3743,164 @@
       .subscribe();
 
     // ---- Live "online now" presence ----
+    // Tracks who is currently in the forum. The badge shows a count; clicking it
+    // opens the list. Only the display name someone has already chosen is shared
+    // — no location, no identifiers beyond the anonymous client id.
     const onlineEl = $('#communityOnline');
+    let onlineList = [];
+
+    function presencePayload() {
+      return {
+        at: Date.now(),
+        name: (myName() || '').slice(0, 40),
+        gender: myGender(),
+        cid: CID
+      };
+    }
+
+    function renderOnlineBadge(n) {
+      if (!onlineEl) return;
+      onlineEl.hidden = false;
+      onlineEl.innerHTML =
+        '<span class="community-online-dot" aria-hidden="true"></span>' +
+        '<span class="community-online-n">' + n + '</span>' +
+        '<span class="community-online-lbl">online</span>';
+      onlineEl.setAttribute('aria-label', n + (n === 1 ? ' person' : ' people') + ' online — view list');
+      onlineEl.setAttribute('role', 'button');
+      onlineEl.setAttribute('tabindex', '0');
+      onlineEl.title = 'See who\u2019s here';
+    }
+
     const presence = sb.channel('community-presence', { config: { presence: { key: CID } } });
     presence.on('presence', { event: 'sync' }, () => {
       const state = presence.presenceState();
-      const n = Object.keys(state).length;
-      if (onlineEl) { onlineEl.hidden = false; onlineEl.textContent = '● ' + n + (n === 1 ? ' online' : ' online'); }
+      // Each key holds an array of that client's tracked payloads; take the newest.
+      onlineList = Object.keys(state).map(k => {
+        const entries = state[k] || [];
+        const latest = entries[entries.length - 1] || {};
+        return {
+          cid: latest.cid || k,
+          name: (latest.name || '').trim(),
+          gender: latest.gender || '',
+          at: latest.at || 0,
+          isMe: (latest.cid || k) === CID
+        };
+      });
+      renderOnlineBadge(onlineList.length);
+      if (onlinePanelOpen) paintOnlinePanel();
     }).subscribe(async (status) => {
-      if (status === 'SUBSCRIBED') { try { await presence.track({ at: Date.now() }); } catch (e) {} }
+      if (status === 'SUBSCRIBED') { try { await presence.track(presencePayload()); } catch (e) {} }
+    });
+
+    // Re-broadcast when the visitor sets or changes their name, so the list
+    // updates from "Anonymous" without needing a reload.
+    let presenceRetrack = null;
+    function refreshPresence() {
+      clearTimeout(presenceRetrack);
+      presenceRetrack = setTimeout(() => {
+        try { presence.track(presencePayload()); } catch (e) {}
+      }, 400);
+    }
+    nameInput?.addEventListener('input', refreshPresence);
+    window.addEventListener('agq:gender-changed', refreshPresence);
+
+    /* ---- The "who's here" panel ---- */
+    let onlinePanel = null;
+    let onlinePanelOpen = false;
+
+    function buildOnlinePanel() {
+      if (onlinePanel) return onlinePanel;
+      onlinePanel = document.createElement('div');
+      onlinePanel.className = 'online-pop';
+      onlinePanel.hidden = true;
+      onlinePanel.setAttribute('role', 'dialog');
+      onlinePanel.setAttribute('aria-label', 'People online now');
+      onlinePanel.innerHTML =
+        '<div class="online-pop-head">' +
+          '<span class="online-pop-title">Here right now</span>' +
+          '<button class="online-pop-x" type="button" aria-label="Close">' +
+            '<svg viewBox="0 0 24 24" width="15" height="15" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>' +
+          '</button>' +
+        '</div>' +
+        '<ul class="online-pop-list"></ul>' +
+        '<p class="online-pop-note mono">Names shown are the ones people entered themselves.</p>';
+      document.body.appendChild(onlinePanel);
+      onlinePanel.querySelector('.online-pop-x').addEventListener('click', closeOnlinePanel);
+      return onlinePanel;
+    }
+
+    function paintOnlinePanel() {
+      const ul = onlinePanel && onlinePanel.querySelector('.online-pop-list');
+      if (!ul) return;
+      ul.innerHTML = '';
+      // Me first, then named visitors, then anonymous ones
+      const sorted = onlineList.slice().sort((a, b) => {
+        if (a.isMe !== b.isMe) return a.isMe ? -1 : 1;
+        const an = a.name ? 0 : 1, bn = b.name ? 0 : 1;
+        if (an !== bn) return an - bn;
+        return (a.name || '').localeCompare(b.name || '');
+      });
+      if (!sorted.length) {
+        ul.innerHTML = '<li class="online-pop-empty">Just you for now.</li>';
+        return;
+      }
+      sorted.forEach(p => {
+        const li = document.createElement('li');
+        li.className = 'online-pop-item' + (p.isMe ? ' is-me' : '');
+        const av = document.createElement('span');
+        av.className = 'online-pop-av';
+        setGenderAvatar(av, p.gender || 'neutral');
+        const nm = document.createElement('span');
+        nm.className = 'online-pop-name';
+        nm.textContent = p.name || 'Anonymous';
+        li.append(av, nm);
+        if (p.isMe) {
+          const you = document.createElement('span');
+          you.className = 'online-pop-you mono';
+          you.textContent = 'you';
+          li.appendChild(you);
+        }
+        ul.appendChild(li);
+      });
+    }
+
+    function openOnlinePanel() {
+      buildOnlinePanel();
+      onlinePanelOpen = true;
+      onlinePanel.hidden = false;
+      paintOnlinePanel();
+      // Anchor it to the badge
+      const r = onlineEl.getBoundingClientRect();
+      const top = r.bottom + window.scrollY + 8;
+      onlinePanel.style.top = top + 'px';
+      const left = Math.min(
+        r.left + window.scrollX,
+        window.innerWidth - onlinePanel.offsetWidth - 14
+      );
+      onlinePanel.style.left = Math.max(12, left) + 'px';
+      document.addEventListener('click', onOutsideOnline, true);
+      document.addEventListener('keydown', onEscOnline);
+    }
+
+    function closeOnlinePanel() {
+      onlinePanelOpen = false;
+      if (onlinePanel) onlinePanel.hidden = true;
+      document.removeEventListener('click', onOutsideOnline, true);
+      document.removeEventListener('keydown', onEscOnline);
+    }
+
+    function onOutsideOnline(e) {
+      if (!onlinePanel || onlinePanel.hidden) return;
+      if (onlinePanel.contains(e.target) || (onlineEl && onlineEl.contains(e.target))) return;
+      closeOnlinePanel();
+    }
+    function onEscOnline(e) { if (e.key === 'Escape') closeOnlinePanel(); }
+
+    onlineEl?.addEventListener('click', () => {
+      onlinePanelOpen ? closeOnlinePanel() : openOnlinePanel();
+    });
+    onlineEl?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onlineEl.click(); }
     });
 
     // ---- "Someone is typing…" indicator (broadcast, ephemeral) ----
@@ -4021,29 +4173,10 @@
       }
 
       const text = document.createElement('p'); text.className = 'community-msg-text';
-      // Auto-linkify URLs (safe: build via DOM, escape everything else).
-      // Links pointing at obviously disrespectful/unsafe destinations are shown as
-      // plain, non-clickable text with a small flag instead of a live link.
-      const BAD_LINK = /(porn|xxx|nsfw|nude|hentai|sex|escort|onlyfans|rape|camgirl|adult-)/i;
-      const parts = String(bodyText).split(/(https?:\/\/[^\s]+)/g);
-      parts.forEach(part => {
-        if (/^https?:\/\//.test(part)) {
-          if (BAD_LINK.test(part)) {
-            const flag = document.createElement('span');
-            flag.className = 'community-msg-link-blocked';
-            flag.textContent = '🚫 link removed';
-            flag.title = 'A link was hidden for being potentially inappropriate.';
-            text.appendChild(flag);
-          } else {
-            const a = document.createElement('a');
-            a.href = part; a.target = '_blank'; a.rel = 'noopener noreferrer nofollow';
-            a.className = 'community-msg-link'; a.textContent = part;
-            text.appendChild(a);
-          }
-        } else if (part) {
-          text.appendChild(document.createTextNode(part));
-        }
-      });
+      // ---- Auto-linkify ----
+      // Turns URLs in a message into real links. Everything is built through
+      // the DOM (never innerHTML) so a crafted message can't inject markup.
+      linkifyInto(text, String(bodyText));
       bubble.append(text);
 
       // Reactions row
@@ -4825,6 +4958,113 @@
         if (PROF_CORE.some(w => collapsed.includes(w))) return true;
       }
       return false;
+    }
+
+    /* =======================================================
+       LINK HANDLING
+       Detects URLs in a message and renders them as real links.
+       Anything questionable is shown as inert text with a reason
+       rather than a clickable link.
+    ======================================================= */
+
+    // Adult / explicit destinations
+    const LINK_BLOCK_WORDS = /(porn|xxx|nsfw|nude|naked|hentai|escort|onlyfans|camgirl|camsoda|chaturbate|brazzers|xvideo|pornhub|redtube|youporn|adult-|sexcam|fetish|bdsm)/i;
+    // Scam / malware / piracy signals
+    const LINK_BLOCK_SCAM = /(free-?money|get-?rich|crypto-?giveaway|double-?your|forex-?signal|casino|betting|1xbet|phish|malware|keygen|crack(ed)?-?download|warez|torrent|pirate)/i;
+    // TLDs overwhelmingly used for throwaway abuse, plus the two that
+    // masquerade as file extensions.
+    const LINK_BAD_TLD = /\.(tk|ml|ga|cf|gq|zip|mov|top|click|work|country|kim|loan|download)(\/|$|\?)/i;
+    // Shorteners hide their destination, so they are never made clickable here.
+    const LINK_SHORTENER = /^(bit\.ly|tinyurl\.com|t\.co|goo\.gl|is\.gd|cutt\.ly|rb\.gy|ow\.ly|buff\.ly|adf\.ly|bc\.vc|shorte\.st|rebrand\.ly|shorturl\.at|tiny\.cc|lnkd\.in)$/i;
+
+    // A bare domain (no scheme, no www.) must end in a real TLD, or ordinary
+    // text like "file.txt" or "config.json" would become a link.
+    const LINK_OK_TLD = /\.(com|net|org|io|dev|app|co|ai|me|xyz|site|online|store|tech|design|studio|agency|edu|gov|ph|uk|us|ca|au|de|fr|jp|sg|info|biz|cloud|page|link|blog|art|photo|media|news|tv|fm|gg|sh|to|ly|be|it|es|nl|se|no|fi|dk|pl|br|mx|in|id|my|th|vn|kr|cn|hk|tw|nz|za|ie|at|ch|pt|gr|cz|ro|hu)$/i;
+
+    // Matches http(s):// links, www. links, and bare domains like example.com/x
+    const LINK_RE = /\b((?:https?:\/\/|www\.)[^\s<>"']+|(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}(?:\/[^\s<>"']*)?)/gi;
+
+    function classifyLink(raw) {
+      let url;
+      const withProto = /^https?:\/\//i.test(raw) ? raw : 'https://' + raw;
+      try { url = new URL(withProto); } catch (e) { return { ok: false, reason: 'malformed' }; }
+
+      if (!/^https?:$/i.test(url.protocol)) return { ok: false, reason: 'unsupported' };
+
+      const host = url.hostname.toLowerCase();
+      const full = url.href;
+
+      // Bare domains are held to a stricter standard than explicit URLs.
+      const bare = !/^(https?:\/\/|www\.)/i.test(raw);
+      if (bare && !LINK_OK_TLD.test(host)) return { ok: false, reason: 'not a link' };
+
+      // Punycode / homograph domains impersonating a familiar brand
+      if (host.includes('xn--')) return { ok: false, reason: 'lookalike domain' };
+      // Raw IP addresses are almost never a legitimate share
+      if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) return { ok: false, reason: 'IP address' };
+      // Credentials embedded in the URL are a classic phishing trick
+      if (url.username || url.password) return { ok: false, reason: 'suspicious' };
+      if (LINK_SHORTENER.test(host)) return { ok: false, reason: 'shortened link' };
+      if (LINK_BAD_TLD.test(host)) return { ok: false, reason: 'untrusted domain' };
+      if (LINK_BLOCK_WORDS.test(full)) return { ok: false, reason: 'inappropriate' };
+      if (LINK_BLOCK_SCAM.test(full)) return { ok: false, reason: 'unsafe' };
+      // Reuse the message profanity filter on the path itself
+      try {
+        if (typeof hasProfanity === 'function' && hasProfanity(decodeURIComponent(url.pathname))) {
+          return { ok: false, reason: 'inappropriate' };
+        }
+      } catch (e) {}
+
+      return { ok: true, url: url, href: url.href, host: host.replace(/^www\./, '') };
+    }
+
+    // Long URLs get shortened for display only; the href stays complete.
+    function linkLabel(info, raw) {
+      const path = info.url.pathname + info.url.search;
+      let label = info.host + (path && path !== '/' ? path : '');
+      if (label.length > 48) label = label.slice(0, 45) + '\u2026';
+      return label;
+    }
+
+    function linkifyInto(container, str) {
+      const parts = String(str).split(LINK_RE);
+      parts.forEach((part, i) => {
+        if (!part) return;
+        // Odd indices are the captured URLs
+        if (i % 2 === 1) {
+          // A chunk ending in '@' means this is the domain half of an email
+          // address, not a link — leave it as plain text.
+          const prev = parts[i - 1];
+          if (prev && /@$/.test(prev)) {
+            container.appendChild(document.createTextNode(part));
+            return;
+          }
+          const info = classifyLink(part);
+          if (info.ok) {
+            const a = document.createElement('a');
+            a.href = info.href;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer nofollow ugc';
+            a.className = 'community-msg-link';
+            a.title = 'Opens ' + info.host + ' in a new tab';
+            a.textContent = linkLabel(info, part);
+            const ic = document.createElement('span');
+            ic.className = 'community-link-ic';
+            ic.setAttribute('aria-hidden', 'true');
+            ic.textContent = '\u2197';
+            a.appendChild(ic);
+            container.appendChild(a);
+          } else {
+            const flag = document.createElement('span');
+            flag.className = 'community-msg-link-blocked';
+            flag.textContent = '\ud83d\udd17 link hidden';
+            flag.title = 'This link was hidden \u2014 ' + info.reason + '.';
+            container.appendChild(flag);
+          }
+        } else {
+          container.appendChild(document.createTextNode(part));
+        }
+      });
     }
 
     // Shared so other modules (feedback quiz) filter with the same rules
