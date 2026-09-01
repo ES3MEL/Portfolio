@@ -1231,12 +1231,12 @@
       if (startNight) {
         // sleeping -> sleepy -> awake, then apology
         setState('sleeping'); showBubble(pick(sleepingMsgs), 1800);
-        autoTimers.push(setTimeout(() => { if (userPicked) return; setState('sleepy'); showBubble('*yawn* waking up\u2026 \ud83d\ude2a', 1400); }, 800));
-        autoTimers.push(setTimeout(() => { if (userPicked) return; setState('day'); userPicked = true; sparkle(); showBubble(pick(wakeApology), 2800); }, 1600));
+        autoTimers.push(setTimeout(() => { if (userPicked) return; setState('sleepy'); showBubble('*yawn* waking up\u2026 \ud83d\ude2a', 1400); }, 1500));
+        autoTimers.push(setTimeout(() => { if (userPicked) return; setState('day'); userPicked = true; sparkle(); showBubble(pick(wakeApology), 2600); }, 2600));
       } else if (startSleepy) {
         // sleepy -> awake, then a light note
         setState('sleepy'); showBubble(pick(sleepyMsgs), 1800);
-        autoTimers.push(setTimeout(() => { if (userPicked) return; setState('day'); userPicked = true; sparkle(); showBubble(pick(sleepyNote), 2800); }, 900));
+        autoTimers.push(setTimeout(() => { if (userPicked) return; setState('day'); userPicked = true; sparkle(); showBubble(pick(sleepyNote), 2600); }, 1500));
       }
     }
     function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
@@ -1270,8 +1270,8 @@
     // The time-of-day windows (7pm-6am sleeping, noon-3pm sleepy) only cover part
     // of the day, so the states were invisible most working hours. Now she also
     // dozes off after a stretch of inactivity, whatever the clock says.
-    const IDLE_SLEEPY_MS = 18000;   // no activity -> sleepy
-    const IDLE_ASLEEP_MS = 38000;   // still nothing -> sleeping
+    const IDLE_SLEEPY_MS = 10000;   // no activity -> sleepy
+    const IDLE_ASLEEP_MS = 20000;   // still nothing -> sleeping
     let idleT1 = null, idleT2 = null;
     function clearIdle() { clearTimeout(idleT1); clearTimeout(idleT2); }
     function scheduleIdle() {

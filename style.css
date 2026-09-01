@@ -4466,7 +4466,7 @@ img, svg, video, canvas, iframe, table, pre{ max-width:100%; }
   display:block; border-radius:0; background:transparent; z-index:1;
   filter:drop-shadow(0 12px 24px rgba(0,0,0,.16));
   /* modern switch: fade + gentle rise + subtle blur, smooth and contemporary */
-  transition:opacity .24s cubic-bezier(.4,0,.2,1), transform .3s cubic-bezier(.34,1.2,.44,1), filter .24s cubic-bezier(.4,0,.2,1);
+  transition:opacity .16s cubic-bezier(.4,0,.2,1), transform .2s cubic-bezier(.34,1.2,.44,1), filter .16s cubic-bezier(.4,0,.2,1);
 }
 .hero-photo-col.hero-photo-inline .photo-cutout .avatar-day{ opacity:1; transform:translateY(0) scale(1); }
 .hero-photo-col.hero-photo-inline .photo-cutout .avatar-sleep,
