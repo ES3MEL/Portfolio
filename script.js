@@ -1425,9 +1425,48 @@
   ========================================================= */
   const PROJECTS = [
     {
+      id: 'proovit',
+      title: 'ProovIt',
+      category: 'Personal',
+      subcategory: ['Web App'],
+      role: 'Designer \u00b7 Developer',
+      year: '2026',
+      status: 'Live',
+      featured: true,
+      tagline: 'A career-readiness app where you never set your own skill levels \u2014 they move when your evidence does.',
+      desc: 'Career-readiness web app built on the premise that a skill is worth exactly what the evidence behind it can prove.',
+      accent: ['#7C5CFC', '#33E5C4'],
+      tech: ['Vanilla JavaScript', 'CSS', 'Supabase', 'PostgreSQL', 'Vercel', 'LLM APIs'],
+      problem: 'Most job tools help you describe yourself better \u2014 they reward whoever writes the most confident summary. ProovIt is built on the opposite premise: a self-assessed skill level is worth nothing on its own.',
+      overview: 'A career-readiness web app of roughly 11,700 lines across 29 files. You never set your own skill levels; they move only when the evidence behind them does. Built as vanilla JavaScript, HTML and CSS \u2014 no framework, no build step. Fourteen JS files, each an IIFE exposing a single global, loaded in dependency order by plain script tags. Opening index.html from disk runs the whole app: no bundler, no npm install, no transpile.',
+      features: [
+        'Layered architecture: config, presentation, domain, data, services and controller, each in its own files.',
+        'model.js holds 31 pure functions with no DOM access \u2014 readiness scoring, the gap engine, the funnel and CV reconciliation are all testable without a browser.',
+        'Five CSS files in cascade order built on 99 design tokens; dark mode reuses the same token names with different values, so nothing downstream knows which theme is running.',
+        '40 media queries covering 320px phones through 1920px desktops, 17 routes, and 60 hand-drawn stroke icons with no icon library.',
+        'Supabase Postgres with row-level security \u2014 each user owns one row holding their whole state as JSON, so a new front-end field needs no migration.',
+        'Email and password auth with an optional emailed second factor.',
+        'Provider-agnostic AI layer \u2014 Groq, OpenRouter or OpenAI, switched by one line of config. Eight functions covering job analysis, apply verdicts, interview prep, lab challenges, CV parsing, text review, chat and context assembly.',
+        'CV parsing runs in the browser via pdf.js and mammoth.js, loaded only for the file type uploaded. Nothing is sent to a server to be read.',
+        'Session security to NIST SP 800-63B: 30-minute idle timeout with a two-minute warning, 12-hour absolute cap, trusted devices for 30 days.',
+        'Startup self-diagnosis verifies all fourteen modules expose what the rest of the app calls, and names the exact file to re-save when one does not.'
+      ],
+      process: [
+        { title: 'Premise', body: 'Started from a single rule: grading happens in code against the evidence vault, never in a prompt. A language model can summarise, but it can never move a score.' },
+        { title: 'Architecture', body: 'Kept the domain layer pure so scoring logic stays testable and tamper-proof, and chose no build step so the app runs from a bare folder.' },
+        { title: 'Platform', body: 'One Postgres row per user holding state as JSON, with row-level security doing the isolation, and two interchangeable serverless functions keeping the AI key server-side.' }
+      ],
+      outcome: 'Live and deployed on Vercel as a static site with no build command. The pure-domain rule held: no AI call can influence a readiness score, and the whole scoring engine runs without a browser.',
+      gallery: [],
+      links: [
+        { label: 'Visit ProovIt', type: 'web', url: 'https://proov-it.vercel.app/' }
+      ]
+    },
+    {
       id: 'portfolio',
       title: 'Personal Portfolio',
-      category: 'Website',
+      category: 'Personal',
+      subcategory: ['Website'],
       role: 'Designer · Front-End',
       year: '2025',
       status: 'Live',
@@ -1435,7 +1474,7 @@
       tagline: 'This very site — a hand-built, interactive portfolio designed and coded from scratch.',
       desc: 'A responsive personal portfolio featuring 50+ interactive touches: theming, smart avatar, project narrator, and more.',
       accent: ['#7C5CFC', '#33E5C4'],
-      tech: ['HTML/CSS', 'JavaScript', 'UI/UX', 'Responsive Design'],
+      tech: ['HTML/CSS', 'JavaScript', 'Supabase', 'Vercel', 'Responsive Design'],
       overview: 'The site you\'re on right now. Designed and built end-to-end to showcase both design sensibility and front-end skill — from the theming system and smart day/night avatar to the guided tour, project narrator, and fully responsive layout across all devices.',
       features: [
         '50+ accent themes with live customization, motion, and background styles.',
@@ -1449,12 +1488,15 @@
         { title: 'Polish', body: 'Tuned responsiveness, micro-interactions, and accessibility across devices.' }
       ],
       gallery: ['Hero', 'Projects', 'Theming'],
-      links: []
+      links: [
+        { label: 'Visit Portfolio', type: 'web', url: 'https://portfolio-six-drab-72.vercel.app/' }
+      ]
     },
     {
       id: 'moodmenu',
       title: 'MoodMenu',
       category: 'UI/UX Design',
+      subcategory: ['Mobile'],
       role: 'UI/UX Designer',
       year: '2024',
       status: 'Academic Project',
@@ -1482,7 +1524,8 @@
     {
       id: 'mobile-banking',
       title: 'Mobile Banking',
-      category: 'Mobile',
+      category: 'UI/UX Design',
+      subcategory: ['Mobile'],
       role: 'UI/UX Designer',
       year: '2024',
       status: 'Concept',
@@ -1509,7 +1552,8 @@
     {
       id: 'classiq',
       title: 'ClassIQ Web Application',
-      category: 'Web App',
+      category: 'UI/UX Design',
+      subcategory: ['Web App'],
       role: 'UI/UX Designer · QA',
       year: '2024',
       status: 'Academic Project',
@@ -1537,7 +1581,8 @@
     {
       id: 'signor',
       title: 'Signor Website',
-      category: 'Website',
+      category: 'UI/UX Design',
+      subcategory: ['Web App'],
       role: 'UI/UX Designer · QA',
       year: '2025',
       status: 'Live · Capstone',
@@ -1568,7 +1613,8 @@
     {
       id: 'golden-pups',
       title: 'Golden Pups',
-      category: 'Website',
+      category: 'UI/UX Design',
+      subcategory: ['Website'],
       role: 'UI/UX Designer',
       year: '2024',
       status: 'Academic Project',
@@ -1596,6 +1642,7 @@
       id: 'busybee',
       title: 'BusyBee',
       category: 'UI/UX Design',
+      subcategory: ['Mobile', 'Website'],
       role: 'UI/UX Designer',
       year: '2025',
       status: 'Prototype',
@@ -1635,7 +1682,9 @@
     if (!grid) return;
 
     let activeFilter = 'all';
+    let activeSub = 'all';   // Mobile / Website, only meaningful under UI/UX Design
     let query = '';
+    const subFilters = $('#projectSubFilters');
 
     function gradFor(p) { return `linear-gradient(135deg, ${p.accent[0]}, ${p.accent[1]})`; }
 
@@ -1656,7 +1705,7 @@
               </div>
             </div>
             ${liveBadge}
-            <span class="pcard-cat">${escapeHtml(p.category)}</span>
+            <span class="pcard-cat">${escapeHtml([].concat(p.subcategory || []).join(' \u00b7 ') || p.category)}</span>
             <span class="pcard-open" aria-hidden="true">
               <svg viewBox="0 0 24 24" width="15" height="15" fill="none"><path d="M7 17L17 7M17 7H9M17 7v8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </span>
@@ -1706,9 +1755,16 @@
       allGrid.querySelectorAll('.pcard').forEach(card => {
         const p = PROJECTS.find(x => x.id === card.dataset.id);
         const matchesFilter = activeFilter === 'all' || p.category === activeFilter;
-        const haystack = (p.title + ' ' + p.desc + ' ' + p.tech.join(' ') + ' ' + p.role + ' ' + p.category).toLowerCase();
+        // The type chips only apply while UI/UX Design is the active category.
+        // subcategory may be a string or an array — some projects cover both
+        // platforms, so normalise before comparing.
+        const subs = Array.isArray(p.subcategory) ? p.subcategory
+          : (p.subcategory ? [p.subcategory] : []);
+        const matchesSub = activeFilter === 'all' || activeSub === 'all' ||
+          subs.indexOf(activeSub) !== -1;
+        const haystack = (p.title + ' ' + p.desc + ' ' + p.tech.join(' ') + ' ' + p.role + ' ' + p.category + ' ' + [].concat(p.subcategory || []).join(' ')).toLowerCase();
         const matchesQuery = !query || haystack.includes(query);
-        const show = matchesFilter && matchesQuery;
+        const show = matchesFilter && matchesSub && matchesQuery;
         card.classList.toggle('is-hidden', !show);
         if (show) visible++;
       });
@@ -1752,6 +1808,40 @@
         b.classList.toggle('is-active', on);
         b.setAttribute('aria-selected', String(on));
       });
+
+    subFilters?.addEventListener('click', (e) => {
+      const btn = e.target.closest('.subfilter-btn');
+      if (!btn) return;
+      activeSub = btn.dataset.sub;
+      $$('.subfilter-btn', subFilters).forEach(b => {
+        const on = b === btn;
+        b.classList.toggle('is-active', on);
+        b.setAttribute('aria-selected', String(on));
+      });
+      applyFilters();
+    });
+      // Type chips belong to UI/UX Design only; reset them when leaving it.
+      activeSub = 'all';
+      if (subFilters) {
+        // Type chips are meaningful inside a category, not across all of them.
+        subFilters.hidden = activeFilter === 'all';
+        // Only offer types that actually exist in this category — Personal has
+        // no mobile work, so that chip would lead to an empty grid.
+        const availableSubs = new Set();
+        PROJECTS.forEach(pr => {
+          if (pr.category !== activeFilter) return;
+          [].concat(pr.subcategory || []).forEach(t => availableSubs.add(t));
+        });
+        $$('.subfilter-btn', subFilters).forEach(b => {
+          const sub = b.dataset.sub;
+          b.hidden = sub !== 'all' && !availableSubs.has(sub);
+          const on = sub === 'all';
+          b.classList.toggle('is-active', on);
+          b.setAttribute('aria-selected', String(on));
+        });
+        // A lone “All types” chip tells the visitor nothing.
+        if (availableSubs.size < 2) subFilters.hidden = true;
+      }
       applyFilters();
     });
 

@@ -765,9 +765,13 @@
         <div class="filter-row" id="projectFilters" role="tablist" aria-label="Filter projects by category">
           <button class="filter-btn is-active" data-filter="all" role="tab" aria-selected="true">All</button>
           <button class="filter-btn" data-filter="UI/UX Design" role="tab" aria-selected="false">UI/UX Design</button>
-          <button class="filter-btn" data-filter="Web App" role="tab" aria-selected="false">Web App</button>
-          <button class="filter-btn" data-filter="Website" role="tab" aria-selected="false">Website</button>
-          <button class="filter-btn" data-filter="Mobile" role="tab" aria-selected="false">Mobile</button>
+          <button class="filter-btn" data-filter="Personal" role="tab" aria-selected="false">Personal</button>
+        </div>
+        <div class="subfilter-row" id="projectSubFilters" role="tablist" aria-label="Filter UI/UX projects by type" hidden>
+          <button class="subfilter-btn is-active" data-sub="all" role="tab" aria-selected="true">All types</button>
+          <button class="subfilter-btn" data-sub="Mobile" role="tab" aria-selected="false">Mobile</button>
+          <button class="subfilter-btn" data-sub="Website" role="tab" aria-selected="false">Website</button>
+          <button class="subfilter-btn" data-sub="Web App" role="tab" aria-selected="false">Web App</button>
         </div>
         <div class="allproj-tools-right">
           <div class="project-search">
@@ -836,7 +840,17 @@
         <div class="skill-group" data-reveal data-rolegroup="fe">
           <h3 class="mono">Front-End Development</h3>
           <div class="chip-row">
-            <span class="chip">HTML <i>basic</i></span><span class="chip">CSS <i>basic</i></span><span class="chip">JavaScript <i>basic</i></span><span class="chip">Webflow <i>basic</i></span><span class="chip">Vercel <i>basic</i></span><span class="chip">Supabase <i>basic</i></span>
+            <span class="chip">HTML</span><span class="chip">CSS</span><span class="chip">JavaScript</span>
+            <span class="chip">Vanilla JS Architecture</span><span class="chip">Responsive Design</span><span class="chip">Design Tokens</span>
+            <span class="chip">Webflow</span><span class="chip">Vercel</span><span class="chip">Git</span>
+          </div>
+        </div>
+        <div class="skill-group" data-reveal data-rolegroup="fe">
+          <h3 class="mono">Backend &amp; Platform</h3>
+          <div class="chip-row">
+            <span class="chip">Supabase</span><span class="chip">PostgreSQL</span><span class="chip">Row-Level Security</span>
+            <span class="chip">Supabase Auth</span><span class="chip">Serverless Functions</span><span class="chip">REST APIs</span>
+            <span class="chip">LLM Integration</span><span class="chip">Prompt Design</span>
           </div>
         </div>
         <div class="skill-group" data-reveal data-rolegroup="qa">
