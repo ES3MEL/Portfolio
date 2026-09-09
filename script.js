@@ -1425,6 +1425,41 @@
   ========================================================= */
   const PROJECTS = [
     {
+      id: 'picaboo',
+      title: 'PicaBoo',
+      category: 'Personal',
+      subcategory: ['Web App'],
+      role: 'Designer \u00b7 Developer',
+      year: '2026',
+      status: 'Live',
+      featured: true,
+      tagline: 'An online photobooth \u2014 pick a theme, take your photos, build a strip, keep it. No account, nothing uploaded.',
+      desc: 'Browser-based photobooth web app with 24 themes, 6 layouts and 12 frames, where every photo stays on the visitor\u2019s device.',
+      accent: ['#FF6FB5', '#7C5CFC'],
+      tech: ['HTML/CSS', 'Vanilla JavaScript', 'Canvas API', 'MediaDevices API', 'Vercel'],
+      problem: 'Photobooth sites usually ask for an account and upload your photos to somebody else\u2019s server before you get anything back. For something as personal as a photo strip, that trade is a poor one.',
+      overview: 'A browser-based photobooth built in plain HTML, CSS and JavaScript. Pick a theme, take your shots, customise the strip and download it \u2014 no sign-up, and nothing leaves the device. Capture, editing and export all happen in the browser via the camera and canvas APIs, so there is no server holding anyone\u2019s images.',
+      features: [
+        '24 themes, 6 strip layouts and 12 frames \u2014 each theme restyles the whole strip, from background and frame through to charms.',
+        'Everything runs on-device: capture, editing and export use the browser\u2019s camera and canvas APIs, so no photo is ever uploaded or stored on a server.',
+        'A four-step flow, each step a single pop-up, so there is nothing to learn before the first photo.',
+        'Occasion presets that open the booth with a matching theme and layout already chosen.',
+        'Supporting pages for themes, walkthrough, occasions, help centre and privacy \u2014 the privacy claim is stated plainly rather than buried.',
+        'Responsive across phones, tablets and desktops, with viewport-fit and safe-area handling so the camera view works on notched devices.',
+        'Skip-to-content link and keyboard-reachable controls throughout.'
+      ],
+      process: [
+        { title: 'Principle', body: 'Fixed one rule at the start: the booth experience stays identical while themes change only the visual style. That kept 24 themes from turning into 24 separate products.' },
+        { title: 'Design', body: 'Built the theme system so a single choice restyles background, frame and charms together, and shaped the flow into four pop-up steps rather than a long form.' },
+        { title: 'Build', body: 'Wrote it in plain HTML, CSS and JavaScript with no framework, doing capture and composition entirely in the browser so the privacy promise is structural rather than a policy line.' }
+      ],
+      outcome: 'Live on Vercel and free to use with no account. Because nothing is uploaded, there is no image storage cost and no user data to protect \u2014 the privacy claim holds by architecture, not by promise.',
+      gallery: [],
+      links: [
+        { label: 'Visit PicaBoo', type: 'web', url: 'https://picaboo-omega.vercel.app/' }
+      ]
+    },
+    {
       id: 'proovit',
       title: 'ProovIt',
       category: 'Personal',
@@ -1436,27 +1471,30 @@
       tagline: 'A career-readiness app where you never set your own skill levels \u2014 they move when your evidence does.',
       desc: 'Career-readiness web app built on the premise that a skill is worth exactly what the evidence behind it can prove.',
       accent: ['#7C5CFC', '#33E5C4'],
-      tech: ['Vanilla JavaScript', 'CSS', 'Supabase', 'PostgreSQL', 'Vercel', 'LLM APIs'],
-      problem: 'Most job tools help you describe yourself better \u2014 they reward whoever writes the most confident summary. ProovIt is built on the opposite premise: a self-assessed skill level is worth nothing on its own.',
-      overview: 'A career-readiness web app of roughly 11,700 lines across 29 files. You never set your own skill levels; they move only when the evidence behind them does. Built as vanilla JavaScript, HTML and CSS \u2014 no framework, no build step. Fourteen JS files, each an IIFE exposing a single global, loaded in dependency order by plain script tags. Opening index.html from disk runs the whole app: no bundler, no npm install, no transpile.',
+      tech: ['Vanilla JavaScript', 'HTML/CSS', 'Supabase', 'PostgreSQL', 'TOTP MFA', 'Vercel', 'LLM APIs'],
+      problem: 'Most job tools help you describe yourself better \u2014 they reward whoever writes the most confident summary. ProovIt is built on the opposite premise: a skill is worth exactly what the evidence behind it can prove.',
+      overview: 'A career-readiness web app of roughly 12,200 lines across 29 files. You never set your own skill levels; they move when your proof does. Vanilla JavaScript, HTML and CSS \u2014 no framework, no build step. Fourteen JS files, each an IIFE exposing one global, loaded in dependency order by plain script tags. Opening index.html from disk runs the whole app: no bundler, no npm install, no transpile.',
       features: [
-        'Layered architecture: config, presentation, domain, data, services and controller, each in its own files.',
-        'model.js holds 31 pure functions with no DOM access \u2014 readiness scoring, the gap engine, the funnel and CV reconciliation are all testable without a browser.',
+        'Layered by responsibility \u2014 config (config.js), presentation (icons, ui, views, views2, views3, guide), domain (model.js), data (store.js), services (auth, ai, cv, idle, appfacts) and controller (app.js with routing, 82 actions, modals and a command palette).',
+        'model.js is pure: 31 functions, no DOM access. Readiness scoring, the gap engine, the funnel and CV reconciliation are all testable without a browser \u2014 and none can be influenced by a language model.',
         'Five CSS files in cascade order built on 99 design tokens; dark mode reuses the same token names with different values, so nothing downstream knows which theme is running.',
-        '40 media queries covering 320px phones through 1920px desktops, 17 routes, and 60 hand-drawn stroke icons with no icon library.',
-        'Supabase Postgres with row-level security \u2014 each user owns one row holding their whole state as JSON, so a new front-end field needs no migration.',
-        'Email and password auth with an optional emailed second factor.',
-        'Provider-agnostic AI layer \u2014 Groq, OpenRouter or OpenAI, switched by one line of config. Eight functions covering job analysis, apply verdicts, interview prep, lab challenges, CV parsing, text review, chat and context assembly.',
-        'CV parsing runs in the browser via pdf.js and mammoth.js, loaded only for the file type uploaded. Nothing is sent to a server to be read.',
-        'Session security to NIST SP 800-63B: 30-minute idle timeout with a two-minute warning, 12-hour absolute cap, trusted devices for 30 days.',
-        'Startup self-diagnosis verifies all fourteen modules expose what the rest of the app calls, and names the exact file to re-save when one does not.'
+        '40 media queries from 320px phones to 1920px desktops, with visible scrollbars, 44px touch targets and safe-area insets. 17 routes and 60 hand-drawn stroke icons, no icon library.',
+        'Supabase Postgres with one table under row-level security \u2014 each user owns a single row holding their whole state as JSON, so a new front-end field needs no migration.',
+        'Two-factor by authenticator app using Supabase native MFA, enforced server-side: a password only reaches assurance level 1, and a verified TOTP code is required to reach level 2.',
+        'Session handling to NIST SP 800-63B \u2014 30-minute idle timeout with a two-minute warning, a 12-hour absolute cap, and trusted devices for 30 days. Password reset handles expired and reused tokens.',
+        'Provider-agnostic AI \u2014 Groq, OpenRouter or OpenAI, switched by one line of config, all speaking the same Chat Completions API. Eight functions: job analyser, apply verdict, interview prep, lab challenges, CV parsing, text review, chat and context assembly.',
+        'The AI layer handles JSON mode with a no-JSON fallback, rate-limit retry honouring the provider\u2019s own wait, and a retry with more headroom when a reply truncates.',
+        'CV reading happens in the browser via pdf.js and mammoth.js, loaded only for the file type uploaded. Nothing is sent to a server to be parsed.',
+        'Startup self-diagnosis verifies all fourteen modules expose what the rest of the app calls, and names the exact file to re-save when one does not.',
+        'One source of truth for help \u2014 appfacts.js feeds the in-app manual, an 11-section printable A4 document and the assistant\u2019s knowledge, so the three cannot contradict each other.'
       ],
       process: [
-        { title: 'Premise', body: 'Started from a single rule: grading happens in code against the evidence vault, never in a prompt. A language model can summarise, but it can never move a score.' },
-        { title: 'Architecture', body: 'Kept the domain layer pure so scoring logic stays testable and tamper-proof, and chose no build step so the app runs from a bare folder.' },
-        { title: 'Platform', body: 'One Postgres row per user holding state as JSON, with row-level security doing the isolation, and two interchangeable serverless functions keeping the AI key server-side.' }
+        { title: 'Premise', body: 'Started from one rule: grading happens in code against the evidence vault, never in a prompt. A language model can summarise; it can never move a score.' },
+        { title: 'Architecture', body: 'Kept the domain layer pure so scoring stays testable and tamper-proof, and chose no build step so the app runs from a bare folder.' },
+        { title: 'Security', body: 'Chose TOTP over emailed codes, which need a mail server, and over SMS, which costs money per message and which NIST has discouraged since 2016 because SIM swapping is a real attack. TOTP is free, works without signal, and is the strongest of the three.' },
+        { title: 'Platform', body: 'One Postgres row per user holding state as JSON, row-level security doing the isolation, and two interchangeable serverless functions keeping the AI key server-side.' }
       ],
-      outcome: 'Live and deployed on Vercel as a static site with no build command. The pure-domain rule held: no AI call can influence a readiness score, and the whole scoring engine runs without a browser.',
+      outcome: 'Live on Vercel as a static site with no build command. The pure-domain rule held: no AI call can influence a readiness score, and the whole scoring engine runs without a browser. Row-level security means the anon key is safe in the browser \u2014 it identifies the project, and the policies do the protecting.',
       gallery: [],
       links: [
         { label: 'Visit ProovIt', type: 'web', url: 'https://proov-it.vercel.app/' }
@@ -1467,27 +1505,34 @@
       title: 'Personal Portfolio',
       category: 'Personal',
       subcategory: ['Website'],
-      role: 'Designer · Front-End',
-      year: '2025',
+      role: 'Designer \u00b7 Front-End \u00b7 QA',
+      year: '2026',
       status: 'Live',
       featured: true,
-      tagline: 'This very site — a hand-built, interactive portfolio designed and coded from scratch.',
-      desc: 'A responsive personal portfolio featuring 50+ interactive touches: theming, smart avatar, project narrator, and more.',
+      tagline: 'This very site \u2014 hand-built from scratch, with a live forum, a feedback system and 115+ themes.',
+      desc: 'A responsive personal portfolio with a realtime community forum, moderated review system, and a deep theming engine.',
       accent: ['#7C5CFC', '#33E5C4'],
-      tech: ['HTML/CSS', 'JavaScript', 'Supabase', 'Vercel', 'Responsive Design'],
-      overview: 'The site you\'re on right now. Designed and built end-to-end to showcase both design sensibility and front-end skill — from the theming system and smart day/night avatar to the guided tour, project narrator, and fully responsive layout across all devices.',
+      tech: ['HTML/CSS', 'Vanilla JavaScript', 'Supabase', 'PostgreSQL', 'Realtime', 'Vercel'],
+      problem: 'A portfolio that only lists work asks a recruiter to take every claim on trust. I wanted the site itself to be the evidence \u2014 something that demonstrates design judgement, front-end capability and QA thinking by existing, not by describing.',
+      overview: 'The site you are on right now, designed and coded end to end in vanilla HTML, CSS and JavaScript with no framework and no build step. Supabase provides Postgres and realtime for the community forum, visitor log and feedback system; the whole thing deploys to Vercel as static files.',
       features: [
-        '50+ accent themes with live customization, motion, and background styles.',
-        'Smart avatar that reacts to time of day and to visitor interaction.',
-        'Fully responsive across mobile, tablet, and desktop with a mobile design popup.',
-        'Accessibility controls, guided tour, and a recruiter snapshot card.'
+        'Realtime community forum on Supabase \u2014 messages, reactions, stickers, replies, typing indicators and live presence showing who is currently reading.',
+        'Image and document attachments with client-side compression, EXIF stripping, size limits enforced both in the browser and at the storage bucket, and profanity and link filtering on every message.',
+        'Feedback system: a five-question quiz that derives a star rating from weighted answers, an optional review with photo, and a moderation queue where nothing is published until approved \u2014 enforced by Postgres row-level security, not just the UI.',
+        '115+ accent themes with live customisation across colour treatment, movement, typeface, edges, pointer, canvas and atmosphere.',
+        'Time-of-day portrait that shifts between awake, sleepy and sleeping, plus an idle drift when the page goes untouched.',
+        'Command palette, guided tour, project narrator, recruiter snapshot card and a password-gated CV.',
+        'Responsive from 320px through 1920px, with 44px touch targets, safe-area insets, reduced-motion support and keyboard navigation throughout.',
+        'Performance work: portraits extracted from inlined base64 to WebP files, cutting the page from 1.18MB to 0.12MB, plus content-visibility on offscreen sections and a lower-effects tier for weaker devices.'
       ],
       process: [
-        { title: 'Design', body: 'Defined the visual language, typography, and a flexible theming system.' },
-        { title: 'Build', body: 'Coded the layout, components, and interactions in vanilla HTML, CSS, and JavaScript.' },
-        { title: 'Polish', body: 'Tuned responsiveness, micro-interactions, and accessibility across devices.' }
+        { title: 'Design', body: 'Defined the visual language, typography and a token-driven theming system where every surface reads from the same variables.' },
+        { title: 'Build', body: 'Coded the layout, components and interactions by hand, then added Supabase for the forum, presence and feedback data.' },
+        { title: 'Test', body: 'Applied QA habits to my own work \u2014 cross-browser checks, edge cases on every filter and form, and fixes for the specificity and scope bugs that surfaced.' },
+        { title: 'Optimise', body: 'Profiled what was actually costing frames, moved images out of the HTML, and cut continuous compositing work on low-powered devices.' }
       ],
-      gallery: ['Hero', 'Projects', 'Theming'],
+      outcome: 'Live on Vercel. The forum, feedback queue and visitor log all run on a single Supabase free-tier project, and the page loads at roughly a tenth of its original weight after the image work.',
+      gallery: [],
       links: [
         { label: 'Visit Portfolio', type: 'web', url: 'https://portfolio-six-drab-72.vercel.app/' }
       ]
